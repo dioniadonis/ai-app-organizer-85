@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,16 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				ai: {
+					blue: '#3B82F6',
+					purple: '#8B5CF6',
+					pink: '#EC4899',
+					indigo: '#6366F1',
+					cyan: '#0EA5E9',
+					emerald: '#10B981',
+					amber: '#F59E0B',
+					red: '#EF4444',
 				}
 			},
 			borderRadius: {
@@ -84,11 +95,31 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse-glow': {
+					'0%, 100%': { 
+						opacity: '1',
+						transform: 'scale(1)',
+					},
+					'50%': { 
+						opacity: '0.7',
+						transform: 'scale(1.05)',
+					},
+				},
+				'float': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-5px)' },
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-glow': 'pulse-glow 3s infinite ease-in-out',
+				'float': 'float 3s infinite ease-in-out',
+			},
+			backgroundImage: {
+				'ai-gradient': 'linear-gradient(to right, #8B5CF6, #EC4899)',
+				'glassy-dark': 'linear-gradient(to bottom right, rgba(17, 24, 39, 0.7), rgba(17, 24, 39, 0.8))',
 			}
 		}
 	},
