@@ -7,4 +7,5 @@ export interface AITool {
   subscriptionCost: number;
   renewalDate: string;
   isFavorite: boolean;
+  website?: string;
 }

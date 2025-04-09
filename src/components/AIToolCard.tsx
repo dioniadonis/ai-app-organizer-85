@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { AITool } from '@/types/AITool';
@@ -36,7 +36,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
       exit="exit"
       className="tool-card p-4 rounded-lg relative group"
     >
-      {/* Favorite Star */}
+      {/* Favorite Star and Action Buttons */}
       <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
         {/* Edit and Delete Buttons */}
         {isEditing && (
@@ -96,7 +96,20 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
         <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/10">
           {getAIToolIcon(tool.category)}
         </div>
-        <h3 className="text-lg font-semibold text-white">{tool.name}</h3>
+        <div className="flex flex-col">
+          <h3 className="text-lg font-semibold text-white">{tool.name}</h3>
+          {tool.website && (
+            <a 
+              href={tool.website} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-sm text-ai-blue flex items-center gap-1 hover:underline"
+            >
+              <ExternalLink className="w-3 h-3" />
+              Visit Website
+            </a>
+          )}
+        </div>
       </div>
 
       {/* Description */}

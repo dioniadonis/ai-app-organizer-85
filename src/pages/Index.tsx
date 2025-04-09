@@ -8,9 +8,9 @@ import {
   Grid,
   ChevronDown,
   ChevronUp,
-  Edit,
+  ArrowLeft,
   Trash2,
-  Star
+  ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,12 +30,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import AIToolCard from '@/components/AIToolCard';
 import EditableAIToolCard from '@/components/EditableAIToolCard';
 import Dashboard from '@/components/Dashboard';
 import { AITool } from '@/types/AITool';
 import { cn } from '@/lib/utils';
 import { getAIToolIcon } from '@/utils/iconUtils';
+import { toast } from '@/components/ui/use-toast';
 
 const initialAITools: AITool[] = [
   {
@@ -46,6 +57,7 @@ const initialAITools: AITool[] = [
     subscriptionCost: 20,
     renewalDate: '2025-05-15',
     isFavorite: true,
+    website: 'https://chat.openai.com/',
   },
   {
     id: '2',
@@ -55,6 +67,7 @@ const initialAITools: AITool[] = [
     subscriptionCost: 10,
     renewalDate: '2025-04-20',
     isFavorite: false,
+    website: 'https://www.midjourney.com/',
   },
   {
     id: '3',
@@ -64,6 +77,7 @@ const initialAITools: AITool[] = [
     subscriptionCost: 10,
     renewalDate: '2025-04-18',
     isFavorite: true,
+    website: 'https://github.com/features/copilot',
   },
   {
     id: '4',
@@ -73,6 +87,7 @@ const initialAITools: AITool[] = [
     subscriptionCost: 59,
     renewalDate: '2025-09-10',
     isFavorite: false,
+    website: 'https://www.jasper.ai/',
   },
   {
     id: '5',
@@ -82,6 +97,7 @@ const initialAITools: AITool[] = [
     subscriptionCost: 15,
     renewalDate: '2025-10-01',
     isFavorite: true,
+    website: 'https://openai.com/dall-e-2/',
   },
   {
     id: '6',
@@ -91,6 +107,7 @@ const initialAITools: AITool[] = [
     subscriptionCost: 0,
     renewalDate: '',
     isFavorite: false,
+    website: 'https://bard.google.com/',
   },
   {
     id: '7',
@@ -100,6 +117,7 @@ const initialAITools: AITool[] = [
     subscriptionCost: 30,
     renewalDate: '2025-05-22',
     isFavorite: false,
+    website: 'https://www.synthesia.io/',
   },
   {
     id: '8',
@@ -109,6 +127,7 @@ const initialAITools: AITool[] = [
     subscriptionCost: 0,
     renewalDate: '',
     isFavorite: true,
+    website: 'https://stability.ai/',
   },
   {
     id: '9',
@@ -117,7 +136,8 @@ const initialAITools: AITool[] = [
     category: 'Writing',
     subscriptionCost: 49,
     renewalDate: '2025-06-28',
-    isFavorite: false
+    isFavorite: false,
+    website: 'https://www.copy.ai/',
   },
   {
     id: '10',
@@ -125,8 +145,9 @@ const initialAITools: AITool[] = [
     description: 'AI coding companion that helps developers write code with real-time suggestions',
     category: 'Code Generation',
     subscriptionCost: 19,
-    renewalDate: '2025-09-05',
+    renewalDate: '2025-05-10',
     isFavorite: false,
+    website: 'https://aws.amazon.com/codewhisperer/',
   },
 ];
 
@@ -147,6 +168,7 @@ const Index = () => {
     category: 'General AI',
     subscriptionCost: 0,
     renewalDate: '',
+    website: '',
   });
   const [isDragging, setIsDragging] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -159,12 +181,38 @@ const Index = () => {
   const [toolToDelete, setToolToDelete] = useState<string | null>(null);
   const [filterByCategory, setFilterByCategory] = useState<string | null>(null);
   const [filterByRenewal, setFilterByRenewal] = useState<boolean>(false);
+  const [showCategoryDeleteConfirm, setShowCategoryDeleteConfirm] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
+  
+  // Extract all custom categories
+  const [customCategories, setCustomCategories] = useState<string[]>(() => {
+    const defaultCategories = ["General AI", "Writing", "Image Generation", "Code Generation", "Chatbots", "Video Generation"];
+    const allCategories = Array.from(new Set(aiTools.map(tool => tool.category)));
+    return allCategories.filter(cat => !defaultCategories.includes(cat));
+  });
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('aiTools', JSON.stringify(aiTools));
     }
+    
+    // Update custom categories whenever tools change
+    const defaultCategories = ["General AI", "Writing", "Image Generation", "Code Generation", "Chatbots", "Video Generation"];
+    const allCategories = Array.from(new Set(aiTools.map(tool => tool.category)));
+    setCustomCategories(allCategories.filter(cat => !defaultCategories.includes(cat)));
   }, [aiTools]);
+
+  // Ensure favorites are expanded when filtering
+  useEffect(() => {
+    if (filterByCategory === 'Favorites' && !expandedCategories.includes('Favorites')) {
+      setExpandedCategories(prev => [...prev, 'Favorites']);
+    }
+    
+    // Auto-expand filtered category
+    if (filterByCategory && !expandedCategories.includes(filterByCategory)) {
+      setExpandedCategories(prev => [...prev, filterByCategory]);
+    }
+  }, [filterByCategory, expandedCategories]);
 
   const handleAddTool = () => {
     if (
@@ -172,7 +220,11 @@ const Index = () => {
       !newTool.description.trim() ||
       (newTool.subscriptionCost > 0 && !newTool.renewalDate)
     ) {
-      alert('Please fill in all required fields!');
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -189,8 +241,15 @@ const Index = () => {
       category: 'General AI',
       subscriptionCost: 0,
       renewalDate: '',
+      website: '',
     });
     setShowAddForm(false);
+    
+    toast({
+      title: "Success",
+      description: `${completeNewTool.name} has been added.`,
+      variant: "default",
+    });
   };
 
   const handleEdit = (id: string) => {
@@ -200,7 +259,11 @@ const Index = () => {
   const handleSave = (id: string) => {
     const toolToSave = editedTools[id] || aiTools.find(t => t.id === id);
     if (toolToSave && toolToSave.subscriptionCost > 0 && !toolToSave.renewalDate) {
-      alert("Please provide a renewal date for paid subscriptions.");
+      toast({
+        title: "Missing Information",
+        description: "Please provide a renewal date for paid subscriptions.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -209,6 +272,12 @@ const Index = () => {
     );
     setEditingId(null);
     setEditedTools({});
+    
+    toast({
+      title: "Updated",
+      description: "Tool information has been updated.",
+      variant: "default",
+    });
   };
 
   const handleCancel = (id: string) => {
@@ -223,9 +292,51 @@ const Index = () => {
 
   const handleDelete = () => {
     if (toolToDelete) {
+      const toolName = aiTools.find(t => t.id === toolToDelete)?.name;
       setAiTools((prevTools) => prevTools.filter((tool) => tool.id !== toolToDelete));
       setShowDeleteConfirm(false);
       setToolToDelete(null);
+      
+      toast({
+        title: "Deleted",
+        description: `${toolName} has been removed.`,
+        variant: "default",
+      });
+    }
+  };
+
+  const confirmCategoryDelete = (category: string) => {
+    setCategoryToDelete(category);
+    setShowCategoryDeleteConfirm(true);
+  };
+
+  const handleCategoryDelete = () => {
+    if (categoryToDelete) {
+      // Change the category of all tools in this category to "General AI"
+      setAiTools(prevTools => 
+        prevTools.map(tool => 
+          tool.category === categoryToDelete 
+            ? { ...tool, category: "General AI" } 
+            : tool
+        )
+      );
+      
+      // Remove from expanded categories
+      setExpandedCategories(prev => prev.filter(cat => cat !== categoryToDelete));
+      
+      // Reset filter if it was set to this category
+      if (filterByCategory === categoryToDelete) {
+        setFilterByCategory(null);
+      }
+      
+      setShowCategoryDeleteConfirm(false);
+      setCategoryToDelete(null);
+      
+      toast({
+        title: "Category Deleted",
+        description: `Category "${categoryToDelete}" has been removed and its tools moved to General AI.`,
+        variant: "default",
+      });
     }
   };
 
@@ -245,6 +356,15 @@ const Index = () => {
         tool.id === id ? { ...tool, isFavorite: !tool.isFavorite } : tool
       )
     );
+    
+    const tool = aiTools.find(t => t.id === id);
+    const action = !tool?.isFavorite ? "added to" : "removed from";
+    
+    toast({
+      title: `${action === "added to" ? "Added to Favorites" : "Removed from Favorites"}`,
+      description: `${tool?.name} has been ${action} favorites.`,
+      variant: "default",
+    });
   };
 
   const handleInputChange = (
@@ -326,6 +446,17 @@ const Index = () => {
       setNewTool(prev => ({ ...prev, category: customCategory.trim() }));
       setCustomCategory("");
       setShowCustomCategoryInput(false);
+      
+      // Add to custom categories if not already present
+      if (!customCategories.includes(customCategory.trim())) {
+        setCustomCategories(prev => [...prev, customCategory.trim()]);
+      }
+      
+      toast({
+        title: "New Category",
+        description: `Category "${customCategory.trim()}" has been created and selected.`,
+        variant: "default",
+      });
     }
   };
 
@@ -333,6 +464,11 @@ const Index = () => {
     setFilterByCategory(category);
     setFilterByRenewal(false);
     setView('list');
+    
+    // Make sure the category is expanded
+    if (category && !expandedCategories.includes(category)) {
+      setExpandedCategories(prev => [...prev, category]);
+    }
   };
 
   const handleRenewalFilter = () => {
@@ -341,13 +477,20 @@ const Index = () => {
     setView('list');
   };
 
+  const clearFilters = () => {
+    setFilterByCategory(null);
+    setFilterByRenewal(false);
+  };
+
   let filteredTools = aiTools.filter((tool) =>
     tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     tool.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Apply category filter if it's set
-  if (filterByCategory) {
+  if (filterByCategory === 'Favorites') {
+    filteredTools = filteredTools.filter(tool => tool.isFavorite);
+  } else if (filterByCategory) {
     filteredTools = filteredTools.filter(tool => tool.category === filterByCategory);
   }
 
@@ -366,7 +509,9 @@ const Index = () => {
 
   const favoriteTools = filteredTools.filter(tool => tool.isFavorite);
   const categorizedTools = filteredTools.reduce((acc, tool) => {
-    (acc[tool.category] = acc[tool.category] || []).push(tool);
+    if (!tool.isFavorite) { // Only include non-favorites in categories
+      (acc[tool.category] = acc[tool.category] || []).push(tool);
+    }
     return acc;
   }, {} as { [category: string]: AITool[] });
 
@@ -394,8 +539,7 @@ const Index = () => {
                 variant={view === 'dashboard' ? 'default' : 'outline'} 
                 onClick={() => {
                   setView('dashboard');
-                  setFilterByCategory(null);
-                  setFilterByRenewal(false);
+                  clearFilters();
                 }}
                 className={view === 'dashboard' ? 'bg-ai-purple hover:bg-ai-purple/90' : 'border-gray-700'}
               >
@@ -424,15 +568,46 @@ const Index = () => {
             </div>
           </div>
           
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Search AI tools..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-black/20 border-gray-700 focus:border-ai-purple focus:ring-ai-purple"
-            />
+          {/* Filter bar with active filters */}
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search AI tools..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-black/20 border-gray-700 focus:border-ai-purple focus:ring-ai-purple"
+              />
+            </div>
+            
+            {(filterByCategory || filterByRenewal) && (
+              <div className="flex items-center gap-2 text-sm">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={clearFilters}
+                  className="h-8 px-2 gap-1 border-gray-700 hover:bg-gray-800"
+                >
+                  <ArrowLeft className="w-3 h-3" />
+                  Back to All
+                </Button>
+                
+                <span className="text-gray-400">Active Filter:</span>
+                
+                {filterByCategory && (
+                  <span className="bg-ai-purple/20 text-ai-purple rounded-full px-3 py-1">
+                    {filterByCategory === 'Favorites' ? 'Favorites' : `Category: ${filterByCategory}`}
+                  </span>
+                )}
+                
+                {filterByRenewal && (
+                  <span className="bg-ai-pink/20 text-ai-pink rounded-full px-3 py-1">
+                    Upcoming Renewals
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </header>
 
@@ -495,7 +670,7 @@ const Index = () => {
                           <SelectItem value="Code Generation" className="hover:bg-gray-700/50 text-white">Code Generation</SelectItem>
                           <SelectItem value="Chatbots" className="hover:bg-gray-700/50 text-white">Chatbots</SelectItem>
                           <SelectItem value="Video Generation" className="hover:bg-gray-700/50 text-white">Video Generation</SelectItem>
-                          {allCategoriesForSelect.filter(cat => 
+                          {customCategories.filter(cat => 
                             !["General AI", "Writing", "Image Generation", "Code Generation", "Chatbots", "Video Generation"].includes(cat)
                           ).map(cat => (
                             <SelectItem key={cat} value={cat} className="hover:bg-gray-700/50 text-white">{cat}</SelectItem>
@@ -527,13 +702,27 @@ const Index = () => {
                 </div>
 
                 <div>
+                  <label htmlFor="new-website" className="block text-sm font-medium text-gray-300 mb-1">
+                    Website URL
+                  </label>
+                  <Input
+                    id="new-website"
+                    type="url"
+                    value={newTool.website}
+                    onChange={(e) => handleInputChange('website', e.target.value)}
+                    className="bg-black/20 text-white border-gray-700 focus:border-ai-purple"
+                    placeholder="https://example.com"
+                  />
+                </div>
+
+                <div>
                   <label htmlFor="new-cost" className="block text-sm font-medium text-gray-300 mb-1">
                     Subscription Cost ($/mo)
                   </label>
                   <Input
                     id="new-cost"
                     type="number"
-                    value={newTool.subscriptionCost}
+                    value={newTool.subscriptionCost > 0 ? newTool.subscriptionCost : ''}
                     onChange={(e) =>
                       handleInputChange(
                         'subscriptionCost',
@@ -584,145 +773,197 @@ const Index = () => {
 
         {view === 'list' && (
           <div className="space-y-6">
-            <div className="mb-6">
-              <div
-                className="tool-category-header"
-                onClick={() => toggleCategoryExpansion('Favorites')}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-yellow-400"
+            {/* Show back button if filtering */}
+            {(filterByCategory || filterByRenewal) && (
+              <div className="mb-2">
+                <Button 
+                  variant="outline" 
+                  onClick={clearFilters}
+                  className="border-gray-700 hover:bg-gray-800"
                 >
-                  <path d="m12 2 3.09 6.26 6.91.9-5.22 5.04 1.18 6.88L12 17.77l-5.96 3.1 1.18-6.88-5.22-5.04 6.91-.9L12 2z" />
-                </svg>
-                <span>Favorites</span>
-                <span className="ml-2 bg-yellow-400/20 text-yellow-400 text-xs px-2 py-1 rounded-full">
-                  {favoriteTools.length}
-                </span>
-                <div className="ml-auto">
-                  {expandedCategories.includes('Favorites') ? (
-                    <ChevronUp className="w-5 h-5 text-gray-400" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
-                  )}
-                </div>
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to All Tools
+                </Button>
               </div>
-              {expandedCategories.includes('Favorites') && (
-                <AnimatePresence>
-                  {favoriteTools.length > 0 ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-                      {favoriteTools.map((tool, index) => (
-                        <div
-                          key={tool.id}
-                          draggable={true}
-                          onDragStart={() => handleDragStart(index)}
-                          onDragOver={(e) => handleDragOver(e, index, 'Favorites')}
-                          onDragEnd={handleDragEnd}
-                          className={cn(
-                            isDragging && draggedIndex === index ? 'opacity-0' : 'opacity-100',
-                            'transition-opacity'
-                          )}
-                        >
-                          {editingId === tool.id ? (
-                            <EditableAIToolCard
-                              tool={tool}
-                              onSave={handleSave}
-                              onCancel={handleCancel}
-                              onUpdate={handleUpdate}
-                            />
-                          ) : (
-                            <AIToolCard
-                              tool={tool}
-                              onEdit={handleEdit}
-                              onDelete={confirmDelete}
-                              onToggleFavorite={handleToggleFavorite}
-                              isEditing={editingId === null}
-                            />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-400 mt-2 pl-2">No favorites yet. Star an AI tool to add it here.</p>
-                  )}
-                </AnimatePresence>
-              )}
-            </div>
-
-            {sortedCategories.map((category) => (
-              <div key={category} className="mb-6">
+            )}
+            
+            {/* Favorites Section */}
+            {(!filterByCategory || filterByCategory === 'Favorites') && (
+              <div className="mb-6">
                 <div
                   className="tool-category-header"
-                  onClick={() => toggleCategoryExpansion(category)}
+                  onClick={() => toggleCategoryExpansion('Favorites')}
                 >
-                  <div className="w-6 h-6 flex items-center justify-center">
-                    {getAIToolIcon(category)}
-                  </div>
-                  <span>{category}</span>
-                  <span className="ml-2 bg-white/10 text-white text-xs px-2 py-1 rounded-full">
-                    {categorizedTools[category].length}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-yellow-400"
+                  >
+                    <path d="m12 2 3.09 6.26 6.91.9-5.22 5.04 1.18 6.88L12 17.77l-5.96 3.1 1.18-6.88-5.22-5.04 6.91-.9L12 2z" />
+                  </svg>
+                  <span>Favorites</span>
+                  <span className="ml-2 bg-yellow-400/20 text-yellow-400 text-xs px-2 py-1 rounded-full">
+                    {favoriteTools.length}
                   </span>
                   <div className="ml-auto">
-                    {expandedCategories.includes(category) ? (
+                    {expandedCategories.includes('Favorites') ? (
                       <ChevronUp className="w-5 h-5 text-gray-400" />
                     ) : (
                       <ChevronDown className="w-5 h-5 text-gray-400" />
                     )}
                   </div>
                 </div>
-                
-                {expandedCategories.includes(category) && (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-                    {categorizedTools[category].map((tool, index) => {
-                      const absoluteIndex = favoriteTools.length + sortedCategories.indexOf(category) + index;
-                      return (
-                        <div
-                          key={tool.id}
-                          draggable={true}
-                          onDragStart={() => handleDragStart(absoluteIndex)}
-                          onDragOver={(e) => handleDragOver(e, index, category)}
-                          onDragEnd={handleDragEnd}
-                          className={cn(
-                            isDragging && draggedIndex === absoluteIndex ? 'opacity-0' : 'opacity-100',
-                            'transition-opacity'
-                          )}
-                        >
-                          {editingId === tool.id ? (
-                            <EditableAIToolCard
-                              tool={tool}
-                              onSave={handleSave}
-                              onCancel={handleCancel}
-                              onUpdate={handleUpdate}
-                            />
-                          ) : (
-                            <AIToolCard
-                              tool={tool}
-                              onEdit={handleEdit}
-                              onDelete={confirmDelete}
-                              onToggleFavorite={handleToggleFavorite}
-                              isEditing={editingId === null}
-                            />
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
+                {expandedCategories.includes('Favorites') && (
+                  <AnimatePresence>
+                    {favoriteTools.length > 0 ? (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                        {favoriteTools.map((tool, index) => (
+                          <div
+                            key={tool.id}
+                            draggable={true}
+                            onDragStart={() => handleDragStart(index)}
+                            onDragOver={(e) => handleDragOver(e, index, 'Favorites')}
+                            onDragEnd={handleDragEnd}
+                            className={cn(
+                              isDragging && draggedIndex === index ? 'opacity-0' : 'opacity-100',
+                              'transition-opacity'
+                            )}
+                          >
+                            {editingId === tool.id ? (
+                              <EditableAIToolCard
+                                tool={tool}
+                                onSave={handleSave}
+                                onCancel={handleCancel}
+                                onUpdate={handleUpdate}
+                                customCategories={customCategories}
+                              />
+                            ) : (
+                              <AIToolCard
+                                tool={tool}
+                                onEdit={handleEdit}
+                                onDelete={confirmDelete}
+                                onToggleFavorite={handleToggleFavorite}
+                                isEditing={editingId === null}
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-400 mt-2 pl-2">No favorites yet. Star an AI tool to add it here.</p>
+                    )}
+                  </AnimatePresence>
                 )}
               </div>
-            ))}
+            )}
+
+            {/* Categories */}
+            {sortedCategories
+              .filter(category => !filterByCategory || filterByCategory === category)
+              .map((category) => (
+                <div key={category} className="mb-6">
+                  <div
+                    className="tool-category-header"
+                    onClick={() => toggleCategoryExpansion(category)}
+                  >
+                    <div className="w-6 h-6 flex items-center justify-center">
+                      {getAIToolIcon(category)}
+                    </div>
+                    <span>{category}</span>
+                    <span className="ml-2 bg-white/10 text-white text-xs px-2 py-1 rounded-full">
+                      {categorizedTools[category].length}
+                    </span>
+                    <div className="ml-auto flex items-center gap-2">
+                      {/* Delete category button - only for custom categories */}
+                      {customCategories.includes(category) && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            confirmCategoryDelete(category);
+                          }}
+                          className="h-6 w-6 text-red-400 hover:text-red-300 hover:bg-red-500/20"
+                          title="Delete Category"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      )}
+                      
+                      {expandedCategories.includes(category) ? (
+                        <ChevronUp className="w-5 h-5 text-gray-400" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-gray-400" />
+                      )}
+                    </div>
+                  </div>
+                  
+                  {expandedCategories.includes(category) && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                      {categorizedTools[category].map((tool, index) => {
+                        const absoluteIndex = favoriteTools.length + sortedCategories.indexOf(category) + index;
+                        return (
+                          <div
+                            key={tool.id}
+                            draggable={true}
+                            onDragStart={() => handleDragStart(absoluteIndex)}
+                            onDragOver={(e) => handleDragOver(e, index, category)}
+                            onDragEnd={handleDragEnd}
+                            className={cn(
+                              isDragging && draggedIndex === absoluteIndex ? 'opacity-0' : 'opacity-100',
+                              'transition-opacity'
+                            )}
+                          >
+                            {editingId === tool.id ? (
+                              <EditableAIToolCard
+                                tool={tool}
+                                onSave={handleSave}
+                                onCancel={handleCancel}
+                                onUpdate={handleUpdate}
+                                customCategories={customCategories}
+                              />
+                            ) : (
+                              <AIToolCard
+                                tool={tool}
+                                onEdit={handleEdit}
+                                onDelete={confirmDelete}
+                                onToggleFavorite={handleToggleFavorite}
+                                isEditing={editingId === null}
+                              />
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))}
+            
+            {/* No results message */}
+            {filteredTools.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-gray-400 text-lg">No tools found matching your search criteria.</p>
+                <Button 
+                  variant="outline" 
+                  onClick={clearFilters}
+                  className="mt-4 border-gray-700 hover:bg-gray-800"
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Tool Confirmation Dialog */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent className="bg-gray-800 text-white border-gray-700">
           <DialogHeader>
@@ -749,6 +990,30 @@ const Index = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Category Confirmation Dialog */}
+      <AlertDialog open={showCategoryDeleteConfirm} onOpenChange={setShowCategoryDeleteConfirm}>
+        <AlertDialogContent className="bg-gray-800 text-white border-gray-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Category</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
+              Are you sure you want to delete this category? All tools in this category 
+              will be moved to "General AI". This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex justify-end gap-2 mt-4">
+            <AlertDialogCancel className="bg-transparent hover:bg-gray-700 border-gray-600 text-white">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleCategoryDelete}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete Category
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <footer className="py-6 text-center text-gray-500 mt-12">
         <p>AI Tool Manager &copy; {new Date().getFullYear()}</p>

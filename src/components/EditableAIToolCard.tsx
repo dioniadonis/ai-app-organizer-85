@@ -19,6 +19,7 @@ interface EditableAIToolCardProps {
   onSave: (id: string) => void;
   onCancel: (id: string) => void;
   onUpdate: (id: string, updates: Partial<AITool>) => void;
+  customCategories: string[];
 }
 
 const EditableAIToolCard: React.FC<EditableAIToolCardProps> = ({
@@ -26,8 +27,11 @@ const EditableAIToolCard: React.FC<EditableAIToolCardProps> = ({
   onSave,
   onCancel,
   onUpdate,
+  customCategories,
 }) => {
   const [localTool, setLocalTool] = useState<AITool>(tool);
+  const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false);
+  const [customCategory, setCustomCategory] = useState('');
   const renewalDateInputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (field: keyof AITool, value: string | number | boolean) => {
@@ -44,9 +48,31 @@ const EditableAIToolCard: React.FC<EditableAIToolCardProps> = ({
     onCancel(localTool.id);
   };
 
+  const handleAddCustomCategory = () => {
+    if (customCategory.trim()) {
+      // Update tool with the custom category
+      handleInputChange('category', customCategory.trim());
+      setCustomCategory('');
+      setShowCustomCategoryInput(false);
+    }
+  };
+
   useEffect(() => {
     setLocalTool(tool);
   }, [tool]);
+
+  // All available categories including built-in and custom ones
+  const allCategories = [
+    "General AI", 
+    "Writing", 
+    "Image Generation", 
+    "Code Generation", 
+    "Chatbots", 
+    "Video Generation",
+    ...customCategories.filter(cat => 
+      !["General AI", "Writing", "Image Generation", "Code Generation", "Chatbots", "Video Generation"].includes(cat)
+    )
+  ];
 
   return (
     <motion.div
@@ -82,26 +108,70 @@ const EditableAIToolCard: React.FC<EditableAIToolCardProps> = ({
         />
       </div>
 
+      {/* Website Input */}
+      <div>
+        <label htmlFor="website" className="block text-sm font-medium text-gray-300 mb-1">
+          Website URL
+        </label>
+        <Input
+          id="website"
+          type="url"
+          value={localTool.website || ''}
+          onChange={(e) => handleInputChange('website', e.target.value)}
+          className="bg-black/20 text-white border-gray-700"
+          placeholder="https://example.com"
+        />
+      </div>
+
       {/* Category Select */}
       <div>
         <label htmlFor="category" className="block text-sm font-medium text-gray-300 mb-1">
           Category
         </label>
-        <Select
-          value={localTool.category}
-          onValueChange={(value) => handleInputChange('category', value)}
-        >
-          <SelectTrigger className="w-full bg-black/20 text-white border-gray-700">
-            <SelectValue placeholder="Select a category" />
-          </SelectTrigger>
-          <SelectContent className="bg-gray-800 border-gray-700">
-            <SelectItem value="General AI" className="hover:bg-gray-700/50 text-white">General AI</SelectItem>
-            <SelectItem value="Writing" className="hover:bg-gray-700/50 text-white">Writing</SelectItem>
-            <SelectItem value="Image Generation" className="hover:bg-gray-700/50 text-white">Image Generation</SelectItem>
-            <SelectItem value="Code Generation" className="hover:bg-gray-700/50 text-white">Code Generation</SelectItem>
-            <SelectItem value="Chatbots" className="hover:bg-gray-700/50 text-white">Chatbots</SelectItem>
-          </SelectContent>
-        </Select>
+        {showCustomCategoryInput ? (
+          <div className="flex gap-2">
+            <Input
+              value={customCategory}
+              onChange={(e) => setCustomCategory(e.target.value)}
+              className="bg-black/20 text-white border-gray-700"
+              placeholder="Enter custom category"
+            />
+            <Button 
+              onClick={handleAddCustomCategory}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Add
+            </Button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <Select
+              value={localTool.category}
+              onValueChange={(value) => handleInputChange('category', value)}
+            >
+              <SelectTrigger className="w-full bg-black/20 text-white border-gray-700">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 border-gray-700">
+                {allCategories.map(category => (
+                  <SelectItem 
+                    key={category} 
+                    value={category} 
+                    className="hover:bg-gray-700/50 text-white"
+                  >
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button 
+              onClick={() => setShowCustomCategoryInput(true)}
+              className="bg-ai-purple hover:bg-ai-purple/90"
+            >
+              Custom
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Subscription Cost Input */}
@@ -112,7 +182,7 @@ const EditableAIToolCard: React.FC<EditableAIToolCardProps> = ({
         <Input
           id="subscriptionCost"
           type="number"
-          value={localTool.subscriptionCost}
+          value={localTool.subscriptionCost > 0 ? localTool.subscriptionCost : ''}
           onChange={(e) =>
             handleInputChange(
               'subscriptionCost',
@@ -120,6 +190,7 @@ const EditableAIToolCard: React.FC<EditableAIToolCardProps> = ({
             )
           }
           className="bg-black/20 text-white border-gray-700"
+          placeholder="Enter cost"
         />
       </div>
 
