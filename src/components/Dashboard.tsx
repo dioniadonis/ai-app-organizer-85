@@ -6,9 +6,11 @@ import { motion } from 'framer-motion';
 
 interface DashboardProps {
   aiTools: AITool[];
+  onCategoryClick: (category: string) => void;
+  onRenewalClick: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ aiTools }) => {
+const Dashboard: React.FC<DashboardProps> = ({ aiTools, onCategoryClick, onRenewalClick }) => {
   // Calculate statistics
   const totalTools = aiTools.length;
   const favoriteTools = aiTools.filter(tool => tool.isFavorite).length;
@@ -36,7 +38,8 @@ const Dashboard: React.FC<DashboardProps> = ({ aiTools }) => {
     .map(([category, count], index) => (
       <div 
         key={category}
-        className="p-2 px-3 rounded-full glass-card text-sm flex items-center gap-2"
+        className="p-2 px-3 rounded-full glass-card text-sm flex items-center gap-2 cursor-pointer hover:bg-white/10 transition-colors"
+        onClick={() => onCategoryClick(category)}
       >
         <span>{category}</span>
         <span className="bg-white/20 rounded-full w-5 h-5 flex items-center justify-center text-xs">
@@ -80,28 +83,44 @@ const Dashboard: React.FC<DashboardProps> = ({ aiTools }) => {
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
       >
         {/* Total Tools */}
-        <motion.div variants={itemVariants} className="dashboard-stat-card">
+        <motion.div 
+          variants={itemVariants} 
+          className="dashboard-stat-card cursor-pointer"
+          onClick={() => onCategoryClick('')}
+        >
           <Package className="w-8 h-8 mb-2 text-ai-blue" />
           <span className="text-gray-400 text-sm">Total Tools</span>
           <span className="text-3xl font-bold">{totalTools}</span>
         </motion.div>
         
         {/* Favorite Tools */}
-        <motion.div variants={itemVariants} className="dashboard-stat-card">
+        <motion.div 
+          variants={itemVariants} 
+          className="dashboard-stat-card cursor-pointer"
+          onClick={() => onCategoryClick('Favorites')}
+        >
           <Star className="w-8 h-8 mb-2 text-ai-amber" />
           <span className="text-gray-400 text-sm">Favorites</span>
           <span className="text-3xl font-bold">{favoriteTools}</span>
         </motion.div>
         
         {/* Monthly Cost */}
-        <motion.div variants={itemVariants} className="dashboard-stat-card">
+        <motion.div 
+          variants={itemVariants} 
+          className="dashboard-stat-card cursor-pointer"
+          onClick={() => onCategoryClick('')}
+        >
           <Banknote className="w-8 h-8 mb-2 text-ai-emerald" />
           <span className="text-gray-400 text-sm">Monthly Cost</span>
           <span className="text-3xl font-bold">${totalMonthlyCost}</span>
         </motion.div>
         
         {/* Upcoming Renewals */}
-        <motion.div variants={itemVariants} className="dashboard-stat-card">
+        <motion.div 
+          variants={itemVariants} 
+          className="dashboard-stat-card cursor-pointer"
+          onClick={onRenewalClick}
+        >
           <Calendar className="w-8 h-8 mb-2 text-ai-purple" />
           <span className="text-gray-400 text-sm">Upcoming Renewals</span>
           <span className="text-3xl font-bold">{upcomingRenewals.length}</span>
@@ -118,11 +137,21 @@ const Dashboard: React.FC<DashboardProps> = ({ aiTools }) => {
       
       {/* Upcoming Renewals List */}
       {upcomingRenewals.length > 0 && (
-        <motion.div variants={itemVariants} className="glass-card p-4 rounded-xl">
-          <h3 className="text-lg font-semibold mb-3">Upcoming Renewals</h3>
+        <motion.div 
+          variants={itemVariants} 
+          className="glass-card p-4 rounded-xl"
+        >
+          <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-ai-pink" />
+            Upcoming Renewals
+          </h3>
           <div className="space-y-2">
             {upcomingRenewals.map(tool => (
-              <div key={tool.id} className="flex justify-between items-center p-2 rounded hover:bg-white/5">
+              <div 
+                key={tool.id} 
+                className="flex justify-between items-center p-2 rounded hover:bg-white/5 transition-colors cursor-pointer"
+                onClick={() => onCategoryClick(tool.category)}
+              >
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-ai-pink animate-pulse"></div>
                   <span>{tool.name}</span>

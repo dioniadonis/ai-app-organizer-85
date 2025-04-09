@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -7,6 +8,9 @@ import {
   Grid,
   ChevronDown,
   ChevronUp,
+  Edit,
+  Trash2,
+  Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +22,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import AIToolCard from '@/components/AIToolCard';
 import EditableAIToolCard from '@/components/EditableAIToolCard';
 import Dashboard from '@/components/Dashboard';
@@ -32,7 +44,7 @@ const initialAITools: AITool[] = [
     description: 'Advanced AI chatbot for natural language processing and generation',
     category: 'Chatbots',
     subscriptionCost: 20,
-    renewalDate: '2024-08-15',
+    renewalDate: '2025-05-15',
     isFavorite: true,
   },
   {
@@ -41,7 +53,7 @@ const initialAITools: AITool[] = [
     description: 'AI image generation platform creating detailed illustrations from text prompts',
     category: 'Image Generation',
     subscriptionCost: 10,
-    renewalDate: '2024-09-01',
+    renewalDate: '2025-04-20',
     isFavorite: false,
   },
   {
@@ -50,7 +62,7 @@ const initialAITools: AITool[] = [
     description: 'AI pair programming assistant that suggests code in real-time',
     category: 'Code Generation',
     subscriptionCost: 10,
-    renewalDate: '2024-08-20',
+    renewalDate: '2025-04-18',
     isFavorite: true,
   },
   {
@@ -59,7 +71,7 @@ const initialAITools: AITool[] = [
     description: 'AI writing assistant for marketing copy and creative content',
     category: 'Writing',
     subscriptionCost: 59,
-    renewalDate: '2024-09-10',
+    renewalDate: '2025-09-10',
     isFavorite: false,
   },
   {
@@ -68,7 +80,7 @@ const initialAITools: AITool[] = [
     description: 'AI system that creates realistic images and art from natural language descriptions',
     category: 'Image Generation',
     subscriptionCost: 15,
-    renewalDate: '2024-10-01',
+    renewalDate: '2025-10-01',
     isFavorite: true,
   },
   {
@@ -84,9 +96,9 @@ const initialAITools: AITool[] = [
     id: '7',
     name: 'Synthesia',
     description: 'AI video generation platform for creating videos with virtual avatars',
-    category: 'General AI',
+    category: 'Video Generation',
     subscriptionCost: 30,
-    renewalDate: '2024-09-22',
+    renewalDate: '2025-05-22',
     isFavorite: false,
   },
   {
@@ -104,7 +116,7 @@ const initialAITools: AITool[] = [
     description: 'AI-powered copywriting tool for marketing content and creative writing',
     category: 'Writing',
     subscriptionCost: 49,
-    renewalDate: '2024-08-28',
+    renewalDate: '2025-06-28',
     isFavorite: false
   },
   {
@@ -113,7 +125,7 @@ const initialAITools: AITool[] = [
     description: 'AI coding companion that helps developers write code with real-time suggestions',
     category: 'Code Generation',
     subscriptionCost: 19,
-    renewalDate: '2024-09-05',
+    renewalDate: '2025-09-05',
     isFavorite: false,
   },
 ];
@@ -141,6 +153,12 @@ const Index = () => {
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['Favorites']);
   const [editedTools, setEditedTools] = useState<{ [id: string]: Partial<AITool> }>({});
   const [view, setView] = useState<'dashboard' | 'list'>('dashboard');
+  const [customCategory, setCustomCategory] = useState('');
+  const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [toolToDelete, setToolToDelete] = useState<string | null>(null);
+  const [filterByCategory, setFilterByCategory] = useState<string | null>(null);
+  const [filterByRenewal, setFilterByRenewal] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -198,9 +216,16 @@ const Index = () => {
     setEditedTools({});
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this AI tool?")) {
-      setAiTools((prevTools) => prevTools.filter((tool) => tool.id !== id));
+  const confirmDelete = (id: string) => {
+    setToolToDelete(id);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDelete = () => {
+    if (toolToDelete) {
+      setAiTools((prevTools) => prevTools.filter((tool) => tool.id !== toolToDelete));
+      setShowDeleteConfirm(false);
+      setToolToDelete(null);
     }
   };
 
@@ -295,10 +320,49 @@ const Index = () => {
     setDraggedIndex(targetIndex);
   };
 
-  const filteredTools = aiTools.filter((tool) =>
+  const handleAddCustomCategory = () => {
+    if (customCategory.trim()) {
+      // Update newTool with the custom category
+      setNewTool(prev => ({ ...prev, category: customCategory.trim() }));
+      setCustomCategory("");
+      setShowCustomCategoryInput(false);
+    }
+  };
+
+  const handleCategoryFilter = (category: string) => {
+    setFilterByCategory(category);
+    setFilterByRenewal(false);
+    setView('list');
+  };
+
+  const handleRenewalFilter = () => {
+    setFilterByRenewal(true);
+    setFilterByCategory(null);
+    setView('list');
+  };
+
+  let filteredTools = aiTools.filter((tool) =>
     tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     tool.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Apply category filter if it's set
+  if (filterByCategory) {
+    filteredTools = filteredTools.filter(tool => tool.category === filterByCategory);
+  }
+
+  // Apply upcoming renewals filter if it's set
+  if (filterByRenewal) {
+    const today = new Date();
+    const thirtyDaysLater = new Date();
+    thirtyDaysLater.setDate(today.getDate() + 30);
+    
+    filteredTools = filteredTools.filter(tool => {
+      if (!tool.renewalDate) return false;
+      const renewalDate = new Date(tool.renewalDate);
+      return renewalDate >= today && renewalDate <= thirtyDaysLater;
+    });
+  }
 
   const favoriteTools = filteredTools.filter(tool => tool.isFavorite);
   const categorizedTools = filteredTools.reduce((acc, tool) => {
@@ -307,6 +371,11 @@ const Index = () => {
   }, {} as { [category: string]: AITool[] });
 
   const sortedCategories = Object.keys(categorizedTools).sort();
+
+  // For dashboard display
+  const allCategoriesForSelect = Array.from(
+    new Set(aiTools.map(tool => tool.category))
+  ).sort();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-100">
@@ -323,7 +392,11 @@ const Index = () => {
             <div className="flex gap-2">
               <Button 
                 variant={view === 'dashboard' ? 'default' : 'outline'} 
-                onClick={() => setView('dashboard')}
+                onClick={() => {
+                  setView('dashboard');
+                  setFilterByCategory(null);
+                  setFilterByRenewal(false);
+                }}
                 className={view === 'dashboard' ? 'bg-ai-purple hover:bg-ai-purple/90' : 'border-gray-700'}
               >
                 <LayoutDashboard className="w-4 h-4 mr-2" />
@@ -391,21 +464,52 @@ const Index = () => {
                   <label htmlFor="new-category" className="block text-sm font-medium text-gray-300 mb-1">
                     Category <span className="text-red-400">*</span>
                   </label>
-                  <Select
-                    value={newTool.category}
-                    onValueChange={(value) => handleInputChange('category', value)}
-                  >
-                    <SelectTrigger className="w-full bg-black/20 text-white border-gray-700">
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
-                      <SelectItem value="General AI" className="hover:bg-gray-700/50 text-white">General AI</SelectItem>
-                      <SelectItem value="Writing" className="hover:bg-gray-700/50 text-white">Writing</SelectItem>
-                      <SelectItem value="Image Generation" className="hover:bg-gray-700/50 text-white">Image Generation</SelectItem>
-                      <SelectItem value="Code Generation" className="hover:bg-gray-700/50 text-white">Code Generation</SelectItem>
-                      <SelectItem value="Chatbots" className="hover:bg-gray-700/50 text-white">Chatbots</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {showCustomCategoryInput ? (
+                    <div className="flex gap-2">
+                      <Input
+                        value={customCategory}
+                        onChange={(e) => setCustomCategory(e.target.value)}
+                        className="bg-black/20 text-white border-gray-700 focus:border-ai-purple"
+                        placeholder="Enter custom category"
+                      />
+                      <Button 
+                        onClick={handleAddCustomCategory}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Select
+                        value={newTool.category}
+                        onValueChange={(value) => handleInputChange('category', value)}
+                      >
+                        <SelectTrigger className="w-full bg-black/20 text-white border-gray-700">
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-800 border-gray-700">
+                          <SelectItem value="General AI" className="hover:bg-gray-700/50 text-white">General AI</SelectItem>
+                          <SelectItem value="Writing" className="hover:bg-gray-700/50 text-white">Writing</SelectItem>
+                          <SelectItem value="Image Generation" className="hover:bg-gray-700/50 text-white">Image Generation</SelectItem>
+                          <SelectItem value="Code Generation" className="hover:bg-gray-700/50 text-white">Code Generation</SelectItem>
+                          <SelectItem value="Chatbots" className="hover:bg-gray-700/50 text-white">Chatbots</SelectItem>
+                          <SelectItem value="Video Generation" className="hover:bg-gray-700/50 text-white">Video Generation</SelectItem>
+                          {allCategoriesForSelect.filter(cat => 
+                            !["General AI", "Writing", "Image Generation", "Code Generation", "Chatbots", "Video Generation"].includes(cat)
+                          ).map(cat => (
+                            <SelectItem key={cat} value={cat} className="hover:bg-gray-700/50 text-white">{cat}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button 
+                        onClick={() => setShowCustomCategoryInput(true)}
+                        className="bg-ai-purple hover:bg-ai-purple/90"
+                      >
+                        Custom
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="col-span-full">
@@ -472,7 +576,11 @@ const Index = () => {
           )}
         </AnimatePresence>
 
-        {view === 'dashboard' && <Dashboard aiTools={aiTools} />}
+        {view === 'dashboard' && <Dashboard 
+          aiTools={aiTools} 
+          onCategoryClick={handleCategoryFilter}
+          onRenewalClick={handleRenewalFilter}
+        />}
 
         {view === 'list' && (
           <div className="space-y-6">
@@ -534,7 +642,7 @@ const Index = () => {
                             <AIToolCard
                               tool={tool}
                               onEdit={handleEdit}
-                              onDelete={handleDelete}
+                              onDelete={confirmDelete}
                               onToggleFavorite={handleToggleFavorite}
                               isEditing={editingId === null}
                             />
@@ -598,7 +706,7 @@ const Index = () => {
                             <AIToolCard
                               tool={tool}
                               onEdit={handleEdit}
-                              onDelete={handleDelete}
+                              onDelete={confirmDelete}
                               onToggleFavorite={handleToggleFavorite}
                               isEditing={editingId === null}
                             />
@@ -613,6 +721,35 @@ const Index = () => {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="bg-gray-800 text-white border-gray-700">
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Are you sure you want to delete this AI tool? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex justify-end gap-2 mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowDeleteConfirm(false)}
+              className="bg-transparent hover:bg-gray-700 border-gray-600"
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <footer className="py-6 text-center text-gray-500 mt-12">
         <p>AI Tool Manager &copy; {new Date().getFullYear()}</p>
       </footer>

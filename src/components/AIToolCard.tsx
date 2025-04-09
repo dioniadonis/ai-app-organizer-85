@@ -37,33 +37,59 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
       className="tool-card p-4 rounded-lg relative group"
     >
       {/* Favorite Star */}
-      <button
-        onClick={() => onToggleFavorite(tool.id)}
-        className={cn(
-          'absolute top-2 right-2 z-10 p-1 rounded-full',
-          'transition-colors duration-300',
-          tool.isFavorite
-            ? 'text-yellow-400'
-            : 'text-gray-500 hover:text-yellow-400',
-          'hover:bg-black/20'
+      <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+        {/* Edit and Delete Buttons */}
+        {isEditing && (
+          <>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => onEdit(tool.id)}
+              className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity"
+              title="Edit"
+            >
+              <Edit className="w-4 h-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => onDelete(tool.id)}
+              className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/20 opacity-0 group-hover:opacity-100 transition-opacity"
+              title="Delete"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </>
         )}
-        title={tool.isFavorite ? "Remove from Favorites" : "Add to Favorites"}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill={tool.isFavorite ? "currentColor" : "none"}
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="lucide lucide-star"
+        
+        <button
+          onClick={() => onToggleFavorite(tool.id)}
+          className={cn(
+            'p-1 rounded-full',
+            'transition-colors duration-300',
+            tool.isFavorite
+              ? 'text-yellow-400'
+              : 'text-gray-500 hover:text-yellow-400',
+            'hover:bg-black/20'
+          )}
+          title={tool.isFavorite ? "Remove from Favorites" : "Add to Favorites"}
         >
-          <path d="m12 2 3.09 6.26 6.91.9-5.22 5.04 1.18 6.88L12 17.77l-5.96 3.1 1.18-6.88-5.22-5.04 6.91-.9L12 2z" />
-        </svg>
-      </button>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill={tool.isFavorite ? "currentColor" : "none"}
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="lucide lucide-star"
+          >
+            <path d="m12 2 3.09 6.26 6.91.9-5.22 5.04 1.18 6.88L12 17.77l-5.96 3.1 1.18-6.88-5.22-5.04 6.91-.9L12 2z" />
+          </svg>
+        </button>
+      </div>
 
       {/* AI Tool Icon and Name */}
       <div className="flex items-center gap-4 mb-4">
@@ -108,30 +134,6 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
           </div>
         )}
       </div>
-
-      {/* Edit and Delete Buttons */}
-      {isEditing && (
-        <div className="absolute top-2 left-2 space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => onEdit(tool.id)}
-            className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-500/20"
-            title="Edit"
-          >
-            <Edit className="w-4 h-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => onDelete(tool.id)}
-            className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/20"
-            title="Delete"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        </div>
-      )}
     </motion.div>
   );
 };
