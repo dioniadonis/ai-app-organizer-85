@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   PlusCircle,
@@ -9,7 +10,10 @@ import {
   ChevronUp,
   ArrowLeft,
   Trash2,
-  ExternalLink
+  ExternalLink,
+  CheckCircle, 
+  XCircle,
+  MessageSquareDot
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,7 +64,7 @@ const Index = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newTool, setNewTool] = useState<Omit<AITool, 'id' | 'isFavorite'>>({
+  const [newTool, setNewTool] = useState<Omit<AITool, 'id' | 'isFavorite' | 'isPaid'>>({
     name: '',
     description: '',
     category: 'General AI',
@@ -81,6 +85,12 @@ const Index = () => {
   const [filterByRenewal, setFilterByRenewal] = useState<boolean>(false);
   const [showCategoryDeleteConfirm, setShowCategoryDeleteConfirm] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
+  
+  // AI Assistant feature
+  const [showAIDialog, setShowAIDialog] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiResponse, setAiResponse] = useState('');
+  const [isAiProcessing, setIsAiProcessing] = useState(false);
   
   const [customCategories, setCustomCategories] = useState<string[]>(() => {
     const defaultCategories = ["General AI", "Writing", "Image Generation", "Code Generation", "Chatbots", "Video Generation"];
@@ -126,6 +136,7 @@ const Index = () => {
     const completeNewTool: AITool = {
       id: newId,
       isFavorite: false,
+      isPaid: false,
       ...newTool,
     };
     setAiTools((prevTools) => [...prevTools, completeNewTool]);
@@ -169,7 +180,7 @@ const Index = () => {
     
     toast({
       title: "Updated",
-      description: "Tool information has been updated.",
+      description: "Subscription information has been updated.",
       variant: "default",
     });
   };
@@ -225,7 +236,7 @@ const Index = () => {
       
       toast({
         title: "Category Deleted",
-        description: `Category "${categoryToDelete}" has been removed and its tools moved to General AI.`,
+        description: `Category "${categoryToDelete}" has been removed and its subscriptions moved to General AI.`,
         variant: "default",
       });
     }
@@ -257,9 +268,26 @@ const Index = () => {
       variant: "default",
     });
   };
+  
+  const handleTogglePaid = (id: string) => {
+    setAiTools((prevTools) =>
+      prevTools.map((tool) =>
+        tool.id === id ? { ...tool, isPaid: !tool.isPaid } : tool
+      )
+    );
+    
+    const tool = aiTools.find(t => t.id === id);
+    const newStatus = !tool?.isPaid ? "Paid" : "Unpaid";
+    
+    toast({
+      title: `Status Updated`,
+      description: `${tool?.name} is now marked as ${newStatus}.`,
+      variant: "default",
+    });
+  };
 
   const handleInputChange = (
-    field: keyof Omit<AITool, 'id' | 'isFavorite'>,
+    field: keyof Omit<AITool, 'id' | 'isFavorite' | 'isPaid'>,
     value: string | number
   ) => {
     setNewTool((prev) => ({ ...prev, [field]: value }));
@@ -271,6 +299,86 @@ const Index = () => {
         ? prev.filter(c => c !== category)
         : [...prev, category]
     );
+  };
+
+  // AI Assistant functionality
+  const processAIPrompt = () => {
+    if (!aiPrompt.trim()) return;
+    
+    setIsAiProcessing(true);
+    
+    // Simulated AI processing
+    setTimeout(() => {
+      let result = '';
+      
+      // Basic expense analysis
+      if (aiPrompt.toLowerCase().includes('total') || aiPrompt.toLowerCase().includes('sum')) {
+        const total = aiTools.reduce((sum, tool) => sum + tool.subscriptionCost, 0);
+        result = `Your total monthly subscription cost is $${total}.`;
+      }
+      // Category analysis
+      else if (aiPrompt.toLowerCase().includes('category') || aiPrompt.toLowerCase().includes('categories')) {
+        const categoryCounts = {};
+        const categoryTotals = {};
+        
+        aiTools.forEach(tool => {
+          categoryCounts[tool.category] = (categoryCounts[tool.category] || 0) + 1;
+          categoryTotals[tool.category] = (categoryTotals[tool.category] || 0) + tool.subscriptionCost;
+        });
+        
+        result = 'Category breakdown:\n';
+        Object.keys(categoryCounts).forEach(category => {
+          result += `- ${category}: ${categoryCounts[category]} subscriptions ($${categoryTotals[category]}/month)\n`;
+        });
+      }
+      // Upcoming renewals
+      else if (aiPrompt.toLowerCase().includes('renewal') || aiPrompt.toLowerCase().includes('due')) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const thirtyDaysLater = new Date();
+        thirtyDaysLater.setDate(today.getDate() + 30);
+        
+        const upcoming = aiTools.filter(tool => {
+          if (!tool.renewalDate) return false;
+          const renewalDate = new Date(tool.renewalDate);
+          return renewalDate >= today && renewalDate <= thirtyDaysLater;
+        });
+        
+        if (upcoming.length === 0) {
+          result = 'You have no upcoming renewals in the next 30 days.';
+        } else {
+          result = 'Upcoming renewals in the next 30 days:\n';
+          upcoming.forEach(tool => {
+            const renewalDate = new Date(tool.renewalDate);
+            const daysUntil = Math.round((renewalDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            const daysText = daysUntil === 0 ? 'today' : daysUntil === 1 ? 'tomorrow' : `in ${daysUntil} days`;
+            
+            result += `- ${tool.name} ($${tool.subscriptionCost}/month) - due ${daysText} (${tool.renewalDate})\n`;
+          });
+        }
+      }
+      // Payment status
+      else if (aiPrompt.toLowerCase().includes('paid') || aiPrompt.toLowerCase().includes('unpaid')) {
+        const paid = aiTools.filter(tool => tool.isPaid);
+        const unpaid = aiTools.filter(tool => tool.subscriptionCost > 0 && !tool.isPaid);
+        
+        result = `Payment status summary:\n- Paid: ${paid.length} subscriptions\n- Unpaid: ${unpaid.length} subscriptions`;
+        
+        if (unpaid.length > 0) {
+          result += '\n\nUnpaid subscriptions:\n';
+          unpaid.forEach(tool => {
+            result += `- ${tool.name} ($${tool.subscriptionCost}/month) - due on ${tool.renewalDate}\n`;
+          });
+        }
+      }
+      // Help or unknown
+      else {
+        result = "I can help you analyze your subscriptions. Try asking about:\n\n- Total monthly costs\n- Category breakdown\n- Upcoming renewals\n- Payment status of your subscriptions";
+      }
+      
+      setAiResponse(result);
+      setIsAiProcessing(false);
+    }, 1500);
   };
 
   const handleDragStart = (index: number) => {
@@ -383,12 +491,14 @@ const Index = () => {
 
   if (filterByRenewal) {
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const thirtyDaysLater = new Date();
     thirtyDaysLater.setDate(today.getDate() + 30);
     
     filteredTools = filteredTools.filter(tool => {
       if (!tool.renewalDate) return false;
       const renewalDate = new Date(tool.renewalDate);
+      renewalDate.setHours(0, 0, 0, 0);
       return renewalDate >= today && renewalDate <= thirtyDaysLater;
     });
   }
@@ -412,10 +522,10 @@ const Index = () => {
       <div className="max-w-6xl mx-auto p-4 sm:p-6">
         <header className="mb-8">
           <h1 className="text-4xl font-bold mb-2 text-center ai-gradient-text">
-            AI Tool Manager
+            Subscription Manager
           </h1>
           <p className="text-center text-gray-400 mb-6">
-            Organize, track, and manage your AI tool subscriptions in one place
+            Organize, track, and manage your subscriptions in one place
           </p>
           
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
@@ -439,6 +549,14 @@ const Index = () => {
                 <Grid className="w-4 h-4 mr-2" />
                 List View
               </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowAIDialog(true)}
+                className="border-ai-cyan bg-ai-cyan/10 text-ai-cyan hover:bg-ai-cyan/20"
+              >
+                <MessageSquareDot className="w-4 h-4 mr-2" />
+                AI Assistant
+              </Button>
             </div>
             
             <div className="w-full sm:w-auto">
@@ -448,7 +566,7 @@ const Index = () => {
                 className="w-full sm:w-auto bg-ai-blue/20 text-ai-blue hover:bg-ai-blue/30 hover:text-ai-blue border-ai-blue/50"
               >
                 <PlusCircle className="w-4 h-4 mr-2" />
-                {showAddForm ? 'Cancel' : 'Add New Tool'}
+                {showAddForm ? 'Cancel' : 'Add New Subscription'}
               </Button>
             </div>
           </div>
@@ -458,7 +576,7 @@ const Index = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Search AI tools..."
+                placeholder="Search subscriptions..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 bg-black/20 border-gray-700 focus:border-ai-purple focus:ring-ai-purple"
@@ -504,7 +622,7 @@ const Index = () => {
               transition={{ duration: 0.3 }}
               className="mb-8 p-5 rounded-xl glass-card"
             >
-              <h2 className="text-xl font-semibold mb-4 ai-gradient-text">Add New AI Tool</h2>
+              <h2 className="text-xl font-semibold mb-4 ai-gradient-text">Add New Subscription</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="new-name" className="block text-sm font-medium text-gray-300 mb-1">
@@ -515,7 +633,7 @@ const Index = () => {
                     value={newTool.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     className="bg-black/20 text-white border-gray-700 focus:border-ai-purple"
-                    placeholder="Tool Name"
+                    placeholder="Subscription Name"
                   />
                 </div>
 
@@ -581,7 +699,7 @@ const Index = () => {
                     onChange={(e) => handleInputChange('description', e.target.value)}
                     className="bg-black/20 text-white border-gray-700 focus:border-ai-purple"
                     rows={3}
-                    placeholder="Tool Description"
+                    placeholder="Subscription Description"
                   />
                 </div>
 
@@ -642,7 +760,7 @@ const Index = () => {
                   className="bg-green-600 hover:bg-green-700 text-white"
                 >
                   <PlusCircle className="w-4 h-4 mr-2" />
-                  Add Tool
+                  Add Subscription
                 </Button>
               </div>
             </motion.div>
@@ -665,7 +783,7 @@ const Index = () => {
                   className="border-gray-700 hover:bg-gray-800"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to All Tools
+                  Back to All Subscriptions
                 </Button>
               </div>
             )}
@@ -732,6 +850,7 @@ const Index = () => {
                                 onEdit={handleEdit}
                                 onDelete={confirmDelete}
                                 onToggleFavorite={handleToggleFavorite}
+                                onTogglePaid={handleTogglePaid}
                                 isEditing={editingId === null}
                               />
                             )}
@@ -739,7 +858,7 @@ const Index = () => {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-gray-400 mt-2 pl-2">No favorites yet. Star an AI tool to add it here.</p>
+                      <p className="text-gray-400 mt-2 pl-2">No favorites yet. Star a subscription to add it here.</p>
                     )}
                   </AnimatePresence>
                 )}
@@ -815,6 +934,7 @@ const Index = () => {
                                 onEdit={handleEdit}
                                 onDelete={confirmDelete}
                                 onToggleFavorite={handleToggleFavorite}
+                                onTogglePaid={handleTogglePaid}
                                 isEditing={editingId === null}
                               />
                             )}
@@ -828,7 +948,7 @@ const Index = () => {
             
             {filteredTools.length === 0 && (
               <div className="text-center py-8">
-                <p className="text-gray-400 text-lg">No tools found matching your search criteria.</p>
+                <p className="text-gray-400 text-lg">No subscriptions found matching your search criteria.</p>
                 <Button 
                   variant="outline" 
                   onClick={clearFilters}
@@ -842,12 +962,136 @@ const Index = () => {
         )}
       </div>
 
+      {/* AI Assistant Dialog */}
+      <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
+        <DialogContent className="bg-gray-800 text-white border-gray-700 max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquareDot className="w-5 h-5 text-ai-cyan" />
+              Subscription Assistant
+            </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Ask questions about your subscriptions, upcoming renewals, or payment status.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-gray-300">What would you like to know?</label>
+              <div className="flex gap-2">
+                <Input
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  placeholder="e.g., What's my total monthly cost?"
+                  className="bg-black/20 text-white border-gray-700"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      processAIPrompt();
+                    }
+                  }}
+                />
+                <Button 
+                  onClick={processAIPrompt}
+                  disabled={isAiProcessing || !aiPrompt.trim()}
+                  className="bg-ai-cyan text-black hover:bg-ai-cyan/90"
+                >
+                  Ask
+                </Button>
+              </div>
+            </div>
+            
+            {(isAiProcessing || aiResponse) && (
+              <div className="p-4 bg-black/30 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-ai-cyan/20 flex items-center justify-center">
+                    <MessageSquareDot className="w-5 h-5 text-ai-cyan" />
+                  </div>
+                  <div className="flex-1">
+                    {isAiProcessing ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-ai-cyan rounded-full animate-pulse"></div>
+                        <div className="w-2 h-2 bg-ai-cyan rounded-full animate-pulse delay-300"></div>
+                        <div className="w-2 h-2 bg-ai-cyan rounded-full animate-pulse delay-600"></div>
+                        <span className="text-gray-400 ml-1">Thinking...</span>
+                      </div>
+                    ) : (
+                      <div className="whitespace-pre-line">{aiResponse}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className="py-2 text-sm text-gray-400">
+              <p>Try asking about:</p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-700"
+                  onClick={() => {
+                    setAiPrompt("What's my total monthly subscription cost?");
+                    processAIPrompt();
+                  }}
+                >
+                  Total costs
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-700"
+                  onClick={() => {
+                    setAiPrompt("Show me upcoming renewals");
+                    processAIPrompt();
+                  }}
+                >
+                  Upcoming renewals
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-700"
+                  onClick={() => {
+                    setAiPrompt("Which subscriptions are unpaid?");
+                    processAIPrompt();
+                  }}
+                >
+                  Payment status
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-700" 
+                  onClick={() => {
+                    setAiPrompt("Breakdown by category");
+                    processAIPrompt();
+                  }}
+                >
+                  Category breakdown
+                </Button>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAIDialog(false)}
+              className="border-gray-600 hover:bg-gray-700"
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent className="bg-gray-800 text-white border-gray-700">
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription className="text-gray-400">
-              Are you sure you want to delete this AI tool? This action cannot be undone.
+              Are you sure you want to delete this subscription? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex justify-end gap-2 mt-4">
@@ -874,7 +1118,7 @@ const Index = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Category</AlertDialogTitle>
             <AlertDialogDescription className="text-gray-400">
-              Are you sure you want to delete this category? All tools in this category 
+              Are you sure you want to delete this category? All subscriptions in this category 
               will be moved to "General AI". This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -893,7 +1137,7 @@ const Index = () => {
       </AlertDialog>
 
       <footer className="py-6 text-center text-gray-500 mt-12">
-        <p>AI Tool Manager &copy; {new Date().getFullYear()}</p>
+        <p>Loop Space AI Organizer &copy; {new Date().getFullYear()}</p>
       </footer>
     </div>
   );

@@ -1,8 +1,9 @@
 
 import React from 'react';
 import { AITool } from '@/types/AITool';
-import { Banknote, Calendar, Package, Star } from 'lucide-react';
+import { Banknote, Calendar, Package, Star, ExternalLink, CheckCircle, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { formatDistanceToNow } from 'date-fns';
 
 interface DashboardProps {
   aiTools: AITool[];
@@ -16,14 +17,16 @@ const Dashboard: React.FC<DashboardProps> = ({ aiTools, onCategoryClick, onRenew
   const favoriteTools = aiTools.filter(tool => tool.isFavorite).length;
   const totalMonthlyCost = aiTools.reduce((sum, tool) => sum + tool.subscriptionCost, 0);
   
-  // Get upcoming renewals (next 30 days)
+  // Get upcoming renewals including those due today
   const today = new Date();
+  today.setHours(0, 0, 0, 0); // Set to beginning of day for comparison
   const thirtyDaysLater = new Date();
   thirtyDaysLater.setDate(today.getDate() + 30);
   
   const upcomingRenewals = aiTools.filter(tool => {
     if (!tool.renewalDate) return false;
     const renewalDate = new Date(tool.renewalDate);
+    renewalDate.setHours(0, 0, 0, 0); // Set to beginning of day for comparison
     return renewalDate >= today && renewalDate <= thirtyDaysLater;
   });
 
@@ -48,22 +51,23 @@ const Dashboard: React.FC<DashboardProps> = ({ aiTools, onCategoryClick, onRenew
       </div>
     ));
 
-  // Animation variants
+  // Single animation variant for smooth fade in
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        delayChildren: 0.3,
-        staggerChildren: 0.2
+        duration: 0.5,
+        ease: "easeOut",
+        when: "beforeChildren",
+        staggerChildren: 0.1
       }
     }
   };
 
   const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: { opacity: 0 },
     visible: {
-      y: 0,
       opacity: 1,
       transition: { duration: 0.5 }
     }
@@ -89,7 +93,7 @@ const Dashboard: React.FC<DashboardProps> = ({ aiTools, onCategoryClick, onRenew
           onClick={() => onCategoryClick('')}
         >
           <Package className="w-8 h-8 mb-2 text-ai-blue" />
-          <span className="text-gray-400 text-sm">Total Tools</span>
+          <span className="text-gray-400 text-sm">Total Subscriptions</span>
           <span className="text-3xl font-bold">{totalTools}</span>
         </motion.div>
         
@@ -146,22 +150,46 @@ const Dashboard: React.FC<DashboardProps> = ({ aiTools, onCategoryClick, onRenew
             Upcoming Renewals
           </h3>
           <div className="space-y-2">
-            {upcomingRenewals.map(tool => (
-              <div 
-                key={tool.id} 
-                className="flex justify-between items-center p-2 rounded hover:bg-white/5 transition-colors cursor-pointer"
-                onClick={() => onCategoryClick(tool.category)}
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-ai-pink animate-pulse"></div>
-                  <span>{tool.name}</span>
+            {upcomingRenewals.map(tool => {
+              // Calculate days remaining
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const renewalDate = new Date(tool.renewalDate);
+              renewalDate.setHours(0, 0, 0, 0);
+              
+              const daysRemaining = Math.round((renewalDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+              const daysText = daysRemaining === 0 
+                ? "Due today!" 
+                : daysRemaining === 1 
+                  ? "Due tomorrow" 
+                  : `${daysRemaining} days left`;
+              
+              return (
+                <div 
+                  key={tool.id} 
+                  className="flex justify-between items-center p-2 rounded hover:bg-white/5 transition-colors cursor-pointer"
+                  onClick={() => onCategoryClick(tool.category)}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-ai-pink animate-pulse"></div>
+                    <span>{tool.name}</span>
+                    {tool.isPaid !== undefined && (
+                      <span className={`ml-2 ${tool.isPaid ? "text-green-400" : "text-red-400"} flex items-center`}>
+                        {tool.isPaid ? <CheckCircle className="w-4 h-4 mr-1" /> : <XCircle className="w-4 h-4 mr-1" />}
+                        {tool.isPaid ? "Paid" : "Unpaid"}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-ai-emerald">${tool.subscriptionCost}/mo</span>
+                    <span className="text-gray-400">{tool.renewalDate}</span>
+                    <span className={`px-2 py-1 rounded-full text-xs ${daysRemaining <= 3 ? "bg-red-500/20 text-red-300" : "bg-ai-blue/20 text-ai-blue"}`}>
+                      {daysText}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-ai-emerald">${tool.subscriptionCost}/mo</span>
-                  <span className="text-gray-400">{tool.renewalDate}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </motion.div>
       )}

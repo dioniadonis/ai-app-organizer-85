@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Edit, Trash2, ExternalLink } from 'lucide-react';
+import { Edit, Trash2, ExternalLink, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { AITool } from '@/types/AITool';
@@ -12,13 +12,14 @@ interface AIToolCardProps {
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onToggleFavorite: (id: string) => void;
+  onTogglePaid?: (id: string) => void;
   isEditing: boolean;
 }
 
 const listItemVariants = {
-  hidden: { opacity: 0, y: -10 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
-  exit: { opacity: 0, y: 10, transition: { duration: 0.2 } },
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.5 } },
+  exit: { opacity: 0, transition: { duration: 0.2 } },
 };
 
 const AIToolCard: React.FC<AIToolCardProps> = ({
@@ -26,8 +27,28 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
   onEdit,
   onDelete,
   onToggleFavorite,
+  onTogglePaid,
   isEditing,
 }) => {
+  // Calculate days remaining if there's a renewal date
+  const getDaysRemaining = () => {
+    if (!tool.renewalDate) return null;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const renewalDate = new Date(tool.renewalDate);
+    renewalDate.setHours(0, 0, 0, 0);
+    
+    const daysRemaining = Math.round((renewalDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysRemaining === 0) return "Due today!";
+    if (daysRemaining === 1) return "Due tomorrow";
+    return `${daysRemaining} days left`;
+  };
+
+  const daysRemaining = getDaysRemaining();
+  const isUpcoming = daysRemaining !== null;
+
   return (
     <motion.div
       variants={listItemVariants}
@@ -115,6 +136,28 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
       {/* Description */}
       <p className="text-gray-400 mb-4 line-clamp-2">{tool.description}</p>
 
+      {/* Paid/Unpaid Status Button */}
+      {tool.subscriptionCost > 0 && onTogglePaid && (
+        <div 
+          onClick={() => onTogglePaid(tool.id)}
+          className={`mb-3 flex items-center justify-center py-1 px-2 rounded-lg cursor-pointer ${
+            tool.isPaid ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+          }`}
+        >
+          {tool.isPaid ? (
+            <>
+              <CheckCircle className="w-4 h-4 mr-2" />
+              <span>Paid</span>
+            </>
+          ) : (
+            <>
+              <XCircle className="w-4 h-4 mr-2" />
+              <span>Unpaid</span>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Category, Cost, Renewal Date */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-300">
         <div className="flex gap-1 items-center">
@@ -147,6 +190,17 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
           </div>
         )}
       </div>
+
+      {/* Days Remaining */}
+      {isUpcoming && (
+        <div className={`mt-3 text-sm px-2 py-1 rounded-full text-center ${
+          daysRemaining === "Due today!" || daysRemaining === "Due tomorrow" 
+            ? "bg-red-500/20 text-red-300" 
+            : "bg-ai-blue/20 text-ai-blue"
+        }`}>
+          {daysRemaining}
+        </div>
+      )}
     </motion.div>
   );
 };

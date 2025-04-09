@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Save, XCircle } from 'lucide-react';
+import { Save, XCircle, CheckCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { AITool } from '@/types/AITool';
 
 interface EditableAIToolCardProps {
@@ -76,9 +77,9 @@ const EditableAIToolCard: React.FC<EditableAIToolCardProps> = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       className="glass-card p-4 rounded-lg space-y-4"
     >
       {/* Name Input */}
@@ -211,6 +212,26 @@ const EditableAIToolCard: React.FC<EditableAIToolCardProps> = ({
           <p className="text-red-400 text-xs mt-1">Required for paid subscriptions</p>
         )}
       </div>
+
+      {/* Paid Status */}
+      {localTool.subscriptionCost > 0 && (
+        <div className="flex items-center space-x-2">
+          <label htmlFor="isPaid" className="block text-sm font-medium text-gray-300">
+            Payment Status
+          </label>
+          <div className="flex-1"></div>
+          <div className="flex items-center gap-1">
+            <span className={!localTool.isPaid ? "text-red-400" : "text-gray-500"}>Unpaid</span>
+            <Switch 
+              id="isPaid"
+              checked={localTool.isPaid || false}
+              onCheckedChange={(checked) => handleInputChange('isPaid', checked)}
+              className={localTool.isPaid ? "bg-green-600" : "bg-red-600"}
+            />
+            <span className={localTool.isPaid ? "text-green-400" : "text-gray-500"}>Paid</span>
+          </div>
+        </div>
+      )}
 
       {/* Save and Cancel Buttons */}
       <div className="flex justify-end gap-2">
