@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -48,108 +47,7 @@ import { cn } from '@/lib/utils';
 import { getAIToolIcon } from '@/utils/iconUtils';
 import { toast } from '@/components/ui/use-toast';
 
-const initialAITools: AITool[] = [
-  {
-    id: '1',
-    name: 'ChatGPT Plus',
-    description: 'Advanced AI chatbot for natural language processing and generation',
-    category: 'Chatbots',
-    subscriptionCost: 20,
-    renewalDate: '2025-05-15',
-    isFavorite: true,
-    website: 'https://chat.openai.com/',
-  },
-  {
-    id: '2',
-    name: 'Midjourney',
-    description: 'AI image generation platform creating detailed illustrations from text prompts',
-    category: 'Image Generation',
-    subscriptionCost: 10,
-    renewalDate: '2025-04-20',
-    isFavorite: false,
-    website: 'https://www.midjourney.com/',
-  },
-  {
-    id: '3',
-    name: 'GitHub Copilot',
-    description: 'AI pair programming assistant that suggests code in real-time',
-    category: 'Code Generation',
-    subscriptionCost: 10,
-    renewalDate: '2025-04-18',
-    isFavorite: true,
-    website: 'https://github.com/features/copilot',
-  },
-  {
-    id: '4',
-    name: 'Jasper',
-    description: 'AI writing assistant for marketing copy and creative content',
-    category: 'Writing',
-    subscriptionCost: 59,
-    renewalDate: '2025-09-10',
-    isFavorite: false,
-    website: 'https://www.jasper.ai/',
-  },
-  {
-    id: '5',
-    name: 'DALL-E 2',
-    description: 'AI system that creates realistic images and art from natural language descriptions',
-    category: 'Image Generation',
-    subscriptionCost: 15,
-    renewalDate: '2025-10-01',
-    isFavorite: true,
-    website: 'https://openai.com/dall-e-2/',
-  },
-  {
-    id: '6',
-    name: 'Bard',
-    description: 'Experimental conversational AI service powered by Google',
-    category: 'Chatbots',
-    subscriptionCost: 0,
-    renewalDate: '',
-    isFavorite: false,
-    website: 'https://bard.google.com/',
-  },
-  {
-    id: '7',
-    name: 'Synthesia',
-    description: 'AI video generation platform for creating videos with virtual avatars',
-    category: 'Video Generation',
-    subscriptionCost: 30,
-    renewalDate: '2025-05-22',
-    isFavorite: false,
-    website: 'https://www.synthesia.io/',
-  },
-  {
-    id: '8',
-    name: 'Stable Diffusion',
-    description: 'Open-source image generation model that creates images from text descriptions',
-    category: 'Image Generation',
-    subscriptionCost: 0,
-    renewalDate: '',
-    isFavorite: true,
-    website: 'https://stability.ai/',
-  },
-  {
-    id: '9',
-    name: 'Copy.ai',
-    description: 'AI-powered copywriting tool for marketing content and creative writing',
-    category: 'Writing',
-    subscriptionCost: 49,
-    renewalDate: '2025-06-28',
-    isFavorite: false,
-    website: 'https://www.copy.ai/',
-  },
-  {
-    id: '10',
-    name: 'Amazon CodeWhisperer',
-    description: 'AI coding companion that helps developers write code with real-time suggestions',
-    category: 'Code Generation',
-    subscriptionCost: 19,
-    renewalDate: '2025-05-10',
-    isFavorite: false,
-    website: 'https://aws.amazon.com/codewhisperer/',
-  },
-];
+const initialAITools: AITool[] = [];
 
 const Index = () => {
   const [aiTools, setAiTools] = useState<AITool[]>(() => {
@@ -184,7 +82,6 @@ const Index = () => {
   const [showCategoryDeleteConfirm, setShowCategoryDeleteConfirm] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
   
-  // Extract all custom categories
   const [customCategories, setCustomCategories] = useState<string[]>(() => {
     const defaultCategories = ["General AI", "Writing", "Image Generation", "Code Generation", "Chatbots", "Video Generation"];
     const allCategories = Array.from(new Set(aiTools.map(tool => tool.category)));
@@ -196,19 +93,16 @@ const Index = () => {
       localStorage.setItem('aiTools', JSON.stringify(aiTools));
     }
     
-    // Update custom categories whenever tools change
     const defaultCategories = ["General AI", "Writing", "Image Generation", "Code Generation", "Chatbots", "Video Generation"];
     const allCategories = Array.from(new Set(aiTools.map(tool => tool.category)));
     setCustomCategories(allCategories.filter(cat => !defaultCategories.includes(cat)));
   }, [aiTools]);
 
-  // Ensure favorites are expanded when filtering
   useEffect(() => {
     if (filterByCategory === 'Favorites' && !expandedCategories.includes('Favorites')) {
       setExpandedCategories(prev => [...prev, 'Favorites']);
     }
     
-    // Auto-expand filtered category
     if (filterByCategory && !expandedCategories.includes(filterByCategory)) {
       setExpandedCategories(prev => [...prev, filterByCategory]);
     }
@@ -312,7 +206,6 @@ const Index = () => {
 
   const handleCategoryDelete = () => {
     if (categoryToDelete) {
-      // Change the category of all tools in this category to "General AI"
       setAiTools(prevTools => 
         prevTools.map(tool => 
           tool.category === categoryToDelete 
@@ -321,10 +214,8 @@ const Index = () => {
         )
       );
       
-      // Remove from expanded categories
       setExpandedCategories(prev => prev.filter(cat => cat !== categoryToDelete));
       
-      // Reset filter if it was set to this category
       if (filterByCategory === categoryToDelete) {
         setFilterByCategory(null);
       }
@@ -442,12 +333,10 @@ const Index = () => {
 
   const handleAddCustomCategory = () => {
     if (customCategory.trim()) {
-      // Update newTool with the custom category
       setNewTool(prev => ({ ...prev, category: customCategory.trim() }));
       setCustomCategory("");
       setShowCustomCategoryInput(false);
       
-      // Add to custom categories if not already present
       if (!customCategories.includes(customCategory.trim())) {
         setCustomCategories(prev => [...prev, customCategory.trim()]);
       }
@@ -465,7 +354,6 @@ const Index = () => {
     setFilterByRenewal(false);
     setView('list');
     
-    // Make sure the category is expanded
     if (category && !expandedCategories.includes(category)) {
       setExpandedCategories(prev => [...prev, category]);
     }
@@ -487,14 +375,12 @@ const Index = () => {
     tool.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Apply category filter if it's set
   if (filterByCategory === 'Favorites') {
     filteredTools = filteredTools.filter(tool => tool.isFavorite);
   } else if (filterByCategory) {
     filteredTools = filteredTools.filter(tool => tool.category === filterByCategory);
   }
 
-  // Apply upcoming renewals filter if it's set
   if (filterByRenewal) {
     const today = new Date();
     const thirtyDaysLater = new Date();
@@ -509,7 +395,7 @@ const Index = () => {
 
   const favoriteTools = filteredTools.filter(tool => tool.isFavorite);
   const categorizedTools = filteredTools.reduce((acc, tool) => {
-    if (!tool.isFavorite) { // Only include non-favorites in categories
+    if (!tool.isFavorite) {
       (acc[tool.category] = acc[tool.category] || []).push(tool);
     }
     return acc;
@@ -517,7 +403,6 @@ const Index = () => {
 
   const sortedCategories = Object.keys(categorizedTools).sort();
 
-  // For dashboard display
   const allCategoriesForSelect = Array.from(
     new Set(aiTools.map(tool => tool.category))
   ).sort();
@@ -568,7 +453,6 @@ const Index = () => {
             </div>
           </div>
           
-          {/* Filter bar with active filters */}
           <div className="space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -773,7 +657,6 @@ const Index = () => {
 
         {view === 'list' && (
           <div className="space-y-6">
-            {/* Show back button if filtering */}
             {(filterByCategory || filterByRenewal) && (
               <div className="mb-2">
                 <Button 
@@ -787,7 +670,6 @@ const Index = () => {
               </div>
             )}
             
-            {/* Favorites Section */}
             {(!filterByCategory || filterByCategory === 'Favorites') && (
               <div className="mb-6">
                 <div
@@ -864,7 +746,6 @@ const Index = () => {
               </div>
             )}
 
-            {/* Categories */}
             {sortedCategories
               .filter(category => !filterByCategory || filterByCategory === category)
               .map((category) => (
@@ -881,7 +762,6 @@ const Index = () => {
                       {categorizedTools[category].length}
                     </span>
                     <div className="ml-auto flex items-center gap-2">
-                      {/* Delete category button - only for custom categories */}
                       {customCategories.includes(category) && (
                         <Button
                           size="icon"
@@ -946,7 +826,6 @@ const Index = () => {
                 </div>
               ))}
             
-            {/* No results message */}
             {filteredTools.length === 0 && (
               <div className="text-center py-8">
                 <p className="text-gray-400 text-lg">No tools found matching your search criteria.</p>
@@ -963,7 +842,6 @@ const Index = () => {
         )}
       </div>
 
-      {/* Delete Tool Confirmation Dialog */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent className="bg-gray-800 text-white border-gray-700">
           <DialogHeader>
@@ -991,7 +869,6 @@ const Index = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Category Confirmation Dialog */}
       <AlertDialog open={showCategoryDeleteConfirm} onOpenChange={setShowCategoryDeleteConfirm}>
         <AlertDialogContent className="bg-gray-800 text-white border-gray-700">
           <AlertDialogHeader>
