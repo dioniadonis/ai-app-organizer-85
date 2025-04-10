@@ -1,9 +1,15 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AITool } from '@/types/AITool';
-import { Banknote, Calendar, Package, Star, ExternalLink, CheckCircle, XCircle } from 'lucide-react';
+import { Banknote, Calendar, Package, Star, ExternalLink, CheckCircle, XCircle, Grid3X3, Layout, LayoutDashboard, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format, isToday, isTomorrow } from 'date-fns';
+import PlannerWidget from './PlannerWidget';
+import ExpensesWidget from './ExpensesWidget';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { toast } from '@/components/ui/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 interface Task {
   id: string;
@@ -45,6 +51,15 @@ const Dashboard: React.FC<DashboardProps> = ({
   selectedCategories,
   onCategoryToggle
 }) => {
+  const [widgetLayout, setWidgetLayout] = useState<'grid' | 'list'>('grid');
+  const [showAddWidgetDialog, setShowAddWidgetDialog] = useState(false);
+  const [activeWidgets, setActiveWidgets] = useState({
+    planner: true,
+    expenses: true,
+    renewals: true,
+    categories: true
+  });
+  
   // Calculate statistics
   const totalTools = aiTools.length;
   const favoriteTools = aiTools.filter(tool => tool.isFavorite).length;
@@ -76,7 +91,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         key={category}
         className={`p-2 px-3 rounded-full text-sm flex items-center gap-2 cursor-pointer transition-colors ${
           selectedCategories.includes(category) 
-            ? 'bg-ai-purple/30 text-ai-purple border border-ai-purple/50' 
+            ? 'bg-purple-500/30 text-purple-300 border border-purple-500/50' 
             : 'glass-card hover:bg-white/10'
         }`}
         onClick={() => onCategoryToggle(category)}
@@ -88,7 +103,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       </div>
     ));
 
-  // Single animation variant for smooth fade in
+  // Animation variant for smooth fade in
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -100,6 +115,25 @@ const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
+  const toggleWidget = (widgetName: keyof typeof activeWidgets) => {
+    setActiveWidgets({
+      ...activeWidgets,
+      [widgetName]: !activeWidgets[widgetName]
+    });
+    
+    toast({
+      title: activeWidgets[widgetName] ? "Widget removed" : "Widget added",
+      description: `${widgetName.charAt(0).toUpperCase() + widgetName.slice(1)} widget has been ${activeWidgets[widgetName] ? "removed from" : "added to"} dashboard`,
+    });
+  };
+  
+  const handleAddExpense = () => {
+    toast({
+      title: "Add Expense",
+      description: "Expense feature will be available soon",
+    });
+  };
+
   return (
     <motion.div
       variants={containerVariants}
@@ -107,7 +141,45 @@ const Dashboard: React.FC<DashboardProps> = ({
       animate="visible"
       className="py-6"
     >
-      <h2 className="text-2xl font-bold mb-6 ai-gradient-text">Dashboard</h2>
+      <div className="flex justify-between items-center mb-6">
+        <motion.h2 
+          className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.3 }}
+        >
+          Dashboard
+        </motion.h2>
+        
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8"
+            onClick={() => setWidgetLayout('grid')}
+          >
+            <Grid3X3 className={`h-4 w-4 ${widgetLayout === 'grid' ? 'text-purple-400' : 'text-gray-400'}`} />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 mr-2"
+            onClick={() => setWidgetLayout('list')}
+          >
+            <Layout className={`h-4 w-4 ${widgetLayout === 'list' ? 'text-purple-400' : 'text-gray-400'}`} />
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="text-xs gap-1"
+            onClick={() => setShowAddWidgetDialog(true)}
+          >
+            <Plus className="h-3 w-3" />
+            Add Widget
+          </Button>
+        </div>
+      </div>
       
       <motion.div 
         variants={containerVariants}
@@ -116,10 +188,10 @@ const Dashboard: React.FC<DashboardProps> = ({
         {/* Total Tools */}
         <motion.div 
           variants={containerVariants} 
-          className="dashboard-stat-card cursor-pointer"
+          className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-700/30 transition-colors"
           onClick={() => onCategoryClick('')}
         >
-          <Package className="w-8 h-8 mb-2 text-ai-blue" />
+          <Package className="w-8 h-8 mb-2 text-blue-400" />
           <span className="text-gray-400 text-sm">Total Subscriptions</span>
           <span className="text-3xl font-bold">{totalTools}</span>
         </motion.div>
@@ -127,10 +199,10 @@ const Dashboard: React.FC<DashboardProps> = ({
         {/* Favorite Tools */}
         <motion.div 
           variants={containerVariants} 
-          className="dashboard-stat-card cursor-pointer"
+          className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-700/30 transition-colors"
           onClick={() => onCategoryClick('Favorites')}
         >
-          <Star className="w-8 h-8 mb-2 text-ai-amber" />
+          <Star className="w-8 h-8 mb-2 text-yellow-400" />
           <span className="text-gray-400 text-sm">Favorites</span>
           <span className="text-3xl font-bold">{favoriteTools}</span>
         </motion.div>
@@ -138,10 +210,10 @@ const Dashboard: React.FC<DashboardProps> = ({
         {/* Monthly Cost */}
         <motion.div 
           variants={containerVariants} 
-          className="dashboard-stat-card cursor-pointer"
+          className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-700/30 transition-colors"
           onClick={() => onCategoryClick('')}
         >
-          <Banknote className="w-8 h-8 mb-2 text-ai-emerald" />
+          <Banknote className="w-8 h-8 mb-2 text-green-400" />
           <span className="text-gray-400 text-sm">Monthly Cost</span>
           <span className="text-3xl font-bold">${totalMonthlyCost}</span>
         </motion.div>
@@ -149,55 +221,72 @@ const Dashboard: React.FC<DashboardProps> = ({
         {/* Upcoming Renewals */}
         <motion.div 
           variants={containerVariants} 
-          className="dashboard-stat-card cursor-pointer"
+          className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-700/30 transition-colors"
           onClick={onRenewalClick}
         >
-          <Calendar className="w-8 h-8 mb-2 text-ai-purple" />
+          <Calendar className="w-8 h-8 mb-2 text-purple-400" />
           <span className="text-gray-400 text-sm">Upcoming Renewals</span>
           <span className="text-3xl font-bold">{upcomingRenewals.length}</span>
         </motion.div>
       </motion.div>
       
+      {/* Dashboard Widgets */}
+      <div className={`grid ${widgetLayout === 'grid' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-6 mb-8`}>
+        {/* Planner Widget */}
+        {activeWidgets.planner && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <PlannerWidget 
+              tasks={tasks} 
+              goals={goals} 
+              onViewMore={onViewPlanner} 
+            />
+          </motion.div>
+        )}
+        
+        {/* Expenses Widget */}
+        {activeWidgets.expenses && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <ExpensesWidget onAddExpense={handleAddExpense} />
+          </motion.div>
+        )}
+      </div>
+      
       {/* Categories */}
-      <motion.div variants={containerVariants} className="glass-card p-4 rounded-xl mb-8">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-lg font-semibold">Categories</h3>
-          {selectedCategories.length > 0 && (
-            <button 
-              onClick={() => selectedCategories.forEach(cat => onCategoryToggle(cat))}
-              className="text-xs text-gray-400 hover:text-white"
-            >
-              Clear all
-            </button>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {categoryItems}
-        </div>
-      </motion.div>
-
-      {/* Planner section - show if tasks or goals exist */}
-      {(tasks.length > 0 || goals.length > 0) && (
-        <motion.div
-          variants={containerVariants}
-          className="mb-8"
-        >
-          <DashboardPlanner 
-            tasks={tasks} 
-            goals={goals} 
-            onViewPlanner={onViewPlanner} 
-          />
+      {activeWidgets.categories && (
+        <motion.div variants={containerVariants} className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl mb-8">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-lg font-medium">Categories</h3>
+            {selectedCategories.length > 0 && (
+              <button 
+                onClick={() => selectedCategories.forEach(cat => onCategoryToggle(cat))}
+                className="text-xs text-gray-400 hover:text-white"
+              >
+                Clear all
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {categoryItems}
+          </div>
         </motion.div>
       )}
       
       {/* Upcoming Renewals List */}
-      {upcomingRenewals.length > 0 && (
+      {activeWidgets.renewals && upcomingRenewals.length > 0 && (
         <motion.div 
           variants={containerVariants} 
-          className="glass-card p-4 rounded-xl"
+          className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl"
         >
-          <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-ai-pink" />
+          <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-purple-400" />
             Upcoming Renewals
           </h3>
           <div className="space-y-2">
@@ -226,7 +315,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                   onClick={() => onCategoryClick(tool.category)}
                 >
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-ai-pink animate-pulse"></div>
+                    <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></div>
                     <span>{tool.name}</span>
                     {tool.isPaid !== undefined && (
                       <span className={`ml-2 ${tool.isPaid ? "text-green-400" : "text-red-400"} flex items-center`}>
@@ -236,9 +325,9 @@ const Dashboard: React.FC<DashboardProps> = ({
                     )}
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-ai-emerald">${tool.subscriptionCost}/mo</span>
+                    <span className="text-green-400">${tool.subscriptionCost}/mo</span>
                     <span className="text-gray-400">{tool.renewalDate}</span>
-                    <span className={`px-2 py-1 rounded-full text-xs ${daysRemaining <= 3 ? "bg-red-500/20 text-red-300" : "bg-ai-blue/20 text-ai-blue"}`}>
+                    <span className={`px-2 py-1 rounded-full text-xs ${daysRemaining <= 3 ? "bg-red-500/20 text-red-300" : "bg-blue-500/20 text-blue-300"}`}>
                       {daysText}
                     </span>
                   </div>
@@ -248,11 +337,88 @@ const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </motion.div>
       )}
+
+      {/* Add Widget Dialog */}
+      <Dialog open={showAddWidgetDialog} onOpenChange={setShowAddWidgetDialog}>
+        <DialogContent className="bg-gray-800 text-white border-gray-700">
+          <DialogHeader>
+            <DialogTitle>Manage Dashboard Widgets</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Choose which widgets to display on your dashboard
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3 py-2">
+            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-700/30">
+              <div className="flex items-center gap-2">
+                <CalendarCheck className="h-5 w-5 text-purple-400" />
+                <span>Planner Widget</span>
+              </div>
+              <Button 
+                variant={activeWidgets.planner ? "default" : "outline"} 
+                size="sm"
+                className={activeWidgets.planner ? "bg-purple-600" : ""}
+                onClick={() => toggleWidget('planner')}
+              >
+                {activeWidgets.planner ? "Active" : "Add"}
+              </Button>
+            </div>
+            
+            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-700/30">
+              <div className="flex items-center gap-2">
+                <Banknote className="h-5 w-5 text-green-400" />
+                <span>Expenses Widget</span>
+              </div>
+              <Button 
+                variant={activeWidgets.expenses ? "default" : "outline"} 
+                size="sm"
+                className={activeWidgets.expenses ? "bg-purple-600" : ""}
+                onClick={() => toggleWidget('expenses')}
+              >
+                {activeWidgets.expenses ? "Active" : "Add"}
+              </Button>
+            </div>
+            
+            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-700/30">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-purple-400" />
+                <span>Renewals List</span>
+              </div>
+              <Button 
+                variant={activeWidgets.renewals ? "default" : "outline"} 
+                size="sm"
+                className={activeWidgets.renewals ? "bg-purple-600" : ""}
+                onClick={() => toggleWidget('renewals')}
+              >
+                {activeWidgets.renewals ? "Active" : "Add"}
+              </Button>
+            </div>
+            
+            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-700/30">
+              <div className="flex items-center gap-2">
+                <LayoutDashboard className="h-5 w-5 text-blue-400" />
+                <span>Categories</span>
+              </div>
+              <Button 
+                variant={activeWidgets.categories ? "default" : "outline"} 
+                size="sm"
+                className={activeWidgets.categories ? "bg-purple-600" : ""}
+                onClick={() => toggleWidget('categories')}
+              >
+                {activeWidgets.categories ? "Active" : "Add"}
+              </Button>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button onClick={() => setShowAddWidgetDialog(false)}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 };
 
 export default Dashboard;
-
-// Need to import this at the top
-import DashboardPlanner from './DashboardPlanner';

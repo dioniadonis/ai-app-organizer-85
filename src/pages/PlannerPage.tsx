@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Planner from '@/components/Planner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, 
   Home, 
@@ -12,7 +12,9 @@ import {
   CalendarCheck, 
   Bell, 
   Settings,
-  Repeat
+  Repeat,
+  UserCircle,
+  BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +26,19 @@ import { Input } from '@/components/ui/input';
 import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 
+// TypeScript interface for AI Assistant conversation
+interface AIConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+// TypeScript interface for Planner Data
+interface PlannerDataType {
+  tasks: any[];
+  goals: any[];
+  recurringTasks: any[];
+}
+
 const PlannerPage: React.FC = () => {
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState<string>('planner');
@@ -32,12 +47,8 @@ const PlannerPage: React.FC = () => {
   const [isNotificationSettingsOpen, setIsNotificationSettingsOpen] = useState(false);
   const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
   const [aiAssistantInput, setAIAssistantInput] = useState('');
-  const [aiAssistantConversation, setAIAssistantConversation] = useState<{role: 'user' | 'assistant', content: string}[]>([]);
-  const [plannerData, setPlannerData] = useState<{
-    tasks: any[],
-    goals: any[],
-    recurringTasks: any[]
-  }>({
+  const [aiAssistantConversation, setAIAssistantConversation] = useState<AIConversationMessage[]>([]);
+  const [plannerData, setPlannerData] = useState<PlannerDataType>({
     tasks: [],
     goals: [],
     recurringTasks: []
@@ -53,6 +64,7 @@ const PlannerPage: React.FC = () => {
       frequency: 'daily',
       emailNotifications: true,
       pushNotifications: true,
+      customRate: 'Every 6 hours'
     }
   });
 
@@ -98,7 +110,7 @@ const PlannerPage: React.FC = () => {
     // Save notification settings
     toast({
       title: "Notification settings saved",
-      description: `Frequency: ${data.frequency}`,
+      description: `Frequency: ${data.frequency}, Custom Rate: ${data.customRate}`,
     });
     setIsNotificationSettingsOpen(false);
   };
@@ -107,7 +119,7 @@ const PlannerPage: React.FC = () => {
     if (!aiAssistantInput.trim()) return;
     
     // Add user message to conversation
-    const updatedConversation = [
+    const updatedConversation: AIConversationMessage[] = [
       ...aiAssistantConversation,
       { role: 'user', content: aiAssistantInput }
     ];
@@ -146,8 +158,14 @@ const PlannerPage: React.FC = () => {
     visible: {
       opacity: 1,
       transition: {
-        duration: 0.4,
+        duration: 0.3,
         ease: "easeOut"
+      }
+    },
+    exit: {
+      opacity: 0,
+      transition: {
+        duration: 0.2
       }
     }
   };
@@ -173,304 +191,362 @@ const PlannerPage: React.FC = () => {
     });
   };
 
+  const navigateToAccount = () => {
+    toast({
+      title: "Account",
+      description: "Account page is coming soon. Early adopters fee: $5 (Currently free)",
+    });
+  };
+
   return (
-    <motion.div 
-      className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-100"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      <div className="max-w-6xl mx-auto p-4 sm:p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-white">Planner & Goals</h1>
-          
-          <div className="flex items-center gap-3">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="w-5 h-5" />
-                  {hasNotifications && (
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-0 bg-gray-800 border-gray-700" align="end">
-                <div className="p-3 border-b border-gray-700">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-medium">Notifications</h3>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setIsNotificationSettingsOpen(true)}
-                    >
-                      <Settings className="h-4 w-4 mr-1" />
-                      Settings
+    <AnimatePresence mode="wait">
+      <motion.div 
+        className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-100"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        key={activeView}
+      >
+        <div className="max-w-6xl mx-auto p-4 sm:p-6">
+          <div className="flex justify-between items-center mb-6">
+            <motion.h1 
+              className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.3 }}
+            >
+              Planner & Goals
+            </motion.h1>
+            
+            <div className="flex items-center gap-3">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative">
+                    <Bell className="w-5 h-5" />
+                    {hasNotifications && (
+                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0 bg-gray-800 border-gray-700" align="end">
+                  <div className="p-3 border-b border-gray-700">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-medium">Notifications</h3>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setIsNotificationSettingsOpen(true)}
+                      >
+                        <Settings className="h-4 w-4 mr-1" />
+                        Settings
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="max-h-80 overflow-auto">
+                    {notifications.length > 0 ? (
+                      notifications.map(notification => (
+                        <div key={notification.id} className="p-3 border-b border-gray-700 hover:bg-gray-700/50 transition-colors">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-medium text-sm">{notification.title}</h4>
+                              <p className="text-sm text-gray-400">{notification.message}</p>
+                              <p className="text-xs text-gray-500 mt-1">{notification.date}</p>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6"
+                              onClick={() => markNotificationAsRead(notification.id)}
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-gray-400">
+                        <p>No new notifications</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-2 border-t border-gray-700">
+                    <Button variant="ghost" size="sm" className="w-full text-xs">
+                      Clear all notifications
                     </Button>
                   </div>
-                </div>
-                <div className="max-h-80 overflow-auto">
-                  {notifications.length > 0 ? (
-                    notifications.map(notification => (
-                      <div key={notification.id} className="p-3 border-b border-gray-700 hover:bg-gray-700/50 transition-colors">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-medium text-sm">{notification.title}</h4>
-                            <p className="text-sm text-gray-400">{notification.message}</p>
-                            <p className="text-xs text-gray-500 mt-1">{notification.date}</p>
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-6 w-6"
-                            onClick={() => markNotificationAsRead(notification.id)}
-                          >
-                            <ChevronLeft className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="p-4 text-center text-gray-400">
-                      <p>No new notifications</p>
-                    </div>
-                  )}
-                </div>
-                <div className="p-2 border-t border-gray-700">
-                  <Button variant="ghost" size="sm" className="w-full text-xs">
-                    Clear all notifications
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
-            
-            <button 
-              onClick={() => navigate(-1)} 
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800/50 text-sm hover:bg-white/10 transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span>Back</span>
-            </button>
+                </PopoverContent>
+              </Popover>
+              
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative"
+                onClick={navigateToAccount}
+              >
+                <UserCircle className="w-5 h-5" />
+              </Button>
+              
+              <Button
+                variant="ghost" 
+                onClick={() => setIsAIAssistantOpen(true)}
+                className="bg-purple-600/20 hover:bg-purple-700/30 text-white transition-colors"
+              >
+                AI Assistant
+              </Button>
+              
+              <button 
+                onClick={() => navigate(-1)} 
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800/30 text-sm hover:bg-white/10 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span>Back</span>
+              </button>
+            </div>
           </div>
-        </div>
-        
-        <div className="bg-gray-800/30 rounded-xl mb-6 backdrop-blur-sm">
-          <Tabs value={activeView} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="w-full justify-start bg-transparent">
-              <TabsTrigger 
-                value="planner" 
-                className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-white rounded-lg gap-2"
-              >
-                <CalendarCheck className="w-4 h-4" />
-                Planner
-              </TabsTrigger>
-              <TabsTrigger 
-                value="dashboard" 
-                className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-white rounded-lg gap-2"
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                Dashboard
-              </TabsTrigger>
-              <TabsTrigger 
-                value="expenses" 
-                className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-white rounded-lg gap-2"
-              >
-                <CreditCard className="w-4 h-4" />
-                Expenses
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-        
-        <div className="bg-gray-800/20 rounded-xl p-6 shadow-lg border border-gray-700">
-          <div className="flex justify-between items-center mb-6">
-            <Tabs value={activeTab} onValueChange={handlePlannerTabChange} className="w-full">
-              <TabsList className="bg-gray-800/40 rounded-lg p-1">
+          
+          <motion.div 
+            className="bg-gray-800/30 rounded-xl mb-6 backdrop-blur-sm"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.3 }}
+          >
+            <Tabs value={activeView} onValueChange={handleTabChange} className="w-full">
+              <TabsList className="w-full justify-start bg-transparent">
                 <TabsTrigger 
-                  value="tasks" 
-                  className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md"
+                  value="planner" 
+                  className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-white rounded-lg gap-2"
                 >
-                  Tasks
+                  <CalendarCheck className="w-4 h-4" />
+                  Planner
                 </TabsTrigger>
                 <TabsTrigger 
-                  value="goals" 
-                  className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md"
+                  value="dashboard" 
+                  className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-white rounded-lg gap-2"
                 >
-                  Goals
+                  <LayoutDashboard className="w-4 h-4" />
+                  Dashboard
                 </TabsTrigger>
                 <TabsTrigger 
-                  value="recurring" 
-                  className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md"
+                  value="expenses" 
+                  className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-white rounded-lg gap-2"
                 >
-                  <Repeat className="w-4 h-4 mr-1" />
-                  Recurring
+                  <CreditCard className="w-4 h-4" />
+                  Expenses
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-            
-            <Button 
-              onClick={() => setIsAIAssistantOpen(true)}
-              className="bg-purple-600 hover:bg-purple-700 text-white transition-colors"
-            >
-              AI Assistant
-            </Button>
-          </div>
+          </motion.div>
           
-          <Planner activeTab={activeTab} plannerData={plannerData} setPlannerData={setPlannerData} />
+          <motion.div 
+            className="bg-gray-800/20 rounded-xl p-6 shadow-lg border border-gray-700"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.3 }}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <Tabs value={activeTab} onValueChange={handlePlannerTabChange} className="w-full">
+                <TabsList className="bg-gray-800/40 rounded-lg p-1">
+                  <TabsTrigger 
+                    value="tasks" 
+                    className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md"
+                  >
+                    Tasks
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="goals" 
+                    className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md"
+                  >
+                    Goals
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="recurring" 
+                    className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md"
+                  >
+                    <Repeat className="w-4 h-4 mr-1" />
+                    Recurring
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            
+            <Planner activeTab={activeTab} plannerData={plannerData} setPlannerData={setPlannerData} />
+          </motion.div>
+          
+          <footer className="py-6 text-center text-gray-500 mt-12">
+            <p>Loop Space AI Organizer &copy; {new Date().getFullYear()}</p>
+          </footer>
         </div>
         
-        <footer className="py-6 text-center text-gray-500 mt-12">
-          <p>Loop Space AI Organizer &copy; {new Date().getFullYear()}</p>
-        </footer>
-      </div>
-      
-      {/* Notification Settings Dialog */}
-      <Dialog open={isNotificationSettingsOpen} onOpenChange={setIsNotificationSettingsOpen}>
-        <DialogContent className="bg-gray-800 text-white border-gray-700">
-          <DialogHeader>
-            <DialogTitle>Notification Settings</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Customize how and when you receive notifications
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Form {...notificationForm}>
-            <form onSubmit={notificationForm.handleSubmit(saveNotificationSettings)} className="space-y-4">
-              <FormField
-                control={notificationForm.control}
-                name="frequency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notification Frequency</FormLabel>
-                    <FormControl>
-                      <select 
-                        className="w-full p-2 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        {...field}
-                      >
-                        <option value="realtime">Real-time</option>
-                        <option value="hourly">Hourly</option>
-                        <option value="daily">Daily</option>
-                        <option value="weekly">Weekly</option>
-                      </select>
-                    </FormControl>
-                  </FormItem>
+        {/* Notification Settings Dialog */}
+        <Dialog open={isNotificationSettingsOpen} onOpenChange={setIsNotificationSettingsOpen}>
+          <DialogContent className="bg-gray-800 text-white border-gray-700">
+            <DialogHeader>
+              <DialogTitle>Notification Settings</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Customize how and when you receive notifications
+              </DialogDescription>
+            </DialogHeader>
+            
+            <Form {...notificationForm}>
+              <form onSubmit={notificationForm.handleSubmit(saveNotificationSettings)} className="space-y-4">
+                <FormField
+                  control={notificationForm.control}
+                  name="frequency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Notification Frequency</FormLabel>
+                      <FormControl>
+                        <select 
+                          className="w-full p-2 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          {...field}
+                        >
+                          <option value="realtime">Real-time</option>
+                          <option value="hourly">Hourly</option>
+                          <option value="daily">Daily</option>
+                          <option value="weekly">Weekly</option>
+                          <option value="custom">Custom</option>
+                        </select>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                {notificationForm.watch("frequency") === "custom" && (
+                  <FormField
+                    control={notificationForm.control}
+                    name="customRate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Custom Notification Rate</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="e.g., Every 6 hours" 
+                            className="bg-gray-700 border-gray-600"
+                            {...field}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
                 )}
-              />
-              
-              <FormField
-                control={notificationForm.control}
-                name="emailNotifications"
-                render={({ field }) => (
-                  <FormItem className="flex items-center gap-2">
-                    <FormControl>
-                      <input 
-                        type="checkbox" 
-                        className="rounded-sm"
-                        checked={field.value}
-                        onChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="m-0">Email Notifications</FormLabel>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={notificationForm.control}
-                name="pushNotifications"
-                render={({ field }) => (
-                  <FormItem className="flex items-center gap-2">
-                    <FormControl>
-                      <input 
-                        type="checkbox" 
-                        className="rounded-sm"
-                        checked={field.value}
-                        onChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="m-0">Push Notifications</FormLabel>
-                  </FormItem>
-                )}
-              />
-              
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsNotificationSettingsOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
-                  Save Changes
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-      
-      {/* AI Assistant Dialog */}
-      <Dialog open={isAIAssistantOpen} onOpenChange={setIsAIAssistantOpen}>
-        <DialogContent className="bg-gray-800 text-white border-gray-700 max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>AI Planning Assistant</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              I can help you create tasks, set goals, and manage your planning
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="max-h-[60vh] overflow-y-auto flex flex-col space-y-4 p-4 my-2 bg-gray-900/50 rounded-md">
-            {aiAssistantConversation.length === 0 ? (
-              <div className="text-center text-gray-500 p-6">
-                <p>Ask me to help with your planning needs!</p>
-                <p className="text-sm mt-2">Examples:</p>
-                <ul className="text-xs mt-1 space-y-1">
-                  <li>"Create a new goal for my project"</li>
-                  <li>"Add a recurring task for weekly reports"</li>
-                  <li>"Help me plan my expenses for this month"</li>
-                </ul>
-              </div>
-            ) : (
-              aiAssistantConversation.map((message, index) => (
-                <div 
-                  key={index} 
-                  className={`${
-                    message.role === 'user' 
-                      ? 'ml-auto bg-purple-600/80' 
-                      : 'mr-auto bg-gray-700/80'
-                  } p-3 rounded-xl max-w-[80%]`}
-                >
-                  {message.content}
+                
+                <FormField
+                  control={notificationForm.control}
+                  name="emailNotifications"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2">
+                      <FormControl>
+                        <input 
+                          type="checkbox" 
+                          className="rounded-sm"
+                          checked={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel className="m-0">Email Notifications</FormLabel>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={notificationForm.control}
+                  name="pushNotifications"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2">
+                      <FormControl>
+                        <input 
+                          type="checkbox" 
+                          className="rounded-sm"
+                          checked={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel className="m-0">Push Notifications</FormLabel>
+                    </FormItem>
+                  )}
+                />
+                
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsNotificationSettingsOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
+                    Save Changes
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+        
+        {/* AI Assistant Dialog */}
+        <Dialog open={isAIAssistantOpen} onOpenChange={setIsAIAssistantOpen}>
+          <DialogContent className="bg-gray-800 text-white border-gray-700 max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>AI Planning Assistant</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                I can help you create tasks, set goals, and manage your planning
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="max-h-[60vh] overflow-y-auto flex flex-col space-y-4 p-4 my-2 bg-gray-900/50 rounded-md">
+              {aiAssistantConversation.length === 0 ? (
+                <div className="text-center text-gray-500 p-6">
+                  <p>Ask me to help with your planning needs!</p>
+                  <p className="text-sm mt-2">Examples:</p>
+                  <ul className="text-xs mt-1 space-y-1">
+                    <li>"Create a new goal for my project"</li>
+                    <li>"Add a recurring task for weekly reports"</li>
+                    <li>"Help me plan my expenses for this month"</li>
+                  </ul>
                 </div>
-              ))
-            )}
-          </div>
-          
-          <div className="flex gap-2 mt-2">
-            <Textarea 
-              placeholder="Ask me about tasks, goals, or planning..."
-              value={aiAssistantInput}
-              onChange={(e) => setAIAssistantInput(e.target.value)}
-              className="bg-gray-700 border-gray-600 focus:border-purple-500"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleAIAssistantSubmit();
-                }
-              }}
-            />
-            <Button 
-              onClick={handleAIAssistantSubmit}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              Send
-            </Button>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAIAssistantOpen(false)}>
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </motion.div>
+              ) : (
+                aiAssistantConversation.map((message, index) => (
+                  <div 
+                    key={index} 
+                    className={`${
+                      message.role === 'user' 
+                        ? 'ml-auto bg-purple-600/80' 
+                        : 'mr-auto bg-gray-700/80'
+                    } p-3 rounded-xl max-w-[80%]`}
+                  >
+                    {message.content}
+                  </div>
+                ))
+              )}
+            </div>
+            
+            <div className="flex gap-2 mt-2">
+              <Textarea 
+                placeholder="Ask me about tasks, goals, or planning..."
+                value={aiAssistantInput}
+                onChange={(e) => setAIAssistantInput(e.target.value)}
+                className="bg-gray-700 border-gray-600 focus:border-purple-500"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleAIAssistantSubmit();
+                  }
+                }}
+              />
+              <Button 
+                onClick={handleAIAssistantSubmit}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                Send
+              </Button>
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAIAssistantOpen(false)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 
