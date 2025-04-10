@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AITool } from '@/types/AITool';
 import { Banknote, Calendar, Package, Star, CheckCircle, XCircle, Grid3X3, Layout, LayoutDashboard, Plus, CalendarClock, Clock, AlertCircle, Receipt, Sparkles, TrendingUp, AlertTriangle, CreditCard } from 'lucide-react';
@@ -161,7 +162,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             ? 'bg-purple-500/30 text-purple-300 border border-purple-500/50' 
             : 'glass-card hover:bg-white/10'
         }`}
-        onClick={() => onCategoryToggle(category)}
+        onClick={() => handleCategoryToggle(category)}
       >
         <span>{category}</span>
         <span className="bg-white/20 rounded-full w-5 h-5 flex items-center justify-center text-xs">
@@ -228,7 +229,9 @@ const Dashboard: React.FC<DashboardProps> = ({
       localStorage.setItem('selectedExpenseCategory', renewal.category);
       navigate('/expenses?view=list&category=' + encodeURIComponent(renewal.category));
     } else {
-      onCategoryClick(renewal.category);
+      // Navigate to the category view
+      handleCategoryToggle(renewal.category);
+      navigate('/');
     }
   };
 
@@ -260,10 +263,6 @@ const Dashboard: React.FC<DashboardProps> = ({
         description: "You don't have any unpaid expenses at the moment",
       });
     }
-  };
-
-  const navigateToPlanner = () => {
-    navigate('/planner');
   };
 
   const getInsights = () => {
@@ -480,7 +479,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         <motion.div 
           variants={containerVariants} 
           className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-700/30 transition-colors"
-          onClick={() => onCategoryClick('Favorites')}
+          onClick={() => handleCategoryToggle('Favorites')}
         >
           <Star className="w-8 h-8 mb-2 text-yellow-400" />
           <span className="text-gray-400 text-sm">Favorites</span>
@@ -518,7 +517,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             <PlannerWidget 
               tasks={tasks} 
               goals={goals} 
-              onViewMore={onViewPlanner}
+              onViewMore={navigateToPlanner}
               onToggleTaskComplete={handleToggleTaskComplete}
               onEditTask={handleEditTask}
               onEditGoal={handleEditGoal}
@@ -550,7 +549,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             <h3 className="text-lg font-medium">Categories</h3>
             {selectedCategories.length > 0 && (
               <button 
-                onClick={() => selectedCategories.forEach(cat => onCategoryToggle(cat))}
+                onClick={() => selectedCategories.forEach(cat => handleCategoryToggle(cat))}
                 className="text-xs text-gray-400 hover:text-white"
               >
                 Clear all

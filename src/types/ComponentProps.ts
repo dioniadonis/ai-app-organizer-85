@@ -51,6 +51,7 @@ export interface AIToolCardProps {
 export interface DashboardProps {
   aiTools: AITool[];
   tasks: any[];
+  goals: any[];
   selectedCategories: string[];
   filterByRenewal: boolean;
   handleRenewalFilter: () => void;
