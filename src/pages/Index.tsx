@@ -20,6 +20,14 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useIsMobile } from '@/hooks/use-mobile';
 import { DatePicker } from '@/components/ui/date-picker';
 
+// Types
+import { 
+  AddFormProps, 
+  HeaderProps, 
+  MobileMenuProps,
+  FilterBarProps
+} from '@/types/ComponentProps';
+
 const initialAITools: AITool[] = [];
 
 interface Task {
@@ -41,6 +49,416 @@ interface Goal {
   type: 'daily' | 'short' | 'long';
 }
 
+// Component for the Filter Bar
+const FilterBar: React.FC<FilterBarProps> = ({ 
+  selectedCategories, 
+  filterByRenewal, 
+  clearFilters, 
+  handleCategoryToggle, 
+  setFilterByRenewal 
+}) => (
+  <div className="flex items-center gap-2 text-sm">
+    <Button 
+      variant="outline" 
+      size="sm" 
+      onClick={clearFilters} 
+      className="h-8 px-2 gap-1 border-gray-700 hover:bg-gray-800"
+    >
+      <ArrowLeft className="w-3 h-3" />
+      Back to All
+    </Button>
+    
+    <span className="text-gray-400">Active Filters:</span>
+    
+    {selectedCategories.map(category => (
+      <span 
+        key={category} 
+        className="bg-ai-purple/20 text-ai-purple rounded-full px-3 py-1 flex items-center gap-1 cursor-pointer" 
+        onClick={() => handleCategoryToggle(category)}
+      >
+        {category === 'Favorites' ? 'Favorites' : category}
+        <XCircle className="w-3 h-3" />
+      </span>
+    ))}
+    
+    {filterByRenewal && (
+      <span 
+        className="bg-ai-pink/20 text-ai-pink rounded-full px-3 py-1 flex items-center gap-1 cursor-pointer" 
+        onClick={() => setFilterByRenewal(false)}
+      >
+        Upcoming Renewals
+        <XCircle className="w-3 h-3" />
+      </span>
+    )}
+  </div>
+);
+
+// Component for Mobile Menu
+const MobileMenu: React.FC<MobileMenuProps> = ({ 
+  mobileMenuOpen, 
+  setMobileMenuOpen, 
+  view, 
+  setView, 
+  clearFilters, 
+  navigateToPlanner, 
+  setShowAIDialog, 
+  showAddForm, 
+  setShowAddForm 
+}) => (
+  <Collapsible 
+    open={mobileMenuOpen} 
+    onOpenChange={setMobileMenuOpen}
+    className="w-full"
+  >
+    <div className="flex justify-between items-center">
+      <div className="flex gap-2 overflow-x-auto pb-2 max-w-[75%] scrollbar-thin">
+        <Button 
+          variant={view === 'dashboard' ? 'default' : 'outline'} 
+          onClick={() => {
+            setView('dashboard');
+            clearFilters();
+          }} 
+          className={cn(
+            "whitespace-nowrap min-w-fit", 
+            view === 'dashboard' ? 'bg-ai-purple hover:bg-ai-purple/90' : 'border-gray-700'
+          )}
+        >
+          <LayoutDashboard className="w-4 h-4 mr-2" />
+          Dashboard
+        </Button>
+        
+        <Button 
+          variant={view === 'list' ? 'default' : 'outline'} 
+          onClick={() => setView('list')} 
+          className={cn(
+            "whitespace-nowrap min-w-fit",
+            view === 'list' ? 'bg-ai-purple hover:bg-ai-purple/90' : 'border-gray-700'
+          )}
+        >
+          <Grid className="w-4 h-4 mr-2" />
+          List View
+        </Button>
+      </div>
+
+      <CollapsibleTrigger asChild>
+        <Button size="sm" variant="ghost" className="px-2">
+          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </Button>
+      </CollapsibleTrigger>
+    </div>
+
+    <CollapsibleContent className="space-y-2 mt-2">
+      <Button 
+        variant="outline" 
+        onClick={navigateToPlanner} 
+        className="border-ai-pink bg-ai-pink/10 text-ai-pink hover:bg-ai-pink/20 w-full justify-start"
+      >
+        <Calendar className="w-4 h-4 mr-2" />
+        Planner
+      </Button>
+      
+      <Button 
+        variant="outline" 
+        onClick={() => setShowAIDialog(true)} 
+        className="border-ai-cyan bg-ai-cyan/10 text-ai-cyan hover:bg-ai-cyan/20 w-full justify-start"
+      >
+        <MessageSquareDot className="w-4 h-4 mr-2" />
+        AI Assistant
+      </Button>
+      
+      <Button 
+        variant="outline" 
+        onClick={() => setShowAddForm(!showAddForm)} 
+        className="w-full bg-ai-blue/20 text-ai-blue hover:bg-ai-blue/30 hover:text-ai-blue border-ai-blue/50 justify-start"
+      >
+        <PlusCircle className="w-4 h-4 mr-2" />
+        {showAddForm ? 'Cancel' : 'Add New Expense'}
+      </Button>
+    </CollapsibleContent>
+  </Collapsible>
+);
+
+// Component for the Header
+const Header: React.FC<HeaderProps> = ({ 
+  isMobile, 
+  mobileMenuOpen, 
+  setMobileMenuOpen, 
+  view, 
+  setView, 
+  clearFilters, 
+  navigateToPlanner, 
+  setShowAIDialog, 
+  showAddForm, 
+  setShowAddForm, 
+  selectedCategories, 
+  filterByRenewal, 
+  handleCategoryToggle, 
+  setFilterByRenewal 
+}) => (
+  <header className="mb-8">
+    <HolographicTitle title="Loop Space AI Organizer" />
+    <p className="text-center text-gray-400 mb-6">
+      Organize, track, and manage your subscriptions in one place
+    </p>
+    
+    {isMobile ? (
+      <div className="mb-6">
+        <MobileMenu 
+          mobileMenuOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
+          view={view}
+          setView={setView}
+          clearFilters={clearFilters}
+          navigateToPlanner={navigateToPlanner}
+          setShowAIDialog={setShowAIDialog}
+          showAddForm={showAddForm}
+          setShowAddForm={setShowAddForm}
+        />
+      </div>
+    ) : (
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+        <div className="flex gap-2">
+          <Button 
+            variant={view === 'dashboard' ? 'default' : 'outline'} 
+            onClick={() => {
+              setView('dashboard');
+              clearFilters();
+            }} 
+            className={view === 'dashboard' ? 'bg-ai-purple hover:bg-ai-purple/90' : 'border-gray-700'}
+          >
+            <LayoutDashboard className="w-4 h-4 mr-2" />
+            Dashboard
+          </Button>
+          <Button 
+            variant={view === 'list' ? 'default' : 'outline'} 
+            onClick={() => setView('list')} 
+            className={view === 'list' ? 'bg-ai-purple hover:bg-ai-purple/90' : 'border-gray-700'}
+          >
+            <Grid className="w-4 h-4 mr-2" />
+            List View
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={navigateToPlanner} 
+            className="border-ai-pink bg-ai-pink/10 text-ai-pink hover:bg-ai-pink/20"
+          >
+            <Calendar className="w-4 h-4 mr-2" />
+            Planner
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowAIDialog(true)} 
+            className="border-ai-cyan bg-ai-cyan/10 text-ai-cyan hover:bg-ai-cyan/20"
+          >
+            <MessageSquareDot className="w-4 h-4 mr-2" />
+            AI Assistant
+          </Button>
+        </div>
+        
+        <div className="w-full sm:w-auto">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowAddForm(!showAddForm)} 
+            className="w-full sm:w-auto bg-ai-blue/20 text-ai-blue hover:bg-ai-blue/30 hover:text-ai-blue border-ai-blue/50"
+          >
+            <PlusCircle className="w-4 h-4 mr-2" />
+            {showAddForm ? 'Cancel' : 'Add New Expense'}
+          </Button>
+        </div>
+      </div>
+    )}
+    
+    <div className="space-y-4">
+      {(selectedCategories.length > 0 || filterByRenewal) && (
+        <FilterBar 
+          selectedCategories={selectedCategories}
+          filterByRenewal={filterByRenewal}
+          clearFilters={clearFilters}
+          handleCategoryToggle={handleCategoryToggle}
+          setFilterByRenewal={setFilterByRenewal}
+        />
+      )}
+    </div>
+  </header>
+);
+
+// Add Form Component
+const AddForm: React.FC<AddFormProps> = ({
+  newTool,
+  handleInputChange,
+  customCategory,
+  setCustomCategory,
+  showCustomCategoryInput,
+  setShowCustomCategoryInput,
+  customCategories,
+  allCategoriesForSelect,
+  handleAddCustomCategory,
+  handleAddTool
+}) => (
+  <motion.div 
+    initial={{
+      opacity: 0,
+      height: 0
+    }} 
+    animate={{
+      opacity: 1,
+      height: 'auto'
+    }} 
+    exit={{
+      opacity: 0,
+      height: 0
+    }} 
+    transition={{
+      duration: 0.3
+    }} 
+    className="mb-8 p-5 rounded-xl glass-card"
+  >
+    <h2 className="text-xl font-semibold mb-4 ai-gradient-text">Add New Expense</h2>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label htmlFor="new-name" className="block text-sm font-medium text-gray-300 mb-1">
+          Name <span className="text-red-400">*</span>
+        </label>
+        <Input 
+          id="new-name" 
+          value={newTool.name} 
+          onChange={e => handleInputChange('name', e.target.value)} 
+          className="bg-black/20 text-white border-gray-700 focus:border-ai-purple" 
+          placeholder="Subscription Name" 
+        />
+      </div>
+
+      <div>
+        <label htmlFor="new-category" className="block text-sm font-medium text-gray-300 mb-1">
+          Category
+        </label>
+        {showCustomCategoryInput ? (
+          <div className="flex gap-2">
+            <Input 
+              id="custom-category" 
+              value={customCategory}
+              onChange={e => setCustomCategory(e.target.value)}
+              className="bg-black/20 text-white border-gray-700 focus:border-ai-purple flex-1"
+              placeholder="New Category Name"
+            />
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={handleAddCustomCategory}
+              className="border-green-500 text-green-500 hover:bg-green-500/20"
+            >
+              <CheckCircle className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setShowCustomCategoryInput(false)}
+              className="border-red-500 text-red-500 hover:bg-red-500/20"
+            >
+              <XCircle className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <Select 
+              value={newTool.category} 
+              onValueChange={value => handleInputChange('category', value)}
+            >
+              <SelectTrigger className="bg-black/20 text-white border-gray-700 focus:border-ai-purple flex-1">
+                <SelectValue placeholder="Select Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {["General AI", "Writing", "Image Generation", "Code Generation", "Chatbots", "Video Generation", ...customCategories].map(category => (
+                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setShowCustomCategoryInput(true)}
+              className="border-blue-500 text-blue-500 hover:bg-blue-500/20"
+            >
+              <PlusCircle className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div>
+        <label htmlFor="new-cost" className="block text-sm font-medium text-gray-300 mb-1">
+          Monthly Cost
+        </label>
+        <Input 
+          id="new-cost" 
+          type="number" 
+          min="0" 
+          step="0.01" 
+          value={newTool.subscriptionCost} 
+          onChange={e => handleInputChange('subscriptionCost', parseFloat(e.target.value) || 0)}
+          className="bg-black/20 text-white border-gray-700 focus:border-ai-purple"
+          placeholder="0.00"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="new-renewal" className="block text-sm font-medium text-gray-300 mb-1">
+          Renewal Date {newTool.subscriptionCost > 0 && <span className="text-red-400">*</span>}
+        </label>
+        <DatePicker
+          date={newTool.renewalDate ? new Date(newTool.renewalDate) : undefined}
+          onDateChange={(date) => {
+            if (date) {
+              handleInputChange('renewalDate', date.toISOString().split('T')[0]);
+            } else {
+              handleInputChange('renewalDate', '');
+            }
+          }}
+          showLabel={false}
+          className="w-full"
+          placeholder="Select renewal date"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="new-website" className="block text-sm font-medium text-gray-300 mb-1">
+          Website URL
+        </label>
+        <Input 
+          id="new-website" 
+          value={newTool.website} 
+          onChange={e => handleInputChange('website', e.target.value)}
+          className="bg-black/20 text-white border-gray-700 focus:border-ai-purple"
+          placeholder="https://example.com"
+        />
+      </div>
+
+      <div className="md:col-span-2">
+        <label htmlFor="new-description" className="block text-sm font-medium text-gray-300 mb-1">
+          Description <span className="text-red-400">*</span>
+        </label>
+        <Textarea 
+          id="new-description" 
+          value={newTool.description} 
+          onChange={e => handleInputChange('description', e.target.value)}
+          className="bg-black/20 text-white border-gray-700 focus:border-ai-purple min-h-[100px]"
+          placeholder="Add details about this subscription"
+        />
+      </div>
+
+      <div className="md:col-span-2 flex justify-end">
+        <Button 
+          onClick={handleAddTool}
+          className="bg-ai-blue hover:bg-ai-blue/90 text-white"
+        >
+          Add Subscription
+        </Button>
+      </div>
+    </div>
+  </motion.div>
+);
+
+// Main component
 const Index = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -386,354 +804,3 @@ const Index = () => {
         const costPattern = /\$(\d+(\.\d{1,2})?)/;
         const costMatch = aiPrompt.match(costPattern);
         let name = aiPrompt.replace(/add subscription|add expense/i, '').trim();
-        let cost = 0;
-        let category = 'General AI';
-        let renewalDate = '';
-
-        if (costMatch && costMatch[1]) {
-          cost = parseFloat(costMatch[1]);
-          name = name.replace(costPattern, '').trim();
-        }
-
-        const datePatterns = [/on\s+(\d{4}-\d{2}-\d{2})/i, /on\s+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i, /due\s+(\d{4}-\d{2}-\d{2})/i, /due\s+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i];
-        for (const pattern of datePatterns) {
-          const match = aiPrompt.match(pattern);
-          if (match && match[1]) {
-            renewalDate = match[1];
-            name = name.replace(pattern, '').trim();
-            break;
-          }
-        }
-
-        const categoryPattern = /in\s+(\w+(\s+\w+)*)\s+category/i;
-        const categoryMatch = aiPrompt.match(categoryPattern);
-        if (categoryMatch && categoryMatch[1]) {
-          category = categoryMatch[1];
-          name = name.replace(categoryPattern, '').trim();
-        }
-        if (name) {
-          const newSubscription: AITool = {
-            id: crypto.randomUUID(),
-            name: name,
-            description: `Added via AI Assistant: ${aiPrompt}`,
-            category: category,
-            subscriptionCost: cost,
-            renewalDate: renewalDate,
-            isFavorite: false,
-            isPaid: false
-          };
-          setAiTools(prev => [...prev, newSubscription]);
-          result = `Subscription added: "${name}" ($${cost}/month)${renewalDate ? ` due on ${renewalDate}` : ''} in category "${category}"`;
-        } else {
-          result = "I couldn't understand the subscription details. Please try again with a clearer description.";
-        }
-      } else {
-        result = "I can help you analyze your subscriptions and tasks. Try asking about:\n\n" + "- Total monthly costs\n" + "- Category breakdown\n" + "- Upcoming renewals\n" + "- Payment status of your subscriptions\n" + "- Add task [task name] on [date]\n" + "- Add subscription [name] $[amount] on [date] in [category] category";
-      }
-      setAiResponse(result);
-      setIsAiProcessing(false);
-    }, 1500);
-  };
-
-  const handleDragStart = (index: number) => {
-    setIsDragging(true);
-    setDraggedIndex(index);
-  };
-
-  const handleDragEnd = () => {
-    setIsDragging(false);
-    setDraggedIndex(null);
-  };
-
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>, targetIndex: number, category: string) => {
-    event.preventDefault();
-    if (draggedIndex === null || draggedIndex === targetIndex) return;
-    const currentCategoryTools = [...(category === 'Favorites' ? favoriteTools : categorizedTools[category] || [])];
-    const newTools = [...aiTools];
-    let draggedItem: AITool;
-    if (draggedIndex < favoriteTools.length && category === 'Favorites') {
-      draggedItem = favoriteTools[draggedIndex];
-    } else if (draggedIndex < favoriteTools.length) {
-      draggedItem = favoriteTools[draggedIndex];
-      const oldIndex = newTools.findIndex(t => t.id === draggedItem.id);
-      newTools.splice(oldIndex, 1);
-    } else {
-      const sourceCategory = Object.keys(categorizedTools).find(cat => {
-        const start = favoriteTools.length + (sortedCategories.indexOf(cat) > -1 ? sortedCategories.indexOf(cat) : 0);
-        const end = start + categorizedTools[cat].length;
-        return draggedIndex >= start && draggedIndex < end;
-      });
-      if (!sourceCategory) return;
-      const sourceIndex = categorizedTools[sourceCategory].findIndex(tool => newTools.indexOf(tool) === draggedIndex);
-      draggedItem = categorizedTools[sourceCategory][sourceIndex];
-      const oldIndex = newTools.findIndex(t => t.id === draggedItem.id);
-      newTools.splice(oldIndex, 1);
-    }
-    const targetAbsoluteIndex = category === 'Favorites' ? targetIndex : favoriteTools.length + sortedCategories.indexOf(category) + targetIndex;
-    newTools.splice(targetAbsoluteIndex, 0, draggedItem);
-    if (category === 'Favorites') {
-      newTools[targetAbsoluteIndex].isFavorite = true;
-    } else if (draggedIndex < favoriteTools.length) {
-      newTools[targetAbsoluteIndex].isFavorite = false;
-    }
-    setAiTools(newTools);
-    setDraggedIndex(targetIndex);
-  };
-
-  const handleAddCustomCategory = () => {
-    if (customCategory.trim()) {
-      setNewTool(prev => ({
-        ...prev,
-        category: customCategory.trim()
-      }));
-      setCustomCategory("");
-      setShowCustomCategoryInput(false);
-      if (!customCategories.includes(customCategory.trim())) {
-        setCustomCategories(prev => [...prev, customCategory.trim()]);
-      }
-      toast({
-        title: "New Category",
-        description: `Category "${customCategory.trim()}" has been created and selected.`,
-        variant: "default"
-      });
-    }
-  };
-
-  const handleCategoryToggle = (category: string) => {
-    setSelectedCategories(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
-
-    if (!selectedCategories.includes(category)) {
-      setView('list');
-    }
-
-    setFilterByRenewal(false);
-  };
-
-  const handleRenewalFilter = () => {
-    setFilterByRenewal(true);
-    setSelectedCategories([]);
-    setView('list');
-  };
-
-  const clearFilters = () => {
-    setSelectedCategories([]);
-    setFilterByRenewal(false);
-  };
-
-  const navigateToPlanner = () => {
-    navigate('/planner');
-  };
-
-  let filteredTools = aiTools.filter(tool => tool.name.toLowerCase().includes(searchTerm.toLowerCase()) || tool.description.toLowerCase().includes(searchTerm.toLowerCase()));
-
-  if (selectedCategories.includes('Favorites')) {
-    filteredTools = filteredTools.filter(tool => tool.isFavorite);
-  }
-  if (selectedCategories.length > 0 && !selectedCategories.includes('Favorites')) {
-    filteredTools = filteredTools.filter(tool => selectedCategories.includes(tool.category));
-  }
-  if (filterByRenewal) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const thirtyDaysLater = new Date();
-    thirtyDaysLater.setDate(today.getDate() + 30);
-    filteredTools = filteredTools.filter(tool => {
-      if (!tool.renewalDate) return false;
-      const renewalDate = new Date(tool.renewalDate);
-      renewalDate.setHours(0, 0, 0, 0);
-      return renewalDate >= today && renewalDate <= thirtyDaysLater;
-    });
-  }
-
-  const favoriteTools = filteredTools.filter(tool => tool.isFavorite);
-  const categorizedTools = filteredTools.reduce((acc, tool) => {
-    if (!tool.isFavorite) {
-      (acc[tool.category] = acc[tool.category] || []).push(tool);
-    }
-    return acc;
-  }, {} as {
-    [category: string]: AITool[];
-  });
-  const sortedCategories = Object.keys(categorizedTools).sort();
-  const allCategoriesForSelect = Array.from(new Set(aiTools.map(tool => tool.category))).sort();
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-100">
-      <div className="max-w-6xl mx-auto p-4 sm:p-6">
-        <header className="mb-8">
-          <HolographicTitle title="Loop Space AI Organizer" />
-          <p className="text-center text-gray-400 mb-6">
-            Organize, track, and manage your subscriptions in one place
-          </p>
-          
-          {isMobile ? (
-            <div className="mb-6">
-              <Collapsible 
-                open={mobileMenuOpen} 
-                onOpenChange={setMobileMenuOpen}
-                className="w-full"
-              >
-                <div className="flex justify-between items-center">
-                  <div className="flex gap-2 overflow-x-auto pb-2 max-w-[75%] scrollbar-thin">
-                    <Button 
-                      variant={view === 'dashboard' ? 'default' : 'outline'} 
-                      onClick={() => {
-                        setView('dashboard');
-                        clearFilters();
-                      }} 
-                      className={cn(
-                        "whitespace-nowrap min-w-fit", 
-                        view === 'dashboard' ? 'bg-ai-purple hover:bg-ai-purple/90' : 'border-gray-700'
-                      )}
-                    >
-                      <LayoutDashboard className="w-4 h-4 mr-2" />
-                      Dashboard
-                    </Button>
-                    
-                    <Button 
-                      variant={view === 'list' ? 'default' : 'outline'} 
-                      onClick={() => setView('list')} 
-                      className={cn(
-                        "whitespace-nowrap min-w-fit",
-                        view === 'list' ? 'bg-ai-purple hover:bg-ai-purple/90' : 'border-gray-700'
-                      )}
-                    >
-                      <Grid className="w-4 h-4 mr-2" />
-                      List View
-                    </Button>
-                  </div>
-
-                  <CollapsibleTrigger asChild>
-                    <Button size="sm" variant="ghost" className="px-2">
-                      {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                    </Button>
-                  </CollapsibleTrigger>
-                </div>
-
-                <CollapsibleContent className="space-y-2 mt-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={navigateToPlanner} 
-                    className="border-ai-pink bg-ai-pink/10 text-ai-pink hover:bg-ai-pink/20 w-full justify-start"
-                  >
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Planner
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setShowAIDialog(true)} 
-                    className="border-ai-cyan bg-ai-cyan/10 text-ai-cyan hover:bg-ai-cyan/20 w-full justify-start"
-                  >
-                    <MessageSquareDot className="w-4 h-4 mr-2" />
-                    AI Assistant
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setShowAddForm(!showAddForm)} 
-                    className="w-full bg-ai-blue/20 text-ai-blue hover:bg-ai-blue/30 hover:text-ai-blue border-ai-blue/50 justify-start"
-                  >
-                    <PlusCircle className="w-4 h-4 mr-2" />
-                    {showAddForm ? 'Cancel' : 'Add New Expense'}
-                  </Button>
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
-          ) : (
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-              <div className="flex gap-2">
-                <Button variant={view === 'dashboard' ? 'default' : 'outline'} onClick={() => {
-                setView('dashboard');
-                clearFilters();
-              }} className={view === 'dashboard' ? 'bg-ai-purple hover:bg-ai-purple/90' : 'border-gray-700'}>
-                  <LayoutDashboard className="w-4 h-4 mr-2" />
-                  Dashboard
-                </Button>
-                <Button variant={view === 'list' ? 'default' : 'outline'} onClick={() => setView('list')} className={view === 'list' ? 'bg-ai-purple hover:bg-ai-purple/90' : 'border-gray-700'}>
-                  <Grid className="w-4 h-4 mr-2" />
-                  List View
-                </Button>
-                <Button variant="outline" onClick={navigateToPlanner} className="border-ai-pink bg-ai-pink/10 text-ai-pink hover:bg-ai-pink/20">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Planner
-                </Button>
-                <Button variant="outline" onClick={() => setShowAIDialog(true)} className="border-ai-cyan bg-ai-cyan/10 text-ai-cyan hover:bg-ai-cyan/20">
-                  <MessageSquareDot className="w-4 h-4 mr-2" />
-                  AI Assistant
-                </Button>
-              </div>
-              
-              <div className="w-full sm:w-auto">
-                <Button variant="outline" onClick={() => setShowAddForm(!showAddForm)} className="w-full sm:w-auto bg-ai-blue/20 text-ai-blue hover:bg-ai-blue/30 hover:text-ai-blue border-ai-blue/50">
-                  <PlusCircle className="w-4 h-4 mr-2" />
-                  {showAddForm ? 'Cancel' : 'Add New Expense'}
-                </Button>
-              </div>
-            </div>
-          )}
-          
-          <div className="space-y-4">
-            {(selectedCategories.length > 0 || filterByRenewal) && (
-              <div className="flex items-center gap-2 text-sm">
-                <Button variant="outline" size="sm" onClick={clearFilters} className="h-8 px-2 gap-1 border-gray-700 hover:bg-gray-800">
-                  <ArrowLeft className="w-3 h-3" />
-                  Back to All
-                </Button>
-                
-                <span className="text-gray-400">Active Filters:</span>
-                
-                {selectedCategories.map(category => (
-                  <span 
-                    key={category} 
-                    className="bg-ai-purple/20 text-ai-purple rounded-full px-3 py-1 flex items-center gap-1 cursor-pointer" 
-                    onClick={() => handleCategoryToggle(category)}
-                  >
-                    {category === 'Favorites' ? 'Favorites' : category}
-                    <XCircle className="w-3 h-3" />
-                  </span>
-                ))}
-                
-                {filterByRenewal && (
-                  <span 
-                    className="bg-ai-pink/20 text-ai-pink rounded-full px-3 py-1 flex items-center gap-1 cursor-pointer" 
-                    onClick={() => setFilterByRenewal(false)}
-                  >
-                    Upcoming Renewals
-                    <XCircle className="w-3 h-3" />
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        </header>
-
-        <AnimatePresence>
-          {showAddForm && (
-            <motion.div 
-              initial={{
-                opacity: 0,
-                height: 0
-              }} 
-              animate={{
-                opacity: 1,
-                height: 'auto'
-              }} 
-              exit={{
-                opacity: 0,
-                height: 0
-              }} 
-              transition={{
-                duration: 0.3
-              }} 
-              className="mb-8 p-5 rounded-xl glass-card"
-            >
-              <h2 className="text-xl font-semibold mb-4 ai-gradient-text">Add New Expense</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="new-name" className="block text-sm font-medium text-gray-300 mb-1">
-                    Name <span className="text-red-400">*</span>
-                  </label>
-                  <Input 
-                    id="new-name" 
-                    value={newTool.name}
