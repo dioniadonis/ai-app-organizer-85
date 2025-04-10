@@ -13,7 +13,8 @@ import {
   ExternalLink,
   CheckCircle, 
   XCircle,
-  MessageSquareDot
+  MessageSquareDot,
+  Calendar
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,16 +51,53 @@ import { AITool } from '@/types/AITool';
 import { cn } from '@/lib/utils';
 import { getAIToolIcon } from '@/utils/iconUtils';
 import { toast } from '@/components/ui/use-toast';
+import HolographicTitle from '@/components/HolographicTitle';
+import { useNavigate } from 'react-router-dom';
+import Planner from '@/components/Planner';
 
 const initialAITools: AITool[] = [];
 
+interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  dueDate?: string;
+  completed: boolean;
+  notify: boolean;
+}
+
+interface Goal {
+  id: string;
+  title: string;
+  targetDate?: string;
+  progress: number;
+  completedSteps: number;
+  totalSteps: number;
+  type: 'daily' | 'short' | 'long';
+}
+
 const Index = () => {
+  const navigate = useNavigate();
   const [aiTools, setAiTools] = useState<AITool[]>(() => {
     if (typeof window !== 'undefined') {
       const savedTools = localStorage.getItem('aiTools');
       return savedTools ? JSON.parse(savedTools) : initialAITools;
     }
     return initialAITools;
+  });
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    if (typeof window !== 'undefined') {
+      const savedTasks = localStorage.getItem('tasks');
+      return savedTasks ? JSON.parse(savedTasks) : [];
+    }
+    return [];
+  });
+  const [goals, setGoals] = useState<Goal[]>(() => {
+    if (typeof window !== 'undefined') {
+      const savedGoals = localStorage.getItem('goals');
+      return savedGoals ? JSON.parse(savedGoals) : [];
+    }
+    return [];
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -81,7 +119,7 @@ const Index = () => {
   const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [toolToDelete, setToolToDelete] = useState<string | null>(null);
-  const [filterByCategory, setFilterByCategory] = useState<string | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [filterByRenewal, setFilterByRenewal] = useState<boolean>(false);
   const [showCategoryDeleteConfirm, setShowCategoryDeleteConfirm] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
@@ -109,14 +147,28 @@ const Index = () => {
   }, [aiTools]);
 
   useEffect(() => {
-    if (filterByCategory === 'Favorites' && !expandedCategories.includes('Favorites')) {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+  }, [tasks]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('goals', JSON.stringify(goals));
+    }
+  }, [goals]);
+
+  useEffect(() => {
+    if (selectedCategories.length > 0 && !expandedCategories.includes('Favorites')) {
       setExpandedCategories(prev => [...prev, 'Favorites']);
     }
     
-    if (filterByCategory && !expandedCategories.includes(filterByCategory)) {
-      setExpandedCategories(prev => [...prev, filterByCategory]);
-    }
-  }, [filterByCategory, expandedCategories]);
+    selectedCategories.forEach(category => {
+      if (!expandedCategories.includes(category)) {
+        setExpandedCategories(prev => [...prev, category]);
+      }
+    });
+  }, [selectedCategories, expandedCategories]);
 
   const handleAddTool = () => {
     if (
@@ -227,8 +279,8 @@ const Index = () => {
       
       setExpandedCategories(prev => prev.filter(cat => cat !== categoryToDelete));
       
-      if (filterByCategory === categoryToDelete) {
-        setFilterByCategory(null);
+      if (selectedCategories.includes(categoryToDelete)) {
+        setSelectedCategories(prev => prev.filter(cat => cat !== categoryToDelete));
       }
       
       setShowCategoryDeleteConfirm(false);
@@ -371,9 +423,135 @@ const Index = () => {
           });
         }
       }
+      // Add task or expense
+      else if (aiPrompt.toLowerCase().includes('add task') || 
+               aiPrompt.toLowerCase().includes('create task') || 
+               aiPrompt.toLowerCase().includes('schedule task')) {
+        // Simple NLP to extract task details
+        let title = aiPrompt.replace(/add task|create task|schedule task/i, '').trim();
+        let dueDate = '';
+        
+        // Extract date if mentioned (simplistic approach)
+        const datePatterns = [
+          /on\s+(\d{4}-\d{2}-\d{2})/i,
+          /on\s+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i,
+          /for\s+(\d{4}-\d{2}-\d{2})/i,
+          /for\s+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i,
+          /by\s+(\d{4}-\d{2}-\d{2})/i,
+          /by\s+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i
+        ];
+        
+        for (const pattern of datePatterns) {
+          const match = aiPrompt.match(pattern);
+          if (match && match[1]) {
+            dueDate = match[1];
+            // Remove the date part from the title
+            title = title.replace(pattern, '').trim();
+            break;
+          }
+        }
+        
+        // Handle special date words
+        if (aiPrompt.toLowerCase().includes('today')) {
+          const today = new Date();
+          dueDate = today.toISOString().split('T')[0];
+          title = title.replace(/today/i, '').trim();
+        } else if (aiPrompt.toLowerCase().includes('tomorrow')) {
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          dueDate = tomorrow.toISOString().split('T')[0];
+          title = title.replace(/tomorrow/i, '').trim();
+        }
+        
+        if (title) {
+          const newTask: Task = {
+            id: crypto.randomUUID(),
+            title: title,
+            dueDate: dueDate,
+            completed: false,
+            notify: true
+          };
+          
+          setTasks(prev => [...prev, newTask]);
+          
+          result = `Task created: "${title}"${dueDate ? ` due on ${dueDate}` : ''}`;
+        } else {
+          result = "I couldn't understand the task details. Please try again with a clearer description.";
+        }
+      }
+      // Add subscription/expense  
+      else if (aiPrompt.toLowerCase().includes('add subscription') || 
+               aiPrompt.toLowerCase().includes('add expense')) {
+        // Simple NLP to extract expense details
+        const costPattern = /\$(\d+(\.\d{1,2})?)/;
+        const costMatch = aiPrompt.match(costPattern);
+        
+        let name = aiPrompt.replace(/add subscription|add expense/i, '').trim();
+        let cost = 0;
+        let category = 'General AI';
+        let renewalDate = '';
+        
+        // Extract cost if mentioned
+        if (costMatch && costMatch[1]) {
+          cost = parseFloat(costMatch[1]);
+          name = name.replace(costPattern, '').trim();
+        }
+        
+        // Extract date if mentioned
+        const datePatterns = [
+          /on\s+(\d{4}-\d{2}-\d{2})/i,
+          /on\s+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i,
+          /due\s+(\d{4}-\d{2}-\d{2})/i,
+          /due\s+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i
+        ];
+        
+        for (const pattern of datePatterns) {
+          const match = aiPrompt.match(pattern);
+          if (match && match[1]) {
+            renewalDate = match[1];
+            // Remove the date part from the name
+            name = name.replace(pattern, '').trim();
+            break;
+          }
+        }
+        
+        // Extract category if mentioned
+        const categoryPattern = /in\s+(\w+(\s+\w+)*)\s+category/i;
+        const categoryMatch = aiPrompt.match(categoryPattern);
+        
+        if (categoryMatch && categoryMatch[1]) {
+          category = categoryMatch[1];
+          name = name.replace(categoryPattern, '').trim();
+        }
+        
+        if (name) {
+          const newSubscription: AITool = {
+            id: crypto.randomUUID(),
+            name: name,
+            description: `Added via AI Assistant: ${aiPrompt}`,
+            category: category,
+            subscriptionCost: cost,
+            renewalDate: renewalDate,
+            isFavorite: false,
+            isPaid: false
+          };
+          
+          setAiTools(prev => [...prev, newSubscription]);
+          
+          result = `Subscription added: "${name}" ($${cost}/month)${renewalDate ? ` due on ${renewalDate}` : ''} in category "${category}"`;
+        } else {
+          result = "I couldn't understand the subscription details. Please try again with a clearer description.";
+        }
+      }
       // Help or unknown
       else {
-        result = "I can help you analyze your subscriptions. Try asking about:\n\n- Total monthly costs\n- Category breakdown\n- Upcoming renewals\n- Payment status of your subscriptions";
+        result = "I can help you analyze your subscriptions and tasks. Try asking about:\n\n" +
+                "- Total monthly costs\n" +
+                "- Category breakdown\n" +
+                "- Upcoming renewals\n" +
+                "- Payment status of your subscriptions\n" +
+                "- Add task [task name] on [date]\n" +
+                "- Add subscription [name] $[amount] on [date] in [category] category";
       }
       
       setAiResponse(result);
@@ -457,25 +635,35 @@ const Index = () => {
     }
   };
 
-  const handleCategoryFilter = (category: string) => {
-    setFilterByCategory(category);
-    setFilterByRenewal(false);
-    setView('list');
+  const handleCategoryToggle = (category: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(category)
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
     
-    if (category && !expandedCategories.includes(category)) {
-      setExpandedCategories(prev => [...prev, category]);
+    // When selecting a category, make sure we're in list view
+    if (!selectedCategories.includes(category)) {
+      setView('list');
     }
+    
+    // When a category is selected, disable the renewal filter
+    setFilterByRenewal(false);
   };
 
   const handleRenewalFilter = () => {
     setFilterByRenewal(true);
-    setFilterByCategory(null);
+    setSelectedCategories([]);
     setView('list');
   };
 
   const clearFilters = () => {
-    setFilterByCategory(null);
+    setSelectedCategories([]);
     setFilterByRenewal(false);
+  };
+
+  const navigateToPlanner = () => {
+    navigate('/planner');
   };
 
   let filteredTools = aiTools.filter((tool) =>
@@ -483,10 +671,13 @@ const Index = () => {
     tool.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (filterByCategory === 'Favorites') {
+  // Multi-category filter
+  if (selectedCategories.includes('Favorites')) {
     filteredTools = filteredTools.filter(tool => tool.isFavorite);
-  } else if (filterByCategory) {
-    filteredTools = filteredTools.filter(tool => tool.category === filterByCategory);
+  }
+  
+  if (selectedCategories.length > 0 && !selectedCategories.includes('Favorites')) {
+    filteredTools = filteredTools.filter(tool => selectedCategories.includes(tool.category));
   }
 
   if (filterByRenewal) {
@@ -521,9 +712,7 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-100">
       <div className="max-w-6xl mx-auto p-4 sm:p-6">
         <header className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 text-center ai-gradient-text">
-            Subscription Manager
-          </h1>
+          <HolographicTitle title="Subscription Manager" />
           <p className="text-center text-gray-400 mb-6">
             Organize, track, and manage your subscriptions in one place
           </p>
@@ -548,6 +737,14 @@ const Index = () => {
               >
                 <Grid className="w-4 h-4 mr-2" />
                 List View
+              </Button>
+              <Button
+                variant="outline"
+                onClick={navigateToPlanner}
+                className="border-ai-pink bg-ai-pink/10 text-ai-pink hover:bg-ai-pink/20"
+              >
+                <Calendar className="w-4 h-4 mr-2" />
+                Planner
               </Button>
               <Button
                 variant="outline"
@@ -583,7 +780,7 @@ const Index = () => {
               />
             </div>
             
-            {(filterByCategory || filterByRenewal) && (
+            {(selectedCategories.length > 0 || filterByRenewal) && (
               <div className="flex items-center gap-2 text-sm">
                 <Button 
                   variant="outline" 
@@ -595,17 +792,26 @@ const Index = () => {
                   Back to All
                 </Button>
                 
-                <span className="text-gray-400">Active Filter:</span>
+                <span className="text-gray-400">Active Filters:</span>
                 
-                {filterByCategory && (
-                  <span className="bg-ai-purple/20 text-ai-purple rounded-full px-3 py-1">
-                    {filterByCategory === 'Favorites' ? 'Favorites' : `Category: ${filterByCategory}`}
+                {selectedCategories.map(category => (
+                  <span 
+                    key={category}
+                    className="bg-ai-purple/20 text-ai-purple rounded-full px-3 py-1 flex items-center gap-1 cursor-pointer"
+                    onClick={() => handleCategoryToggle(category)}
+                  >
+                    {category === 'Favorites' ? 'Favorites' : category}
+                    <XCircle className="w-3 h-3" />
                   </span>
-                )}
+                ))}
                 
                 {filterByRenewal && (
-                  <span className="bg-ai-pink/20 text-ai-pink rounded-full px-3 py-1">
+                  <span 
+                    className="bg-ai-pink/20 text-ai-pink rounded-full px-3 py-1 flex items-center gap-1 cursor-pointer"
+                    onClick={() => setFilterByRenewal(false)}
+                  >
                     Upcoming Renewals
+                    <XCircle className="w-3 h-3" />
                   </span>
                 )}
               </div>
@@ -769,26 +975,18 @@ const Index = () => {
 
         {view === 'dashboard' && <Dashboard 
           aiTools={aiTools} 
-          onCategoryClick={handleCategoryFilter}
+          onCategoryClick={handleCategoryToggle}
           onRenewalClick={handleRenewalFilter}
+          onViewPlanner={navigateToPlanner}
+          tasks={tasks}
+          goals={goals}
+          selectedCategories={selectedCategories}
+          onCategoryToggle={handleCategoryToggle}
         />}
 
         {view === 'list' && (
           <div className="space-y-6">
-            {(filterByCategory || filterByRenewal) && (
-              <div className="mb-2">
-                <Button 
-                  variant="outline" 
-                  onClick={clearFilters}
-                  className="border-gray-700 hover:bg-gray-800"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to All Subscriptions
-                </Button>
-              </div>
-            )}
-            
-            {(!filterByCategory || filterByCategory === 'Favorites') && (
+            {(!selectedCategories.includes('Favorites')) && (
               <div className="mb-6">
                 <div
                   className="tool-category-header"
@@ -866,7 +1064,7 @@ const Index = () => {
             )}
 
             {sortedCategories
-              .filter(category => !filterByCategory || filterByCategory === category)
+              .filter(category => !selectedCategories.length || selectedCategories.includes(category))
               .map((category) => (
                 <div key={category} className="mb-6">
                   <div
@@ -971,13 +1169,13 @@ const Index = () => {
               Subscription Assistant
             </DialogTitle>
             <DialogDescription className="text-gray-400">
-              Ask questions about your subscriptions, upcoming renewals, or payment status.
+              Ask questions about your subscriptions, add tasks or expenses, or get insights.
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-gray-300">What would you like to know?</label>
+              <label className="text-sm font-medium text-gray-300">What would you like to do?</label>
               <div className="flex gap-2">
                 <Input
                   value={aiPrompt}
@@ -1064,11 +1262,22 @@ const Index = () => {
                   size="sm" 
                   className="bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-700" 
                   onClick={() => {
-                    setAiPrompt("Breakdown by category");
+                    setAiPrompt("Add task Send invoice to client tomorrow");
                     processAIPrompt();
                   }}
                 >
-                  Category breakdown
+                  Add task
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-700" 
+                  onClick={() => {
+                    setAiPrompt("Add subscription Netflix $15.99 on 2023-05-21");
+                    processAIPrompt();
+                  }}
+                >
+                  Add subscription
                 </Button>
               </div>
             </div>

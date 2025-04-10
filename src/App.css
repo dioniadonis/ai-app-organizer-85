@@ -65,3 +65,73 @@
   text-shadow: 0 0 10px rgba(155, 135, 245, 0.5);
 }
 
+/* Dashboard styles */
+.dashboard-stat-card {
+  @apply flex flex-col items-center justify-center p-4 rounded-xl gap-1 transition-all duration-300 hover:bg-white/10;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ai-gradient-text {
+  background: linear-gradient(90deg, #9b87f5, #7e69ab, #6e59a5, #d6bcfa);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Colors */
+.text-ai-blue {
+  color: #33c3f0;
+}
+
+.text-ai-purple {
+  color: #9b87f5;
+}
+
+.text-ai-pink {
+  color: #f87eb1;
+}
+
+.text-ai-emerald {
+  color: #34d399;
+}
+
+.text-ai-amber {
+  color: #fbbf24;
+}
+
+.text-ai-cyan {
+  color: #22d3ee;
+}
+
+/* Tool category styling */
+.tool-category-header {
+  @apply flex items-center gap-2 p-3 rounded-lg transition-colors cursor-pointer;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tool-category-header:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Single animation variant for smooth fade in */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}

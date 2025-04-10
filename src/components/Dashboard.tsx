@@ -3,15 +3,48 @@ import React from 'react';
 import { AITool } from '@/types/AITool';
 import { Banknote, Calendar, Package, Star, ExternalLink, CheckCircle, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { formatDistanceToNow } from 'date-fns';
+import { format, isToday, isTomorrow } from 'date-fns';
+
+interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  dueDate?: string;
+  completed: boolean;
+  notify: boolean;
+}
+
+interface Goal {
+  id: string;
+  title: string;
+  targetDate?: string;
+  progress: number;
+  completedSteps: number;
+  totalSteps: number;
+  type: 'daily' | 'short' | 'long';
+}
 
 interface DashboardProps {
   aiTools: AITool[];
   onCategoryClick: (category: string) => void;
   onRenewalClick: () => void;
+  onViewPlanner: () => void;
+  tasks?: Task[];
+  goals?: Goal[];
+  selectedCategories: string[];
+  onCategoryToggle: (category: string) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ aiTools, onCategoryClick, onRenewalClick }) => {
+const Dashboard: React.FC<DashboardProps> = ({ 
+  aiTools, 
+  onCategoryClick, 
+  onRenewalClick, 
+  onViewPlanner,
+  tasks = [],
+  goals = [],
+  selectedCategories,
+  onCategoryToggle
+}) => {
   // Calculate statistics
   const totalTools = aiTools.length;
   const favoriteTools = aiTools.filter(tool => tool.isFavorite).length;
@@ -41,8 +74,12 @@ const Dashboard: React.FC<DashboardProps> = ({ aiTools, onCategoryClick, onRenew
     .map(([category, count], index) => (
       <div 
         key={category}
-        className="p-2 px-3 rounded-full glass-card text-sm flex items-center gap-2 cursor-pointer hover:bg-white/10 transition-colors"
-        onClick={() => onCategoryClick(category)}
+        className={`p-2 px-3 rounded-full text-sm flex items-center gap-2 cursor-pointer transition-colors ${
+          selectedCategories.includes(category) 
+            ? 'bg-ai-purple/30 text-ai-purple border border-ai-purple/50' 
+            : 'glass-card hover:bg-white/10'
+        }`}
+        onClick={() => onCategoryToggle(category)}
       >
         <span>{category}</span>
         <span className="bg-white/20 rounded-full w-5 h-5 flex items-center justify-center text-xs">
@@ -58,18 +95,8 @@ const Dashboard: React.FC<DashboardProps> = ({ aiTools, onCategoryClick, onRenew
       opacity: 1,
       transition: {
         duration: 0.5,
-        ease: "easeOut",
-        when: "beforeChildren",
-        staggerChildren: 0.1
+        ease: "easeOut"
       }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { duration: 0.5 }
     }
   };
 
@@ -88,7 +115,7 @@ const Dashboard: React.FC<DashboardProps> = ({ aiTools, onCategoryClick, onRenew
       >
         {/* Total Tools */}
         <motion.div 
-          variants={itemVariants} 
+          variants={containerVariants} 
           className="dashboard-stat-card cursor-pointer"
           onClick={() => onCategoryClick('')}
         >
@@ -99,7 +126,7 @@ const Dashboard: React.FC<DashboardProps> = ({ aiTools, onCategoryClick, onRenew
         
         {/* Favorite Tools */}
         <motion.div 
-          variants={itemVariants} 
+          variants={containerVariants} 
           className="dashboard-stat-card cursor-pointer"
           onClick={() => onCategoryClick('Favorites')}
         >
@@ -110,7 +137,7 @@ const Dashboard: React.FC<DashboardProps> = ({ aiTools, onCategoryClick, onRenew
         
         {/* Monthly Cost */}
         <motion.div 
-          variants={itemVariants} 
+          variants={containerVariants} 
           className="dashboard-stat-card cursor-pointer"
           onClick={() => onCategoryClick('')}
         >
@@ -121,7 +148,7 @@ const Dashboard: React.FC<DashboardProps> = ({ aiTools, onCategoryClick, onRenew
         
         {/* Upcoming Renewals */}
         <motion.div 
-          variants={itemVariants} 
+          variants={containerVariants} 
           className="dashboard-stat-card cursor-pointer"
           onClick={onRenewalClick}
         >
@@ -132,17 +159,41 @@ const Dashboard: React.FC<DashboardProps> = ({ aiTools, onCategoryClick, onRenew
       </motion.div>
       
       {/* Categories */}
-      <motion.div variants={itemVariants} className="glass-card p-4 rounded-xl mb-8">
-        <h3 className="text-lg font-semibold mb-3">Categories</h3>
+      <motion.div variants={containerVariants} className="glass-card p-4 rounded-xl mb-8">
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="text-lg font-semibold">Categories</h3>
+          {selectedCategories.length > 0 && (
+            <button 
+              onClick={() => selectedCategories.forEach(cat => onCategoryToggle(cat))}
+              className="text-xs text-gray-400 hover:text-white"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
           {categoryItems}
         </div>
       </motion.div>
+
+      {/* Planner section - show if tasks or goals exist */}
+      {(tasks.length > 0 || goals.length > 0) && (
+        <motion.div
+          variants={containerVariants}
+          className="mb-8"
+        >
+          <DashboardPlanner 
+            tasks={tasks} 
+            goals={goals} 
+            onViewPlanner={onViewPlanner} 
+          />
+        </motion.div>
+      )}
       
       {/* Upcoming Renewals List */}
       {upcomingRenewals.length > 0 && (
         <motion.div 
-          variants={itemVariants} 
+          variants={containerVariants} 
           className="glass-card p-4 rounded-xl"
         >
           <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
@@ -152,17 +203,21 @@ const Dashboard: React.FC<DashboardProps> = ({ aiTools, onCategoryClick, onRenew
           <div className="space-y-2">
             {upcomingRenewals.map(tool => {
               // Calculate days remaining
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
+              const now = new Date();
+              now.setHours(0, 0, 0, 0);
               const renewalDate = new Date(tool.renewalDate);
               renewalDate.setHours(0, 0, 0, 0);
               
-              const daysRemaining = Math.round((renewalDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-              const daysText = daysRemaining === 0 
-                ? "Due today!" 
-                : daysRemaining === 1 
-                  ? "Due tomorrow" 
-                  : `${daysRemaining} days left`;
+              const daysRemaining = Math.round((renewalDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+              
+              let daysText = "";
+              if (isToday(renewalDate)) {
+                daysText = "Due today!";
+              } else if (isTomorrow(renewalDate)) {
+                daysText = "Due tomorrow";
+              } else {
+                daysText = `${daysRemaining} days left`;
+              }
               
               return (
                 <div 
@@ -198,3 +253,6 @@ const Dashboard: React.FC<DashboardProps> = ({ aiTools, onCategoryClick, onRenew
 };
 
 export default Dashboard;
+
+// Need to import this at the top
+import DashboardPlanner from './DashboardPlanner';
