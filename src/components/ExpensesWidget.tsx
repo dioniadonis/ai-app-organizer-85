@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 interface ExpensesWidgetProps {
   expenses?: Array<{
@@ -56,7 +56,12 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
   const navigate = useNavigate();
   const [localExpenses, setLocalExpenses] = useState(expenses);
   const [showQuickAddDialog, setShowQuickAddDialog] = useState(false);
-  const [newExpense, setNewExpense] = useState({
+  const [newExpense, setNewExpense] = useState<{
+    category: string;
+    amount: number;
+    recurring: boolean;
+    isPaid?: boolean;
+  }>({
     category: '',
     amount: 0,
     recurring: false
@@ -204,7 +209,8 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     setNewExpense({
       category: '',
       amount: 0,
-      recurring: false
+      recurring: false,
+      isPaid: true
     });
     setShowQuickAddDialog(false);
     
@@ -524,10 +530,10 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
             <div className="flex items-center space-x-2">
               <Switch
                 id="isPaid"
-                checked={!newExpense.isPaid}
-                onCheckedChange={(checked) => setNewExpense({...newExpense, isPaid: !checked})}
+                checked={newExpense.isPaid !== false}
+                onCheckedChange={(checked) => setNewExpense({...newExpense, isPaid: checked})}
               />
-              <Label htmlFor="isPaid">Mark as unpaid</Label>
+              <Label htmlFor="isPaid">Mark as paid</Label>
             </div>
           </div>
           <DialogFooter>
