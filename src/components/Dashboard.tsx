@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { AITool } from '@/types/AITool';
-import { Banknote, Calendar, Package, Star, ExternalLink, CheckCircle, XCircle, Grid3X3, Layout, LayoutDashboard, Plus, CalendarClock } from 'lucide-react';
+import { Banknote, Calendar, Package, Star, CheckCircle, XCircle, Grid3X3, Layout, LayoutDashboard, Plus, CalendarClock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format, isToday, isTomorrow } from 'date-fns';
 import PlannerWidget from './PlannerWidget';
@@ -286,7 +287,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         )}
       </div>
       
-      {activeWidgets.categories && (
+      {activeWidgets.categories && categoryItems.length > 0 && (
         <motion.div variants={containerVariants} className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl mb-8">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-lg font-medium">Categories</h3>

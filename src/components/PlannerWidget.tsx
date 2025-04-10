@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CalendarCheck, CheckCircle, Circle, Clock, ArrowRight, Edit, Pencil } from 'lucide-react';
+import { CalendarCheck, CheckCircle, Circle, Clock, ArrowRight, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
@@ -204,9 +204,9 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
         <Button 
           variant="ghost" 
           className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
-          onClick={() => navigate('/expenses')}
+          onClick={() => navigate('/goals')}
         >
-          View Expenses
+          View Goals
         </Button>
         
         <Button 

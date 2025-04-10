@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Planner from '@/components/Planner';
@@ -11,12 +12,9 @@ import {
   CalendarClock, 
   Bell, 
   Settings,
-  Repeat,
   UserCircle,
-  BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -80,10 +78,7 @@ const PlannerPage: React.FC = () => {
     if (value === 'dashboard') {
       navigate('/');
     } else if (value === 'expenses') {
-      toast({
-        title: "Expenses",
-        description: "Expenses feature is being implemented",
-      });
+      navigate('/expenses');
     } else {
       setActiveView(value);
     }
@@ -356,21 +351,86 @@ const PlannerPage: React.FC = () => {
                   >
                     Goals
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="recurring" 
-                    className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md"
-                  >
-                    <Repeat className="w-4 h-4 mr-1" />
-                    Recurring
-                  </TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
             
             <Planner 
               activeTab={activeTab} 
-              plannerData={plannerData} 
-              setPlannerData={setPlannerData} 
+              onAddTask={(taskData) => {
+                const newTasks = [...plannerData.tasks, {
+                  id: Date.now(),
+                  ...taskData,
+                  completed: false
+                }];
+                setPlannerData({
+                  ...plannerData,
+                  tasks: newTasks
+                });
+                return true;
+              }}
+              onEditTask={(taskId, taskData) => {
+                const taskIndex = plannerData.tasks.findIndex(t => t.id === taskId);
+                if (taskIndex !== -1) {
+                  const updatedTasks = [...plannerData.tasks];
+                  updatedTasks[taskIndex] = {
+                    ...updatedTasks[taskIndex],
+                    ...taskData
+                  };
+                  setPlannerData({
+                    ...plannerData,
+                    tasks: updatedTasks
+                  });
+                  return true;
+                }
+                return false;
+              }}
+              onDeleteTask={(taskId) => {
+                setPlannerData({
+                  ...plannerData,
+                  tasks: plannerData.tasks.filter(t => t.id !== taskId)
+                });
+                return true;
+              }}
+              onAddGoal={(goalData) => {
+                const newGoals = [...plannerData.goals, {
+                  id: Date.now(),
+                  ...goalData,
+                  type: goalData.type || 'short', // Add default type for goals
+                  progress: 0,
+                  completedSteps: 0
+                }];
+                setPlannerData({
+                  ...plannerData,
+                  goals: newGoals
+                });
+                return true;
+              }}
+              onEditGoal={(goalId, goalData) => {
+                const goalIndex = plannerData.goals.findIndex(g => g.id === goalId);
+                if (goalIndex !== -1) {
+                  const updatedGoals = [...plannerData.goals];
+                  updatedGoals[goalIndex] = {
+                    ...updatedGoals[goalIndex],
+                    ...goalData
+                  };
+                  setPlannerData({
+                    ...plannerData,
+                    goals: updatedGoals
+                  });
+                  return true;
+                }
+                return false;
+              }}
+              onDeleteGoal={(goalId) => {
+                setPlannerData({
+                  ...plannerData,
+                  goals: plannerData.goals.filter(g => g.id !== goalId)
+                });
+                return true;
+              }}
+              tasks={plannerData.tasks}
+              goals={plannerData.goals}
             />
           </motion.div>
           
