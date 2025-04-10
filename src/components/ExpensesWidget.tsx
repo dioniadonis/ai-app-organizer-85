@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -61,6 +62,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     recurring: false
   });
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [totalMonthlyAmount, setTotalMonthlyAmount] = useState<number>(0);
 
   useEffect(() => {
     const fetchExpenses = () => {
@@ -69,6 +71,31 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
         try {
           const parsedExpenses = JSON.parse(savedExpenses);
           setLocalExpenses(parsedExpenses);
+          
+          // Calculate total monthly amount (recurring + one-time expenses)
+          const currentMonth = new Date().getMonth();
+          const currentYear = new Date().getFullYear();
+          
+          const monthlyTotal = parsedExpenses.reduce((total: number, expense: any) => {
+            // Check if expense has a date and it's from the current month
+            if (expense.date) {
+              const expenseDate = new Date(expense.date);
+              const isCurrentMonth = 
+                expenseDate.getMonth() === currentMonth && 
+                expenseDate.getFullYear() === currentYear;
+              
+              // Include if it's recurring or from the current month
+              if (expense.recurring || isCurrentMonth) {
+                return total + Number(expense.amount);
+              }
+            } else if (expense.recurring) {
+              // Always include recurring expenses without dates
+              return total + Number(expense.amount);
+            }
+            return total;
+          }, 0);
+          
+          setTotalMonthlyAmount(monthlyTotal);
         } catch (e) {
           console.error('Failed to parse expenses from localStorage', e);
         }
@@ -301,8 +328,13 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
         
         {displayData.length > 0 && (
           <div className="mt-4 space-y-2">
-            <div className="text-xs text-gray-400">
-              Total: ${totalExpenses}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="text-gray-400">
+                Total Expenses: ${totalExpenses.toFixed(2)}
+              </div>
+              <div className="text-gray-400 text-right">
+                Monthly Cost: ${totalMonthlyAmount.toFixed(2)}
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               {displayData.map((item, index) => (
