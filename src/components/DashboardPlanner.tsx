@@ -31,6 +31,8 @@ interface DashboardPlannerProps {
 }
 
 const DashboardPlanner: React.FC<DashboardPlannerProps> = ({ tasks, goals, onViewPlanner }) => {
+  const navigate = useNavigate();
+
   // Get upcoming tasks - those due in the next 7 days
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -73,7 +75,7 @@ const DashboardPlanner: React.FC<DashboardPlannerProps> = ({ tasks, goals, onVie
       <div className="flex justify-between items-center mb-3">
         <h3 className="text-lg font-semibold flex items-center gap-2">
           <Calendar className="w-5 h-5 text-ai-pink" />
-          Planner Overview
+          Loop Space AI Organizer
         </h3>
         <Button 
           variant="outline" 

@@ -190,6 +190,7 @@ const PlannerPage: React.FC = () => {
     });
   };
 
+  // Pass all required props explicitly to the Planner component
   return (
     <AnimatePresence mode="wait">
       <motion.div 
@@ -355,83 +356,171 @@ const PlannerPage: React.FC = () => {
               </Tabs>
             </div>
             
-            <Planner 
-              activeTab={activeTab} 
-              onAddTask={(taskData) => {
-                const newTasks = [...plannerData.tasks, {
-                  id: Date.now(),
-                  ...taskData,
-                  completed: false
-                }];
-                setPlannerData({
-                  ...plannerData,
-                  tasks: newTasks
-                });
-                return true;
-              }}
-              onEditTask={(taskId, taskData) => {
-                const taskIndex = plannerData.tasks.findIndex(t => t.id === taskId);
-                if (taskIndex !== -1) {
-                  const updatedTasks = [...plannerData.tasks];
-                  updatedTasks[taskIndex] = {
-                    ...updatedTasks[taskIndex],
-                    ...taskData
-                  };
-                  setPlannerData({
-                    ...plannerData,
-                    tasks: updatedTasks
-                  });
-                  return true;
-                }
-                return false;
-              }}
-              onDeleteTask={(taskId) => {
-                setPlannerData({
-                  ...plannerData,
-                  tasks: plannerData.tasks.filter(t => t.id !== taskId)
-                });
-                return true;
-              }}
-              onAddGoal={(goalData) => {
-                const newGoals = [...plannerData.goals, {
-                  id: Date.now(),
-                  ...goalData,
-                  type: goalData.type || 'short', // Add default type for goals
-                  progress: 0,
-                  completedSteps: 0
-                }];
-                setPlannerData({
-                  ...plannerData,
-                  goals: newGoals
-                });
-                return true;
-              }}
-              onEditGoal={(goalId, goalData) => {
-                const goalIndex = plannerData.goals.findIndex(g => g.id === goalId);
-                if (goalIndex !== -1) {
-                  const updatedGoals = [...plannerData.goals];
-                  updatedGoals[goalIndex] = {
-                    ...updatedGoals[goalIndex],
-                    ...goalData
-                  };
-                  setPlannerData({
-                    ...plannerData,
-                    goals: updatedGoals
-                  });
-                  return true;
-                }
-                return false;
-              }}
-              onDeleteGoal={(goalId) => {
-                setPlannerData({
-                  ...plannerData,
-                  goals: plannerData.goals.filter(g => g.id !== goalId)
-                });
-                return true;
-              }}
-              tasks={plannerData.tasks}
-              goals={plannerData.goals}
-            />
+            {/* Fix: Provide all required props to the Planner component */}
+            <div>
+              {activeTab === 'tasks' && 
+                <div>
+                  <Planner 
+                    activeTab={activeTab}
+                    tasks={plannerData.tasks}
+                    goals={plannerData.goals}
+                    onAddTask={(taskData) => {
+                      const newTasks = [...plannerData.tasks, {
+                        id: Date.now(),
+                        ...taskData,
+                        completed: false
+                      }];
+                      setPlannerData({
+                        ...plannerData,
+                        tasks: newTasks
+                      });
+                      return true;
+                    }}
+                    onEditTask={(taskId, taskData) => {
+                      const taskIndex = plannerData.tasks.findIndex(t => t.id === taskId);
+                      if (taskIndex !== -1) {
+                        const updatedTasks = [...plannerData.tasks];
+                        updatedTasks[taskIndex] = {
+                          ...updatedTasks[taskIndex],
+                          ...taskData
+                        };
+                        setPlannerData({
+                          ...plannerData,
+                          tasks: updatedTasks
+                        });
+                        return true;
+                      }
+                      return false;
+                    }}
+                    onDeleteTask={(taskId) => {
+                      setPlannerData({
+                        ...plannerData,
+                        tasks: plannerData.tasks.filter(t => t.id !== taskId)
+                      });
+                      return true;
+                    }}
+                    onAddGoal={(goalData) => {
+                      const newGoals = [...plannerData.goals, {
+                        id: Date.now(),
+                        ...goalData,
+                        type: goalData.type || 'short', // Add default type for goals
+                        progress: 0,
+                        completedSteps: 0
+                      }];
+                      setPlannerData({
+                        ...plannerData,
+                        goals: newGoals
+                      });
+                      return true;
+                    }}
+                    onEditGoal={(goalId, goalData) => {
+                      const goalIndex = plannerData.goals.findIndex(g => g.id === goalId);
+                      if (goalIndex !== -1) {
+                        const updatedGoals = [...plannerData.goals];
+                        updatedGoals[goalIndex] = {
+                          ...updatedGoals[goalIndex],
+                          ...goalData
+                        };
+                        setPlannerData({
+                          ...plannerData,
+                          goals: updatedGoals
+                        });
+                        return true;
+                      }
+                      return false;
+                    }}
+                    onDeleteGoal={(goalId) => {
+                      setPlannerData({
+                        ...plannerData,
+                        goals: plannerData.goals.filter(g => g.id !== goalId)
+                      });
+                      return true;
+                    }}
+                  />
+                </div>
+              }
+              {activeTab === 'goals' && 
+                <div>
+                  <Planner 
+                    activeTab={activeTab}
+                    tasks={plannerData.tasks}
+                    goals={plannerData.goals}
+                    onAddTask={(taskData) => {
+                      const newTasks = [...plannerData.tasks, {
+                        id: Date.now(),
+                        ...taskData,
+                        completed: false
+                      }];
+                      setPlannerData({
+                        ...plannerData,
+                        tasks: newTasks
+                      });
+                      return true;
+                    }}
+                    onEditTask={(taskId, taskData) => {
+                      const taskIndex = plannerData.tasks.findIndex(t => t.id === taskId);
+                      if (taskIndex !== -1) {
+                        const updatedTasks = [...plannerData.tasks];
+                        updatedTasks[taskIndex] = {
+                          ...updatedTasks[taskIndex],
+                          ...taskData
+                        };
+                        setPlannerData({
+                          ...plannerData,
+                          tasks: updatedTasks
+                        });
+                        return true;
+                      }
+                      return false;
+                    }}
+                    onDeleteTask={(taskId) => {
+                      setPlannerData({
+                        ...plannerData,
+                        tasks: plannerData.tasks.filter(t => t.id !== taskId)
+                      });
+                      return true;
+                    }}
+                    onAddGoal={(goalData) => {
+                      const newGoals = [...plannerData.goals, {
+                        id: Date.now(),
+                        ...goalData,
+                        type: goalData.type || 'short', // Add default type for goals
+                        progress: 0,
+                        completedSteps: 0
+                      }];
+                      setPlannerData({
+                        ...plannerData,
+                        goals: newGoals
+                      });
+                      return true;
+                    }}
+                    onEditGoal={(goalId, goalData) => {
+                      const goalIndex = plannerData.goals.findIndex(g => g.id === goalId);
+                      if (goalIndex !== -1) {
+                        const updatedGoals = [...plannerData.goals];
+                        updatedGoals[goalIndex] = {
+                          ...updatedGoals[goalIndex],
+                          ...goalData
+                        };
+                        setPlannerData({
+                          ...plannerData,
+                          goals: updatedGoals
+                        });
+                        return true;
+                      }
+                      return false;
+                    }}
+                    onDeleteGoal={(goalId) => {
+                      setPlannerData({
+                        ...plannerData,
+                        goals: plannerData.goals.filter(g => g.id !== goalId)
+                      });
+                      return true;
+                    }}
+                  />
+                </div>
+              }
+            </div>
           </motion.div>
           
           <footer className="py-6 text-center text-gray-500 mt-12">
