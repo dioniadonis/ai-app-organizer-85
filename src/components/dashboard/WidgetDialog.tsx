@@ -13,7 +13,7 @@ interface WidgetDialogProps {
     renewals: boolean;
     categories: boolean;
   };
-  toggleWidget: (widgetName: keyof typeof activeWidgets) => void;
+  toggleWidget: (widgetName: 'planner' | 'expenses' | 'renewals' | 'categories') => void;
 }
 
 const WidgetDialog: React.FC<WidgetDialogProps> = ({
