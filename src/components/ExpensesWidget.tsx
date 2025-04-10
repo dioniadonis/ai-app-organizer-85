@@ -28,6 +28,7 @@ interface ExpensesWidgetProps {
     date?: string;
     recurring?: boolean;
     tags?: string[];
+    isPaid?: boolean;
   }>;
   onAddExpense?: () => void;
   onViewAllExpenses?: () => void;
@@ -64,36 +65,31 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [totalMonthlyAmount, setTotalMonthlyAmount] = useState<number>(0);
 
-  // Improved function to calculate monthly total
+  // Simple direct calculation function for monthly total
   const calculateMonthlyTotal = (expenseItems: any[]) => {
     if (!expenseItems || expenseItems.length === 0) return 0;
     
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-    
     return expenseItems.reduce((total: number, expense: any) => {
-      // Handle null/undefined expense
+      // Skip if expense is null or undefined
       if (!expense) return total;
       
-      const amount = Number(expense.amount || 0);
+      // Convert amount to number and default to 0 if NaN
+      const amount = Number(expense.amount) || 0;
       
-      // Always include recurring expenses
+      // Include all recurring expenses regardless of paid status
       if (expense.recurring) {
         return total + amount;
       }
       
       // For non-recurring expenses, check if they're from current month
       if (expense.date) {
-        try {
-          const expenseDate = new Date(expense.date);
-          if (
-            expenseDate.getMonth() === currentMonth && 
-            expenseDate.getFullYear() === currentYear
-          ) {
-            return total + amount;
-          }
-        } catch (e) {
-          console.error('Error parsing date:', expense.date);
+        const expenseDate = new Date(expense.date);
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+        
+        if (expenseDate.getMonth() === currentMonth && 
+            expenseDate.getFullYear() === currentYear) {
+          return total + amount;
         }
       }
       
@@ -101,7 +97,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     }, 0);
   };
 
-  // Fetch expenses and recalculate totals
+  // Update expenses data from localStorage
   const fetchAndUpdateExpenses = () => {
     try {
       const savedExpenses = localStorage.getItem('expenses');
@@ -109,12 +105,13 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
         const parsedExpenses = JSON.parse(savedExpenses);
         setLocalExpenses(parsedExpenses);
         
-        // Calculate monthly total
+        // Calculate and update monthly total right away
         const monthlyTotal = calculateMonthlyTotal(parsedExpenses);
         setTotalMonthlyAmount(monthlyTotal);
         
-        console.log('Updated monthly total:', monthlyTotal);
+        console.log('Updated monthly total:', monthlyTotal, 'from expenses:', parsedExpenses);
       } else {
+        console.log('No expenses found in localStorage');
         setTotalMonthlyAmount(0);
       }
     } catch (e) {
@@ -127,17 +124,18 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
   useEffect(() => {
     fetchAndUpdateExpenses();
     
-    // Listen for storage changes
+    // Listen for storage changes from other components
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'expenses') {
+        console.log('Storage event detected - expenses updated');
         fetchAndUpdateExpenses();
       }
     };
     
     window.addEventListener('storage', handleStorageChange);
     
-    // Poll every 2 seconds to catch any updates
-    const intervalId = setInterval(fetchAndUpdateExpenses, 2000);
+    // Poll every second to catch any updates
+    const intervalId = setInterval(fetchAndUpdateExpenses, 1000);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
@@ -182,12 +180,11 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
     
     // Dispatch storage event for other components
-    const storageEvent = new StorageEvent('storage', {
+    window.dispatchEvent(new StorageEvent('storage', {
       key: 'expenses',
       newValue: JSON.stringify(updatedExpenses),
       url: window.location.href
-    });
-    window.dispatchEvent(storageEvent);
+    }));
 
     toast({
       title: "Expense added",
@@ -294,19 +291,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
       
       <CardContent>
         {displayData.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-center">
-            <div className="text-gray-400 mb-6">
-              <p className="mb-2">No expense data yet</p>
-              <p className="text-sm text-gray-500">Track your recurring expenses and subscriptions</p>
-            </div>
-            <Button 
-              onClick={handleAddExpense}
-              className="bg-purple-600/70 hover:bg-purple-700 backdrop-blur-sm border border-white/10 shadow-lg transition-all hover:scale-[1.02]"
-            >
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add New Expense
-            </Button>
-          </div>
+          renderEmptyState()
         ) : (
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
@@ -398,6 +383,9 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
                   <span>{item.category}: ${Number(item.amount).toFixed(2)}</span>
                   {item.recurring && (
                     <span className="ml-1 px-1 bg-blue-500/20 text-blue-300 rounded-full text-xs">recurring</span>
+                  )}
+                  {item.isPaid === false && (
+                    <span className="ml-1 px-1 bg-red-500/20 text-red-300 rounded-full text-xs">unpaid</span>
                   )}
                 </div>
               ))}
