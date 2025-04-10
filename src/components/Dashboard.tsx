@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import SearchBox from './SearchBox';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { DashboardProps } from '@/types/ComponentProps';
 
 interface Task {
   id: string;
@@ -33,26 +34,21 @@ interface Goal {
   type: 'daily' | 'short' | 'long';
 }
 
-interface DashboardProps {
-  aiTools: AITool[];
-  onCategoryClick: (category: string) => void;
-  onRenewalClick: () => void;
-  onViewPlanner: () => void;
-  tasks?: Task[];
-  goals?: Goal[];
-  selectedCategories: string[];
-  onCategoryToggle: (category: string) => void;
-}
-
 const Dashboard: React.FC<DashboardProps> = ({ 
   aiTools, 
-  onCategoryClick, 
-  onRenewalClick,
-  onViewPlanner,
   tasks = [],
   goals = [],
   selectedCategories,
-  onCategoryToggle
+  filterByRenewal,
+  handleRenewalFilter,
+  handleCategoryToggle,
+  customCategories,
+  navigateToPlanner,
+  setShowAddForm,
+  expandedCategories = [],
+  toggleCategoryExpansion,
+  confirmCategoryDelete,
+  setShowAIDialog
 }) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -70,7 +66,6 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [renewals, setRenewals] = useState<any[]>([]);
   const [mobileControlsExpanded, setMobileControlsExpanded] = useState(false);
   
-  // New state for insights component
   const [activeInsight, setActiveInsight] = useState(0);
 
   useEffect(() => {
@@ -271,11 +266,9 @@ const Dashboard: React.FC<DashboardProps> = ({
     navigate('/planner');
   };
 
-  // Generate insights based on current data
   const getInsights = () => {
     const insights = [];
     
-    // Insight 1: Upcoming renewals in the next 7 days
     const sevenDaysFromNow = addDays(new Date(), 7);
     const upcomingSevenDays = upcomingRenewals.filter(renewal => {
       const renewalDate = new Date(renewal.renewalDate);
@@ -292,7 +285,6 @@ const Dashboard: React.FC<DashboardProps> = ({
       });
     }
     
-    // Insight 2: Unpaid expenses
     if (unpaidTotal > 0) {
       insights.push({
         title: `${unpaidCount} unpaid expense${unpaidCount > 1 ? 's' : ''}`,
@@ -303,7 +295,6 @@ const Dashboard: React.FC<DashboardProps> = ({
       });
     }
     
-    // Insight 3: Monthly spending
     insights.push({
       title: "Monthly spending",
       description: `$${totalMonthlyCost.toFixed(2)}/month`,
@@ -312,7 +303,6 @@ const Dashboard: React.FC<DashboardProps> = ({
       color: 'bg-blue-500/20 text-blue-300'
     });
     
-    // Insight 4: Upcoming tasks
     const incompleteTasks = tasks.filter(task => !task.completed);
     if (incompleteTasks.length > 0) {
       insights.push({
@@ -329,7 +319,6 @@ const Dashboard: React.FC<DashboardProps> = ({
   
   const insights = getInsights();
   
-  // Auto-rotate through insights
   useEffect(() => {
     if (insights.length <= 1) return;
     
@@ -357,7 +346,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           <h2 className="text-2xl font-bold text-white">Dashboard</h2>
         </motion.div>
         
-        {/* Replace search box with insights */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
           <div className="hidden md:flex items-center text-gray-400 text-sm mr-3">
             <Clock className="w-4 h-4 mr-1" />
