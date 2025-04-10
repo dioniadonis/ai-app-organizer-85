@@ -3,6 +3,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import Planner from '@/components/Planner';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 
 interface PlannerTask {
   id: number;
@@ -149,6 +151,33 @@ const PlannerContent: React.FC<PlannerContentProps> = ({
             </TabsTrigger>
           </TabsList>
         </Tabs>
+        
+        <Button 
+          className="bg-purple-600 hover:bg-purple-700 bg-opacity-70"
+          onClick={() => {
+            if (activeTab === 'tasks') {
+              const dummyTask = {
+                title: "New Task",
+                description: "",
+                dueDate: new Date().toISOString().split('T')[0],
+                priority: "medium"
+              };
+              handleTaskOperations.onAddTask(dummyTask);
+            } else {
+              const dummyGoal = {
+                title: "New Goal",
+                description: "",
+                targetDate: new Date().toISOString().split('T')[0],
+                totalSteps: 3,
+                type: "short"
+              };
+              handleGoalOperations.onAddGoal(dummyGoal);
+            }
+          }}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add New {activeTab === 'tasks' ? 'Task' : 'Goal'}
+        </Button>
       </div>
       
       <div>

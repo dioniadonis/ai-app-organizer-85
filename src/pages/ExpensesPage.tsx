@@ -119,6 +119,22 @@ const ExpensesPage: React.FC = () => {
       setShowFilters(true);
     }
     
+    if (location.search) {
+      const filterParam = params.get('filter');
+      if (filterParam === 'renewals') {
+        const renewalExpenses = parsedExpenses ? parsedExpenses.filter((expense: Expense) => expense.recurring) : [];
+        if (renewalExpenses.length > 0) {
+          const categories = [...new Set(renewalExpenses.map((e: Expense) => e.category))];
+          setCategoryFilter(categories);
+          setShowFilters(true);
+          toast({
+            title: "Showing upcoming renewals",
+            description: `${renewalExpenses.length} recurring expenses loaded`,
+          });
+        }
+      }
+    }
+
     const selectedCategory = localStorage.getItem('selectedExpenseCategory');
     if (selectedCategory) {
       setCategoryFilter([selectedCategory]);
@@ -132,21 +148,7 @@ const ExpensesPage: React.FC = () => {
       setShowFilters(true);
       localStorage.removeItem('selectedExpenseTag');
     }
-    
-    const filterParam = params.get('filter');
-    if (filterParam === 'renewals') {
-      const filtered = expenses.filter(expense => expense.recurring);
-      if (filtered.length > 0) {
-        const categories = [...new Set(filtered.map(e => e.category))];
-        setCategoryFilter(categories);
-        setShowFilters(true);
-        toast({
-          title: "Showing upcoming renewals",
-          description: `${filtered.length} recurring expenses loaded`,
-        });
-      }
-    }
-  }, [location.search, expenses]);
+  }, [location.search]);
 
   useEffect(() => {
     localStorage.setItem('expenses', JSON.stringify(expenses));
@@ -887,7 +889,7 @@ const ExpensesPage: React.FC = () => {
                   className="col-span-3 bg-gray-700 border-gray-600"
                 />
               </div>
-              <div className="grid grid-cols-4 items-start gap-4">
+              <div className="grid grid-cols-4 items-center gap-4">
                 <label htmlFor="description" className="text-right text-sm font-medium">
                   Description
                 </label>
