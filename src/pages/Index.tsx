@@ -1023,6 +1023,7 @@ const Index = () => {
             <Dashboard 
               aiTools={aiTools}
               tasks={tasks}
+              goals={goals}
               selectedCategories={selectedCategories}
               filterByRenewal={filterByRenewal}
               handleRenewalFilter={handleRenewalFilter}
