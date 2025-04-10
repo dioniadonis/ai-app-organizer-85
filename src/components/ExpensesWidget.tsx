@@ -64,60 +64,81 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [totalMonthlyAmount, setTotalMonthlyAmount] = useState<number>(0);
 
-  const calculateMonthlyTotal = (expenses: any[]) => {
+  // Improved function to calculate monthly total
+  const calculateMonthlyTotal = (expenseItems: any[]) => {
+    if (!expenseItems || expenseItems.length === 0) return 0;
+    
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
     
-    return expenses.reduce((total: number, expense: any) => {
-      // Check if expense has a date and it's from the current month
-      if (expense.date) {
-        const expenseDate = new Date(expense.date);
-        const isCurrentMonth = 
-          expenseDate.getMonth() === currentMonth && 
-          expenseDate.getFullYear() === currentYear;
-        
-        // Include if it's recurring or from the current month
-        if (expense.recurring || isCurrentMonth) {
-          return total + Number(expense.amount || 0);
-        }
-      } else if (expense.recurring) {
-        // Always include recurring expenses without dates
-        return total + Number(expense.amount || 0);
+    return expenseItems.reduce((total: number, expense: any) => {
+      // Handle null/undefined expense
+      if (!expense) return total;
+      
+      const amount = Number(expense.amount || 0);
+      
+      // Always include recurring expenses
+      if (expense.recurring) {
+        return total + amount;
       }
+      
+      // For non-recurring expenses, check if they're from current month
+      if (expense.date) {
+        try {
+          const expenseDate = new Date(expense.date);
+          if (
+            expenseDate.getMonth() === currentMonth && 
+            expenseDate.getFullYear() === currentYear
+          ) {
+            return total + amount;
+          }
+        } catch (e) {
+          console.error('Error parsing date:', expense.date);
+        }
+      }
+      
       return total;
     }, 0);
   };
 
-  useEffect(() => {
-    const fetchExpenses = () => {
+  // Fetch expenses and recalculate totals
+  const fetchAndUpdateExpenses = () => {
+    try {
       const savedExpenses = localStorage.getItem('expenses');
       if (savedExpenses) {
-        try {
-          const parsedExpenses = JSON.parse(savedExpenses);
-          setLocalExpenses(parsedExpenses);
-          
-          // Calculate monthly total using the helper function
-          const monthlyTotal = calculateMonthlyTotal(parsedExpenses);
-          setTotalMonthlyAmount(monthlyTotal);
-          
-        } catch (e) {
-          console.error('Failed to parse expenses from localStorage', e);
-        }
+        const parsedExpenses = JSON.parse(savedExpenses);
+        setLocalExpenses(parsedExpenses);
+        
+        // Calculate monthly total
+        const monthlyTotal = calculateMonthlyTotal(parsedExpenses);
+        setTotalMonthlyAmount(monthlyTotal);
+        
+        console.log('Updated monthly total:', monthlyTotal);
+      } else {
+        setTotalMonthlyAmount(0);
       }
-    };
+    } catch (e) {
+      console.error('Failed to parse expenses from localStorage', e);
+      setTotalMonthlyAmount(0);
+    }
+  };
 
-    fetchExpenses();
-
+  // Initial load and periodic update
+  useEffect(() => {
+    fetchAndUpdateExpenses();
+    
+    // Listen for storage changes
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'expenses') {
-        fetchExpenses();
+        fetchAndUpdateExpenses();
       }
     };
-
+    
     window.addEventListener('storage', handleStorageChange);
     
-    const intervalId = setInterval(fetchExpenses, 2000);
-
+    // Poll every 2 seconds to catch any updates
+    const intervalId = setInterval(fetchAndUpdateExpenses, 2000);
+    
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       clearInterval(intervalId);
@@ -149,16 +170,18 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
       date: new Date().toISOString().split('T')[0]
     };
 
+    // Update local state right away
     const updatedExpenses = [...localExpenses, newExpenseItem];
     setLocalExpenses(updatedExpenses);
     
-    // Update the monthly total right away
-    const newMonthlyTotal = calculateMonthlyTotal(updatedExpenses);
-    setTotalMonthlyAmount(newMonthlyTotal);
+    // Immediately update the monthly total
+    const newTotal = calculateMonthlyTotal(updatedExpenses);
+    setTotalMonthlyAmount(newTotal);
     
+    // Update localStorage
     localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
     
-    // Dispatch a storage event to notify other components
+    // Dispatch storage event for other components
     const storageEvent = new StorageEvent('storage', {
       key: 'expenses',
       newValue: JSON.stringify(updatedExpenses),
@@ -168,7 +191,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
 
     toast({
       title: "Expense added",
-      description: `${newExpense.category}: $${newExpense.amount} ${newExpense.recurring ? '(recurring)' : ''}`,
+      description: `${newExpense.category}: $${newExpense.amount.toFixed(2)} ${newExpense.recurring ? '(recurring)' : ''}`,
     });
     
     setNewExpense({
@@ -177,6 +200,8 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
       recurring: false
     });
     setShowQuickAddDialog(false);
+    
+    console.log('Added expense, new monthly total:', newTotal);
   };
 
   const handleCategoryClick = (category: string) => {
@@ -192,6 +217,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     navigate('/expenses?view=list&tag=' + encodeURIComponent(tag));
   };
 
+  // Get total of all expenses (not just monthly)
   const displayData = localExpenses.length > 0 ? localExpenses : [];
   const totalExpenses = displayData.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 
@@ -228,7 +254,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
       return (
         <div className="bg-gray-800 border border-gray-700 px-3 py-2 rounded-md shadow-md">
           <p className="text-white font-medium">{payload[0].name}</p>
-          <p className="text-purple-300">${payload[0].value}</p>
+          <p className="text-purple-300">${payload[0].value.toFixed(2)}</p>
         </div>
       );
     }
@@ -339,7 +365,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
                       borderColor: '#374151',
                       color: 'white'
                     }}
-                    formatter={(value: number) => [`$${value}`, 'Amount']}
+                    formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
                   />
                 </PieChart>
               )}
