@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,7 +15,8 @@ import {
   Search,
   SlidersHorizontal,
   ArrowUpDown,
-  AlertCircle
+  AlertCircle,
+  Receipt
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -29,6 +29,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { PieChart as Pie, Pie as PieSegment, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 
 interface Expense {
   id: string | number;
@@ -40,6 +41,7 @@ interface Expense {
   frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
   color?: string;
   tags?: string[];
+  isPaid?: boolean;
 }
 
 const CHART_COLORS = [
@@ -145,6 +147,25 @@ const ExpensesPage: React.FC = () => {
             console.error('Failed to parse expenses for renewals', e);
           }
         }
+      } else if (filterParam === 'unpaid') {
+        if (savedExpenses) {
+          try {
+            const parsedExpenses = JSON.parse(savedExpenses);
+            // Filter for expenses marked as explicitly unpaid
+            const unpaidExpenses = parsedExpenses.filter((expense: Expense) => expense.isPaid === false);
+            if (unpaidExpenses.length > 0) {
+              toast({
+                title: "Showing unpaid expenses",
+                description: `${unpaidExpenses.length} unpaid expenses loaded`,
+              });
+            }
+            setActiveView('list');
+            // Set a special flag to highlight unpaid expenses
+            sessionStorage.setItem('highlightUnpaid', 'true');
+          } catch (e) {
+            console.error('Failed to parse expenses for unpaid view', e);
+          }
+        }
       }
     }
 
@@ -161,7 +182,18 @@ const ExpensesPage: React.FC = () => {
       setShowFilters(true);
       localStorage.removeItem('selectedExpenseTag');
     }
+    
+    // Check for highlight unpaid flag
+    const highlightUnpaid = sessionStorage.getItem('highlightUnpaid');
+    if (highlightUnpaid === 'true') {
+      // Clear the flag but apply the filter for unpaid expenses
+      sessionStorage.removeItem('highlightUnpaid');
+      setFilterUnpaid(true);
+    }
   }, [location.search]);
+
+  // Add state for unpaid filter
+  const [filterUnpaid, setFilterUnpaid] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('expenses', JSON.stringify(expenses));
@@ -182,7 +214,8 @@ const ExpensesPage: React.FC = () => {
        expense.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
        expense.description?.toLowerCase().includes(searchTerm.toLowerCase())) &&
       (categoryFilter.length === 0 || categoryFilter.includes(expense.category)) &&
-      (tagFilter.length === 0 || (expense.tags && expense.tags.some(tag => tagFilter.includes(tag))))
+      (tagFilter.length === 0 || (expense.tags && expense.tags.some(tag => tagFilter.includes(tag)))) &&
+      (!filterUnpaid || expense.isPaid === false)
     )
     .sort((a, b) => {
       if (sortOrder.field === 'amount') {
@@ -236,6 +269,11 @@ const ExpensesPage: React.FC = () => {
     setCategoryFilter([]);
     setTagFilter([]);
     setSearchTerm('');
+    setFilterUnpaid(false);
+  };
+
+  const toggleUnpaidFilter = () => {
+    setFilterUnpaid(prev => !prev);
   };
 
   const addExpense = () => {
@@ -256,7 +294,8 @@ const ExpensesPage: React.FC = () => {
       description: newExpense.description,
       recurring: newExpense.recurring,
       frequency: newExpense.recurring ? newExpense.frequency : undefined,
-      color: CHART_COLORS[categories.length % CHART_COLORS.length]
+      color: CHART_COLORS[categories.length % CHART_COLORS.length],
+      isPaid: newExpense.isPaid !== false
     };
 
     setExpenses(prev => [...prev, expenseToAdd]);
@@ -300,6 +339,9 @@ const ExpensesPage: React.FC = () => {
   };
 
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const unpaidTotal = expenses
+    .filter(expense => expense.isPaid === false)
+    .reduce((sum, expense) => sum + expense.amount, 0);
 
   const handleTabChange = (value: string) => {
     if (value === 'dashboard') {
@@ -487,6 +529,16 @@ const ExpensesPage: React.FC = () => {
                 >
                   <SlidersHorizontal className="h-4 w-4" />
                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleUnpaidFilter}
+                  className={filterUnpaid ? "bg-red-500/20 text-red-300 border-red-500/50" : ""}
+                >
+                  <Receipt className="h-4 w-4 mr-2" />
+                  Unpaid
+                  {filterUnpaid && <Badge className="ml-2 bg-red-500/50 text-white">On</Badge>}
+                </Button>
               </div>
               <Button
                 onClick={() => setIsAddExpenseOpen(true)}
@@ -583,7 +635,7 @@ const ExpensesPage: React.FC = () => {
                   </div>
                 )}
                 
-                {(categoryFilter.length > 0 || tagFilter.length > 0 || searchTerm) && (
+                {(categoryFilter.length > 0 || tagFilter.length > 0 || searchTerm || filterUnpaid) && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -628,12 +680,14 @@ const ExpensesPage: React.FC = () => {
                       const today = new Date();
                       today.setHours(0, 0, 0, 0);
                       const isOverdue = expense.recurring && isPast(expenseDate) && !isToday(expenseDate);
+                      const isUnpaid = expense.isPaid === false;
                       
                       return (
                         <motion.div
                           key={expense.id}
                           className={`bg-gray-700/30 rounded-lg p-3 flex items-center ${
-                            isOverdue ? 'border-l-4 border-red-500' : ''
+                            isOverdue ? 'border-l-4 border-red-500' : 
+                            isUnpaid ? 'border-l-4 border-orange-500' : ''
                           }`}
                           whileHover={{ scale: 1.01 }}
                           transition={{ duration: 0.2 }}
@@ -649,6 +703,11 @@ const ExpensesPage: React.FC = () => {
                                 {isOverdue && (
                                   <span className="ml-2 px-2 py-0.5 bg-red-500/20 text-red-300 rounded-full text-xs flex items-center">
                                     <AlertCircle className="h-3 w-3 mr-1" /> Overdue
+                                  </span>
+                                )}
+                                {isUnpaid && !isOverdue && (
+                                  <span className="ml-2 px-2 py-0.5 bg-orange-500/20 text-orange-300 rounded-full text-xs flex items-center">
+                                    <Receipt className="h-3 w-3 mr-1" /> Unpaid
                                   </span>
                                 )}
                               </div>
@@ -695,6 +754,16 @@ const ExpensesPage: React.FC = () => {
                       <span>Total Expenses</span>
                       <span className="font-bold text-lg">${totalExpenses.toFixed(2)}</span>
                     </div>
+                    
+                    {unpaidTotal > 0 && (
+                      <div className="flex justify-between items-center p-4 bg-red-500/10 rounded-lg">
+                        <span className="flex items-center">
+                          <AlertCircle className="h-4 w-4 mr-2 text-red-400" />
+                          Unpaid Total
+                        </span>
+                        <span className="font-bold text-lg text-red-300">${unpaidTotal.toFixed(2)}</span>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-gray-400">
@@ -773,226 +842,3 @@ const ExpensesPage: React.FC = () => {
                                   activeBar={{ fill: null }}
                                 >
                                   {totalsByCategory.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]} />
-                                  ))}
-                                </Bar>
-                              </BarChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 justify-center">
-                      {totalsByCategory.map((category, index) => (
-                        <div
-                          key={index}
-                          className="px-3 py-1.5 rounded-full text-sm flex items-center gap-2 cursor-pointer"
-                          style={{ backgroundColor: `${category.color}30` }}
-                          onClick={() => {
-                            setCategoryFilter([category.category]);
-                            setActiveView('list');
-                          }}
-                        >
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: category.color }}
-                          ></div>
-                          <span>{category.category}: ${category.amount}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex justify-between items-center p-4 bg-purple-500/10 rounded-lg mt-6">
-                      <span>Total Expenses</span>
-                      <span className="font-bold text-lg">${totalExpenses.toFixed(2)}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-400">
-                    <p className="mb-4">No expense data to visualize</p>
-                    <Button
-                      onClick={() => setIsAddExpenseOpen(true)}
-                      className="bg-purple-600/70 hover:bg-purple-700 backdrop-blur-sm border border-white/10 shadow-lg transition-all hover:scale-[1.02]"
-                    >
-                      <PlusCircle className="w-4 h-4 mr-2" />
-                      Add Your First Expense
-                    </Button>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </motion.div>
-          
-          <footer className="py-6 text-center text-gray-500 mt-12">
-            <p>Loop Space AI Organizer &copy; {new Date().getFullYear()}</p>
-          </footer>
-        </div>
-
-        <Dialog open={isAddExpenseOpen} onOpenChange={setIsAddExpenseOpen}>
-          <DialogContent className="bg-gray-800 text-white border-gray-700">
-            <DialogHeader>
-              <DialogTitle>{editingExpense ? "Edit Expense" : "Add New Expense"}</DialogTitle>
-              <DialogDescription className="text-gray-400">
-                {editingExpense 
-                  ? "Update the expense details below"
-                  : "Enter the details for your new expense"}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="category" className="text-right text-sm font-medium">
-                  Category
-                </label>
-                <Input
-                  id="category"
-                  value={editingExpense ? editingExpense.category : newExpense.category}
-                  onChange={(e) => {
-                    if (editingExpense) {
-                      setEditingExpense({...editingExpense, category: e.target.value});
-                    } else {
-                      setNewExpense({...newExpense, category: e.target.value});
-                    }
-                  }}
-                  className="col-span-3 bg-gray-700 border-gray-600"
-                  list="categories"
-                  placeholder="Enter or select a category"
-                />
-                <datalist id="categories">
-                  {categories.map(category => (
-                    <option key={category} value={category} />
-                  ))}
-                </datalist>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="amount" className="text-right text-sm font-medium">
-                  Expense Cost ($)
-                </label>
-                <Input
-                  id="amount"
-                  type="number"
-                  value={editingExpense ? editingExpense.amount : newExpense.amount}
-                  onChange={(e) => {
-                    const value = parseFloat(e.target.value);
-                    if (editingExpense) {
-                      setEditingExpense({...editingExpense, amount: value});
-                    } else {
-                      setNewExpense({...newExpense, amount: value});
-                    }
-                  }}
-                  className="col-span-3 bg-gray-700 border-gray-600"
-                  style={{ appearance: 'textfield' }}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="date" className="text-right text-sm font-medium">
-                  Date
-                </label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={editingExpense ? editingExpense.date : newExpense.date}
-                  onChange={(e) => {
-                    if (editingExpense) {
-                      setEditingExpense({...editingExpense, date: e.target.value});
-                    } else {
-                      setNewExpense({...newExpense, date: e.target.value});
-                    }
-                  }}
-                  className="col-span-3 bg-gray-700 border-gray-600"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="description" className="text-right text-sm font-medium">
-                  Description
-                </label>
-                <Input
-                  id="description"
-                  value={editingExpense ? editingExpense.description || '' : newExpense.description || ''}
-                  onChange={(e) => {
-                    if (editingExpense) {
-                      setEditingExpense({...editingExpense, description: e.target.value});
-                    } else {
-                      setNewExpense({...newExpense, description: e.target.value});
-                    }
-                  }}
-                  className="col-span-3 bg-gray-700 border-gray-600"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label className="text-right text-sm font-medium">
-                  Recurring
-                </label>
-                <div className="flex items-center col-span-3">
-                  <Switch
-                    id="recurring"
-                    checked={editingExpense ? !!editingExpense.recurring : !!newExpense.recurring}
-                    onCheckedChange={(checked) => {
-                      if (editingExpense) {
-                        setEditingExpense({...editingExpense, recurring: checked});
-                      } else {
-                        setNewExpense({...newExpense, recurring: checked});
-                      }
-                    }}
-                  />
-                  <Label htmlFor="recurring" className="ml-2">
-                    This is a recurring expense
-                  </Label>
-                </div>
-              </div>
-              {(editingExpense?.recurring || newExpense.recurring) && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label htmlFor="frequency" className="text-right text-sm font-medium">
-                    Frequency
-                  </label>
-                  <select
-                    id="frequency"
-                    value={editingExpense ? editingExpense.frequency : newExpense.frequency}
-                    onChange={(e) => {
-                      if (editingExpense) {
-                        setEditingExpense({
-                          ...editingExpense, 
-                          frequency: e.target.value as 'daily' | 'weekly' | 'monthly' | 'yearly'
-                        });
-                      } else {
-                        setNewExpense({
-                          ...newExpense, 
-                          frequency: e.target.value as 'daily' | 'weekly' | 'monthly' | 'yearly'
-                        });
-                      }
-                    }}
-                    className="col-span-3 p-2 rounded-md bg-gray-700 border border-gray-600 text-white"
-                  >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
-                  </select>
-                </div>
-              )}
-            </div>
-            <DialogFooter>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setIsAddExpenseOpen(false);
-                  setEditingExpense(null);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={editingExpense ? updateExpense : addExpense}
-                className="bg-purple-600 hover:bg-purple-700"
-              >
-                {editingExpense ? "Update Expense" : "Add Expense"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </motion.div>
-    </AnimatePresence>
-  );
-};
-
-export default ExpensesPage;

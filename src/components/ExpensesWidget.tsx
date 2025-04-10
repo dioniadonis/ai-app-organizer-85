@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, PieChart as PieChartIcon, BarChart as BarChartIcon, ArrowRight, AlertCircle } from 'lucide-react';
+import { PlusCircle, PieChart as PieChartIcon, BarChart as BarChartIcon, ArrowRight, AlertCircle, Receipt } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useNavigate } from 'react-router-dom';
@@ -66,18 +65,14 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
   const [totalMonthlyAmount, setTotalMonthlyAmount] = useState<number>(0);
   const [unpaidTotalAmount, setUnpaidTotalAmount] = useState<number>(0);
 
-  // Calculate the unpaid total amount
   const calculateUnpaidTotal = (expenseItems: any[]) => {
     if (!expenseItems || expenseItems.length === 0) return 0;
     
     return expenseItems.reduce((total: number, expense: any) => {
-      // Skip if expense is null or undefined
       if (!expense) return total;
       
-      // Convert amount to number and default to 0 if NaN
       const amount = Number(expense.amount) || 0;
       
-      // Only count explicitly unpaid expenses (isPaid === false)
       if (expense.isPaid === false) {
         return total + amount;
       }
@@ -86,23 +81,18 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     }, 0);
   };
 
-  // Simple direct calculation function for monthly total
   const calculateMonthlyTotal = (expenseItems: any[]) => {
     if (!expenseItems || expenseItems.length === 0) return 0;
     
     return expenseItems.reduce((total: number, expense: any) => {
-      // Skip if expense is null or undefined
       if (!expense) return total;
       
-      // Convert amount to number and default to 0 if NaN
       const amount = Number(expense.amount) || 0;
       
-      // Include all recurring expenses regardless of paid status
       if (expense.recurring) {
         return total + amount;
       }
       
-      // For non-recurring expenses, check if they're from current month
       if (expense.date) {
         const expenseDate = new Date(expense.date);
         const currentMonth = new Date().getMonth();
@@ -118,7 +108,6 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     }, 0);
   };
 
-  // Update expenses data from localStorage
   const fetchAndUpdateExpenses = () => {
     try {
       const savedExpenses = localStorage.getItem('expenses');
@@ -126,11 +115,9 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
         const parsedExpenses = JSON.parse(savedExpenses);
         setLocalExpenses(parsedExpenses);
         
-        // Calculate and update monthly total right away
         const monthlyTotal = calculateMonthlyTotal(parsedExpenses);
         setTotalMonthlyAmount(monthlyTotal);
         
-        // Calculate and update unpaid total
         const unpaidTotal = calculateUnpaidTotal(parsedExpenses);
         setUnpaidTotalAmount(unpaidTotal);
         
@@ -147,11 +134,9 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     }
   };
 
-  // Initial load and periodic update
   useEffect(() => {
     fetchAndUpdateExpenses();
     
-    // Listen for storage changes from other components
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'expenses') {
         console.log('Storage event detected - expenses updated');
@@ -161,7 +146,6 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     
     window.addEventListener('storage', handleStorageChange);
     
-    // Poll every second to catch any updates
     const intervalId = setInterval(fetchAndUpdateExpenses, 1000);
     
     return () => {
@@ -195,22 +179,17 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
       date: new Date().toISOString().split('T')[0]
     };
 
-    // Update local state right away
     const updatedExpenses = [...localExpenses, newExpenseItem];
     setLocalExpenses(updatedExpenses);
     
-    // Immediately update the monthly total
     const newTotal = calculateMonthlyTotal(updatedExpenses);
     setTotalMonthlyAmount(newTotal);
     
-    // Immediately update the unpaid total
     const newUnpaidTotal = calculateUnpaidTotal(updatedExpenses);
     setUnpaidTotalAmount(newUnpaidTotal);
     
-    // Update localStorage
     localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
     
-    // Dispatch storage event for other components
     window.dispatchEvent(new StorageEvent('storage', {
       key: 'expenses',
       newValue: JSON.stringify(updatedExpenses),
@@ -245,9 +224,14 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     navigate('/expenses?view=list&tag=' + encodeURIComponent(tag));
   };
 
-  // Get total of all expenses (not just monthly)
+  const viewUnpaidExpenses = () => {
+    navigate('/expenses?view=list&filter=unpaid');
+  };
+
   const displayData = localExpenses.length > 0 ? localExpenses : [];
   const totalExpenses = displayData.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+  
+  const unpaidExpenses = displayData.filter(expense => expense.isPaid === false);
 
   const pieData = displayData.map((item, index) => ({
     name: item.category,
@@ -400,14 +384,35 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
               </div>
             </div>
             
-            {/* Unpaid expense display section */}
             {unpaidTotalAmount > 0 && (
-              <div className="flex items-center justify-between bg-red-500/20 text-red-300 px-3 py-2 rounded-lg mt-2">
-                <div className="flex items-center">
-                  <AlertCircle className="h-4 w-4 mr-2" />
-                  <span className="text-sm">Unpaid Expenses</span>
+              <div className="flex flex-col bg-red-500/20 text-red-300 px-3 py-2 rounded-lg mt-2">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    <span className="text-sm font-medium">Unpaid Expenses</span>
+                  </div>
+                  <div className="font-medium">${unpaidTotalAmount.toFixed(2)}</div>
                 </div>
-                <div className="font-medium">${unpaidTotalAmount.toFixed(2)}</div>
+                
+                {unpaidExpenses.length > 0 && (
+                  <div className="flex flex-col gap-1 mt-1">
+                    {unpaidExpenses.slice(0, 2).map((expense, idx) => (
+                      <div key={idx} className="flex justify-between text-xs">
+                        <span>{expense.category}</span>
+                        <span>${expense.amount.toFixed(2)}</span>
+                      </div>
+                    ))}
+                    {unpaidExpenses.length > 2 && (
+                      <Button 
+                        variant="link" 
+                        className="text-xs text-red-300 p-0 h-auto mt-1"
+                        onClick={viewUnpaidExpenses}
+                      >
+                        View all {unpaidExpenses.length} unpaid expenses <ArrowRight className="h-3 w-3 ml-1" />
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
             
@@ -455,7 +460,16 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
       </CardContent>
 
       {displayData.length > 0 && (
-        <CardFooter>
+        <CardFooter className="flex flex-col gap-2">
+          {unpaidTotalAmount > 0 && (
+            <Button 
+              variant="outline" 
+              className="w-full border-red-500/50 text-red-300 hover:bg-red-500/10 hover:text-red-200"
+              onClick={viewUnpaidExpenses}
+            >
+              <Receipt className="mr-2 h-4 w-4" /> View Unpaid Expenses
+            </Button>
+          )}
           <Button 
             variant="ghost" 
             className="w-full text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
@@ -506,6 +520,14 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
                 onCheckedChange={(checked) => setNewExpense({...newExpense, recurring: checked})}
               />
               <Label htmlFor="recurring">Recurring expense</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="isPaid"
+                checked={!newExpense.isPaid}
+                onCheckedChange={(checked) => setNewExpense({...newExpense, isPaid: !checked})}
+              />
+              <Label htmlFor="isPaid">Mark as unpaid</Label>
             </div>
           </div>
           <DialogFooter>
