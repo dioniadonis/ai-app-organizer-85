@@ -9,4 +9,6 @@ export interface AITool {
   isFavorite: boolean;
   website?: string;
   isPaid?: boolean; // Field to track paid/unpaid status
+  isExpense?: boolean; // Flag to identify as expense vs AI tool
+  frequency?: string; // Frequency of renewal for expenses
 }
