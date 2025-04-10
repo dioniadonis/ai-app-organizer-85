@@ -122,12 +122,12 @@ const SearchBox: React.FC<SearchBoxProps> = ({
     
     // Navigate based on result type
     if (result.type === 'expense') {
-      // Filter to the specific expense
-      navigate('/');
-      // We'll let the main page handle the filtering
-    } else if (result.type === 'task' || result.type === 'goal') {
-      navigate('/planner');
-      // The planner page will handle showing tasks/goals
+      // Navigate to expenses page with category filter
+      navigate(`/expenses?category=${encodeURIComponent(result.category || '')}`);
+    } else if (result.type === 'task') {
+      navigate('/planner?type=task');
+    } else if (result.type === 'goal') {
+      navigate('/planner?type=goal');
     }
   };
 

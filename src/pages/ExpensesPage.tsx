@@ -190,7 +190,7 @@ const ExpensesPage: React.FC = () => {
     return {
       category,
       amount: total,
-      color: COLORS[categories.indexOf(category) % COLORS.length]
+      color: CHART_COLORS[categories.indexOf(category) % CHART_COLORS.length]
     };
   });
 
@@ -241,7 +241,7 @@ const ExpensesPage: React.FC = () => {
       description: newExpense.description,
       recurring: newExpense.recurring,
       frequency: newExpense.recurring ? newExpense.frequency : undefined,
-      color: COLORS[categories.length % COLORS.length]
+      color: CHART_COLORS[categories.length % CHART_COLORS.length]
     };
 
     setExpenses(prev => [...prev, expenseToAdd]);
