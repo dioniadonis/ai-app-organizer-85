@@ -1,18 +1,18 @@
+
 import React, { useState, useEffect } from 'react';
 import { AITool } from '@/types/AITool';
-import { Banknote, Calendar, Package, Star, CheckCircle, XCircle, Grid3X3, Layout, LayoutDashboard, Plus, CalendarClock, Clock, AlertCircle } from 'lucide-react';
+import { Banknote, Calendar, Package, Star, CheckCircle, XCircle, Grid3X3, Layout, LayoutDashboard, Plus, CalendarClock, Clock, AlertCircle, Receipt } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format, isToday, isTomorrow, isPast } from 'date-fns';
 import PlannerWidget from './PlannerWidget';
 import ExpensesWidget from './ExpensesWidget';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
 import SearchBox from './SearchBox';
 import { useIsMobile } from '@/hooks/use-mobile';
-import HolographicTitle from './HolographicTitle';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface Task {
@@ -103,14 +103,19 @@ const Dashboard: React.FC<DashboardProps> = ({
   const totalTools = aiTools.length;
   const favoriteTools = aiTools.filter(tool => tool.isFavorite).length;
   
+  // Calculate total monthly cost including both recurring expenses and AI tool renewals
   const totalMonthlyCost = expenses.reduce((sum, expense) => {
-    if (expense.recurring) {
+    if (expense.recurring && (expense.frequency === 'monthly' || !expense.frequency)) {
       return sum + expense.amount;
     }
     return sum;
+  }, 0) + aiTools.reduce((sum, tool) => {
+    return sum + (tool.subscriptionCost || 0);
   }, 0);
   
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  // Calculate total expenses including both expenses and AI tool costs
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0) + 
+    aiTools.reduce((sum, tool) => sum + (tool.subscriptionCost || 0), 0);
   
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -132,13 +137,18 @@ const Dashboard: React.FC<DashboardProps> = ({
       category: expense.category,
       subscriptionCost: expense.amount,
       renewalDate: date,
-      isPaid: false,
+      isPaid: expense.isPaid !== false,
       isExpense: true,
       frequency: expense.frequency || 'monthly'
     };
   });
   
   const upcomingRenewals = [...toolRenewals, ...expenseRenewals];
+
+  // Calculate unpaid totals for dashboard
+  const unpaidTotal = expenses
+    .filter(expense => expense.isPaid === false)
+    .reduce((sum, expense) => sum + expense.amount, 0);
 
   const categoryCount = aiTools.reduce((acc, tool) => {
     acc[tool.category] = (acc[tool.category] || 0) + 1;
@@ -237,6 +247,21 @@ const Dashboard: React.FC<DashboardProps> = ({
       toast({
         title: "No upcoming renewals",
         description: "You don't have any upcoming renewals in the next 30 days",
+      });
+    }
+  };
+
+  const handleUnpaidExpensesClick = () => {
+    if (unpaidTotal > 0) {
+      navigate('/expenses?view=list&filter=unpaid');
+      toast({
+        title: "Showing unpaid expenses",
+        description: "Filtered to show only unpaid expenses",
+      });
+    } else {
+      toast({
+        title: "No unpaid expenses",
+        description: "You don't have any unpaid expenses at the moment",
       });
     }
   };
@@ -392,11 +417,11 @@ const Dashboard: React.FC<DashboardProps> = ({
         <motion.div 
           variants={containerVariants} 
           className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-700/30 transition-colors"
-          onClick={handleRenewalsStatClick}
+          onClick={handleUnpaidExpensesClick}
         >
-          <Calendar className="w-8 h-8 mb-2 text-purple-400" />
-          <span className="text-gray-400 text-sm">Upcoming Renewals</span>
-          <span className="text-3xl font-bold">{upcomingRenewals.length}</span>
+          <Receipt className="w-8 h-8 mb-2 text-red-400" />
+          <span className="text-gray-400 text-sm">Unpaid Expenses</span>
+          <span className="text-3xl font-bold">${unpaidTotal.toFixed(2)}</span>
         </motion.div>
       </motion.div>
       
