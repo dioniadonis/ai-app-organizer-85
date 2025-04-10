@@ -84,3 +84,12 @@
     @apply fill-[#33C3F0];
   }
 }
+
+/* Brand theme colors for the application */
+:root {
+  --ai-purple: #9b87f5;
+  --ai-purple-dark: #7E69AB;
+  --ai-cyan: #33C3F0;
+  --ai-blue: #1EAEDB;
+  --ai-pink: #ea384c;
+}
