@@ -18,6 +18,7 @@ import HolographicTitle from '@/components/HolographicTitle';
 import { useNavigate } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { DatePicker } from '@/components/ui/date-picker';
 
 const initialAITools: AITool[] = [];
 
@@ -556,7 +557,8 @@ const Index = () => {
   const sortedCategories = Object.keys(categorizedTools).sort();
   const allCategoriesForSelect = Array.from(new Set(aiTools.map(tool => tool.category))).sort();
 
-  return <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-100">
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-100">
       <div className="max-w-6xl mx-auto p-4 sm:p-6">
         <header className="mb-8">
           <HolographicTitle title="Loop Space AI Organizer" />
@@ -672,8 +674,8 @@ const Index = () => {
           )}
           
           <div className="space-y-4">
-            
-            {(selectedCategories.length > 0 || filterByRenewal) && <div className="flex items-center gap-2 text-sm">
+            {(selectedCategories.length > 0 || filterByRenewal) && (
+              <div className="flex items-center gap-2 text-sm">
                 <Button variant="outline" size="sm" onClick={clearFilters} className="h-8 px-2 gap-1 border-gray-700 hover:bg-gray-800">
                   <ArrowLeft className="w-3 h-3" />
                   Back to All
@@ -681,41 +683,57 @@ const Index = () => {
                 
                 <span className="text-gray-400">Active Filters:</span>
                 
-                {selectedCategories.map(category => <span key={category} className="bg-ai-purple/20 text-ai-purple rounded-full px-3 py-1 flex items-center gap-1 cursor-pointer" onClick={() => handleCategoryToggle(category)}>
+                {selectedCategories.map(category => (
+                  <span 
+                    key={category} 
+                    className="bg-ai-purple/20 text-ai-purple rounded-full px-3 py-1 flex items-center gap-1 cursor-pointer" 
+                    onClick={() => handleCategoryToggle(category)}
+                  >
                     {category === 'Favorites' ? 'Favorites' : category}
                     <XCircle className="w-3 h-3" />
-                  </span>)}
+                  </span>
+                ))}
                 
-                {filterByRenewal && <span className="bg-ai-pink/20 text-ai-pink rounded-full px-3 py-1 flex items-center gap-1 cursor-pointer" onClick={() => setFilterByRenewal(false)}>
+                {filterByRenewal && (
+                  <span 
+                    className="bg-ai-pink/20 text-ai-pink rounded-full px-3 py-1 flex items-center gap-1 cursor-pointer" 
+                    onClick={() => setFilterByRenewal(false)}
+                  >
                     Upcoming Renewals
                     <XCircle className="w-3 h-3" />
-                  </span>}
-              </div>}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </header>
 
         <AnimatePresence>
-          {showAddForm && <motion.div initial={{
-          opacity: 0,
-          height: 0
-        }} animate={{
-          opacity: 1,
-          height: 'auto'
-        }} exit={{
-          opacity: 0,
-          height: 0
-        }} transition={{
-          duration: 0.3
-        }} className="mb-8 p-5 rounded-xl glass-card">
+          {showAddForm && (
+            <motion.div 
+              initial={{
+                opacity: 0,
+                height: 0
+              }} 
+              animate={{
+                opacity: 1,
+                height: 'auto'
+              }} 
+              exit={{
+                opacity: 0,
+                height: 0
+              }} 
+              transition={{
+                duration: 0.3
+              }} 
+              className="mb-8 p-5 rounded-xl glass-card"
+            >
               <h2 className="text-xl font-semibold mb-4 ai-gradient-text">Add New Expense</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="new-name" className="block text-sm font-medium text-gray-300 mb-1">
                     Name <span className="text-red-400">*</span>
                   </label>
-                  <Input id="new-name" value={newTool.name} onChange={e => handleInputChange('name', e.target.value)} className="bg-black/20 text-white border-gray-700 focus:border-ai-purple" placeholder="Subscription Name" />
-                </div>
-
-                <div>
-                  <label htmlFor="new-category" className="block text-sm font-medium text-gray-300 mb-1">
-                    Category
+                  <Input 
+                    id="new-name" 
+                    value={newTool.name}
