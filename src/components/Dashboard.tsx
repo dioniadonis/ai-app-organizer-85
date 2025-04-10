@@ -229,7 +229,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="py-6"
+      className="py-6 px-2 sm:px-4 max-w-full overflow-x-hidden"
     >
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <motion.div
@@ -285,7 +285,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       
       <motion.div 
         variants={containerVariants}
-        className={`grid grid-cols-1 ${isMobile ? '' : 'sm:grid-cols-2 lg:grid-cols-4'} gap-4 mb-8`}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
       >
         <motion.div 
           variants={containerVariants} 
@@ -362,7 +362,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       </div>
       
       {activeWidgets.categories && categoryItems.length > 0 && (
-        <motion.div variants={containerVariants} className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl mb-8">
+        <motion.div variants={containerVariants} className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl mb-8 overflow-x-auto">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-lg font-medium">Categories</h3>
             {selectedCategories.length > 0 && (
@@ -374,7 +374,7 @@ const Dashboard: React.FC<DashboardProps> = ({
               </button>
             )}
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 min-w-max">
             {categoryItems}
           </div>
         </motion.div>
@@ -383,7 +383,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       {activeWidgets.renewals && upcomingRenewals.length > 0 && (
         <motion.div 
           variants={containerVariants} 
-          className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl"
+          className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl overflow-x-auto"
         >
           <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-purple-400" />
@@ -413,14 +413,14 @@ const Dashboard: React.FC<DashboardProps> = ({
               return (
                 <div 
                   key={renewal.id} 
-                  className={`flex justify-between items-center p-2 rounded hover:bg-white/5 transition-colors cursor-pointer ${
+                  className={`flex flex-col sm:flex-row justify-between items-start sm:items-center p-2 rounded hover:bg-white/5 transition-colors cursor-pointer ${
                     isOverdue ? 'border-l-4 border-red-500 pl-2' : ''
                   }`}
                   onClick={() => handleRenewalClick(renewal)}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 mb-2 sm:mb-0">
                     <div className={`w-2 h-2 rounded-full ${isOverdue ? 'bg-red-400' : 'bg-purple-400'} animate-pulse`}></div>
-                    <span>{renewal.name}</span>
+                    <span className="truncate max-w-[180px] sm:max-w-none">{renewal.name}</span>
                     {renewal.isPaid !== undefined && (
                       <span className={`ml-2 ${renewal.isPaid ? "text-green-400" : "text-red-400"} flex items-center`}>
                         {renewal.isPaid ? <CheckCircle className="w-4 h-4 mr-1" /> : <XCircle className="w-4 h-4 mr-1" />}
@@ -433,9 +433,9 @@ const Dashboard: React.FC<DashboardProps> = ({
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
                     <span className="text-green-400">${renewal.subscriptionCost}{renewal.isExpense ? '' : '/mo'}</span>
-                    <span className="text-gray-400">{format(new Date(renewal.renewalDate), 'MMM dd, yyyy')}</span>
+                    <span className="text-gray-400 text-sm">{format(new Date(renewal.renewalDate), 'MMM dd, yyyy')}</span>
                     <span className={`px-2 py-1 rounded-full text-xs ${
                       isOverdue 
                         ? "bg-red-500/20 text-red-300" 
@@ -455,7 +455,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       )}
 
       <Dialog open={showAddWidgetDialog} onOpenChange={setShowAddWidgetDialog}>
-        <DialogContent className="bg-gray-800 text-white border-gray-700">
+        <DialogContent className="bg-gray-800 text-white border-gray-700 max-w-sm mx-auto">
           <DialogHeader>
             <DialogTitle>Manage Dashboard Widgets</DialogTitle>
             <DialogDescription className="text-gray-400">
