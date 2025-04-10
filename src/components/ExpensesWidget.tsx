@@ -64,6 +64,30 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [totalMonthlyAmount, setTotalMonthlyAmount] = useState<number>(0);
 
+  const calculateMonthlyTotal = (expenses: any[]) => {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    
+    return expenses.reduce((total: number, expense: any) => {
+      // Check if expense has a date and it's from the current month
+      if (expense.date) {
+        const expenseDate = new Date(expense.date);
+        const isCurrentMonth = 
+          expenseDate.getMonth() === currentMonth && 
+          expenseDate.getFullYear() === currentYear;
+        
+        // Include if it's recurring or from the current month
+        if (expense.recurring || isCurrentMonth) {
+          return total + Number(expense.amount || 0);
+        }
+      } else if (expense.recurring) {
+        // Always include recurring expenses without dates
+        return total + Number(expense.amount || 0);
+      }
+      return total;
+    }, 0);
+  };
+
   useEffect(() => {
     const fetchExpenses = () => {
       const savedExpenses = localStorage.getItem('expenses');
@@ -72,30 +96,10 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
           const parsedExpenses = JSON.parse(savedExpenses);
           setLocalExpenses(parsedExpenses);
           
-          // Calculate total monthly amount (recurring + one-time expenses)
-          const currentMonth = new Date().getMonth();
-          const currentYear = new Date().getFullYear();
-          
-          const monthlyTotal = parsedExpenses.reduce((total: number, expense: any) => {
-            // Check if expense has a date and it's from the current month
-            if (expense.date) {
-              const expenseDate = new Date(expense.date);
-              const isCurrentMonth = 
-                expenseDate.getMonth() === currentMonth && 
-                expenseDate.getFullYear() === currentYear;
-              
-              // Include if it's recurring or from the current month
-              if (expense.recurring || isCurrentMonth) {
-                return total + Number(expense.amount);
-              }
-            } else if (expense.recurring) {
-              // Always include recurring expenses without dates
-              return total + Number(expense.amount);
-            }
-            return total;
-          }, 0);
-          
+          // Calculate monthly total using the helper function
+          const monthlyTotal = calculateMonthlyTotal(parsedExpenses);
           setTotalMonthlyAmount(monthlyTotal);
+          
         } catch (e) {
           console.error('Failed to parse expenses from localStorage', e);
         }
@@ -148,8 +152,13 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     const updatedExpenses = [...localExpenses, newExpenseItem];
     setLocalExpenses(updatedExpenses);
     
+    // Update the monthly total right away
+    const newMonthlyTotal = calculateMonthlyTotal(updatedExpenses);
+    setTotalMonthlyAmount(newMonthlyTotal);
+    
     localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
     
+    // Dispatch a storage event to notify other components
     const storageEvent = new StorageEvent('storage', {
       key: 'expenses',
       newValue: JSON.stringify(updatedExpenses),
@@ -184,11 +193,11 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
   };
 
   const displayData = localExpenses.length > 0 ? localExpenses : [];
-  const totalExpenses = displayData.reduce((sum, item) => sum + item.amount, 0);
+  const totalExpenses = displayData.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 
   const pieData = displayData.map((item, index) => ({
     name: item.category,
-    value: item.amount,
+    value: Number(item.amount) || 0,
     color: item.color || CHART_COLORS[index % CHART_COLORS.length]
   }));
 
@@ -259,7 +268,19 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
       
       <CardContent>
         {displayData.length === 0 ? (
-          renderEmptyState()
+          <div className="flex flex-col items-center justify-center h-48 text-center">
+            <div className="text-gray-400 mb-6">
+              <p className="mb-2">No expense data yet</p>
+              <p className="text-sm text-gray-500">Track your recurring expenses and subscriptions</p>
+            </div>
+            <Button 
+              onClick={handleAddExpense}
+              className="bg-purple-600/70 hover:bg-purple-700 backdrop-blur-sm border border-white/10 shadow-lg transition-all hover:scale-[1.02]"
+            >
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add New Expense
+            </Button>
+          </div>
         ) : (
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
@@ -348,7 +369,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
                     className="w-2 h-2 rounded-full" 
                     style={{ backgroundColor: item.color }}
                   ></div>
-                  <span>{item.category}: ${item.amount}</span>
+                  <span>{item.category}: ${Number(item.amount).toFixed(2)}</span>
                   {item.recurring && (
                     <span className="ml-1 px-1 bg-blue-500/20 text-blue-300 rounded-full text-xs">recurring</span>
                   )}
