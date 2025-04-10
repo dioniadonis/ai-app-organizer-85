@@ -164,12 +164,12 @@ const Dashboard: React.FC<DashboardProps> = ({
     >
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <motion.h2 
-          className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300"
+          className="text-2xl font-bold text-white"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.3 }}
         >
-          Subscription Manager
+          Dashboard
         </motion.h2>
         
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">

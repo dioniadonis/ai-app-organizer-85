@@ -42,6 +42,7 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
 }) => {
   const navigate = useNavigate();
   const [hoveredItemId, setHoveredItemId] = useState<string | number | null>(null);
+  const [activeTaskId, setActiveTaskId] = useState<string | number | null>(null);
   
   // Show max 3 items
   const tasksToShow = tasks.slice(0, 3);
@@ -65,6 +66,9 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
   };
 
   const handleTaskCircleClick = (task: Task) => {
+    setActiveTaskId(task.id);
+    setTimeout(() => setActiveTaskId(null), 300);
+    
     if (onToggleTaskComplete) {
       onToggleTaskComplete(task.id);
     }
@@ -111,7 +115,7 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
                 >
                   <div className="flex items-center gap-2">
                     <div 
-                      className="cursor-pointer transition-transform hover:scale-110"
+                      className={`cursor-pointer transition-all ${activeTaskId === task.id ? 'scale-125 bg-purple-500/20 rounded-full' : 'hover:scale-110'}`}
                       onClick={() => handleTaskCircleClick(task)}
                     >
                       {task.completed ? 

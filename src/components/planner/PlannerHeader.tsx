@@ -49,7 +49,7 @@ const PlannerHeader: React.FC<PlannerHeaderProps> = ({
     <>
       <div className="flex justify-between items-center mb-6">
         <motion.h1 
-          className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300"
+          className="text-2xl font-bold text-white"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.3 }}

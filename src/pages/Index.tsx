@@ -587,7 +587,7 @@ const Index = () => {
             <div className="w-full sm:w-auto">
               <Button variant="outline" onClick={() => setShowAddForm(!showAddForm)} className="w-full sm:w-auto bg-ai-blue/20 text-ai-blue hover:bg-ai-blue/30 hover:text-ai-blue border-ai-blue/50">
                 <PlusCircle className="w-4 h-4 mr-2" />
-                {showAddForm ? 'Cancel' : 'Add New Subscription'}
+                {showAddForm ? 'Cancel' : 'Add New Expense'}
               </Button>
             </div>
           </div>
@@ -632,7 +632,7 @@ const Index = () => {
         }} transition={{
           duration: 0.3
         }} className="mb-8 p-5 rounded-xl glass-card">
-              <h2 className="text-xl font-semibold mb-4 ai-gradient-text">Add New Subscription</h2>
+              <h2 className="text-xl font-semibold mb-4 ai-gradient-text">Add New Expense</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="new-name" className="block text-sm font-medium text-gray-300 mb-1">
