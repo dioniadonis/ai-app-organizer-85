@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Planner from '@/components/Planner';
@@ -9,7 +8,7 @@ import {
   Home, 
   CreditCard, 
   LayoutDashboard, 
-  CalendarCheck, 
+  CalendarClock, 
   Bell, 
   Settings,
   Repeat,
@@ -26,13 +25,11 @@ import { Input } from '@/components/ui/input';
 import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 
-// TypeScript interface for AI Assistant conversation
 interface AIConversationMessage {
   role: 'user' | 'assistant';
   content: string;
 }
 
-// TypeScript interface for Planner Data
 interface PlannerDataType {
   tasks: any[];
   goals: any[];
@@ -53,7 +50,7 @@ const PlannerPage: React.FC = () => {
     goals: [],
     recurringTasks: []
   });
-  
+
   const [notifications, setNotifications] = useState([
     { id: 1, title: "Task Due", message: "Complete project presentation", date: "2 hours ago" },
     { id: 2, title: "Goal Progress", message: "Daily exercise goal near completion", date: "Yesterday" }
@@ -69,7 +66,6 @@ const PlannerPage: React.FC = () => {
   });
 
   useEffect(() => {
-    // Persist data when switching between tabs
     const savedData = localStorage.getItem('plannerData');
     if (savedData) {
       setPlannerData(JSON.parse(savedData));
@@ -77,15 +73,13 @@ const PlannerPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Save data when it changes
     localStorage.setItem('plannerData', JSON.stringify(plannerData));
   }, [plannerData]);
-  
+
   const handleTabChange = (value: string) => {
     if (value === 'dashboard') {
       navigate('/');
     } else if (value === 'expenses') {
-      // Navigate to expenses page when implemented
       toast({
         title: "Expenses",
         description: "Expenses feature is being implemented",
@@ -107,7 +101,6 @@ const PlannerPage: React.FC = () => {
   };
 
   const saveNotificationSettings = (data: any) => {
-    // Save notification settings
     toast({
       title: "Notification settings saved",
       description: `Frequency: ${data.frequency}, Custom Rate: ${data.customRate}`,
@@ -118,21 +111,21 @@ const PlannerPage: React.FC = () => {
   const handleAIAssistantSubmit = () => {
     if (!aiAssistantInput.trim()) return;
     
-    // Add user message to conversation
+    const userMessage: AIConversationMessage = { 
+      role: 'user', 
+      content: aiAssistantInput 
+    };
     const updatedConversation: AIConversationMessage[] = [
       ...aiAssistantConversation,
-      { role: 'user', content: aiAssistantInput }
+      userMessage
     ];
     setAIAssistantConversation(updatedConversation);
     
-    // Clear input
     setAIAssistantInput('');
     
-    // Simulate AI response
     setTimeout(() => {
       let response: string;
       
-      // Simple logic to determine response based on user input
       if (aiAssistantInput.toLowerCase().includes('goal')) {
         response = "I can help you set up a goal. What's the title of your goal, and when would you like to complete it? Would you like to add any steps to track progress?";
       } else if (aiAssistantInput.toLowerCase().includes('task')) {
@@ -145,10 +138,14 @@ const PlannerPage: React.FC = () => {
         response = "I'm your AI assistant for planning. I can help you create tasks, set goals, manage recurring tasks, and track expenses. What would you like help with today?";
       }
       
-      // Add AI response to conversation
+      const assistantMessage: AIConversationMessage = {
+        role: 'assistant',
+        content: response
+      };
+      
       setAIAssistantConversation([
         ...updatedConversation,
-        { role: 'assistant', content: response }
+        assistantMessage
       ]);
     }, 800);
   };
@@ -317,7 +314,7 @@ const PlannerPage: React.FC = () => {
                   value="planner" 
                   className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-white rounded-lg gap-2"
                 >
-                  <CalendarCheck className="w-4 h-4" />
+                  <CalendarClock className="w-4 h-4" />
                   Planner
                 </TabsTrigger>
                 <TabsTrigger 
@@ -370,7 +367,11 @@ const PlannerPage: React.FC = () => {
               </Tabs>
             </div>
             
-            <Planner activeTab={activeTab} plannerData={plannerData} setPlannerData={setPlannerData} />
+            <Planner 
+              activeTab={activeTab} 
+              plannerData={plannerData} 
+              setPlannerData={setPlannerData} 
+            />
           </motion.div>
           
           <footer className="py-6 text-center text-gray-500 mt-12">
@@ -378,7 +379,6 @@ const PlannerPage: React.FC = () => {
           </footer>
         </div>
         
-        {/* Notification Settings Dialog */}
         <Dialog open={isNotificationSettingsOpen} onOpenChange={setIsNotificationSettingsOpen}>
           <DialogContent className="bg-gray-800 text-white border-gray-700">
             <DialogHeader>
@@ -480,7 +480,6 @@ const PlannerPage: React.FC = () => {
           </DialogContent>
         </Dialog>
         
-        {/* AI Assistant Dialog */}
         <Dialog open={isAIAssistantOpen} onOpenChange={setIsAIAssistantOpen}>
           <DialogContent className="bg-gray-800 text-white border-gray-700 max-w-2xl">
             <DialogHeader>

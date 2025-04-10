@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { AITool } from '@/types/AITool';
-import { Banknote, Calendar, Package, Star, ExternalLink, CheckCircle, XCircle, Grid3X3, Layout, LayoutDashboard, Plus } from 'lucide-react';
+import { Banknote, Calendar, Package, Star, ExternalLink, CheckCircle, XCircle, Grid3X3, Layout, LayoutDashboard, Plus, CalendarClock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format, isToday, isTomorrow } from 'date-fns';
 import PlannerWidget from './PlannerWidget';
@@ -60,25 +59,22 @@ const Dashboard: React.FC<DashboardProps> = ({
     categories: true
   });
   
-  // Calculate statistics
   const totalTools = aiTools.length;
   const favoriteTools = aiTools.filter(tool => tool.isFavorite).length;
   const totalMonthlyCost = aiTools.reduce((sum, tool) => sum + tool.subscriptionCost, 0);
   
-  // Get upcoming renewals including those due today
   const today = new Date();
-  today.setHours(0, 0, 0, 0); // Set to beginning of day for comparison
+  today.setHours(0, 0, 0, 0);
   const thirtyDaysLater = new Date();
   thirtyDaysLater.setDate(today.getDate() + 30);
   
   const upcomingRenewals = aiTools.filter(tool => {
     if (!tool.renewalDate) return false;
     const renewalDate = new Date(tool.renewalDate);
-    renewalDate.setHours(0, 0, 0, 0); // Set to beginning of day for comparison
+    renewalDate.setHours(0, 0, 0, 0);
     return renewalDate >= today && renewalDate <= thirtyDaysLater;
   });
 
-  // Get category counts
   const categoryCount = aiTools.reduce((acc, tool) => {
     acc[tool.category] = (acc[tool.category] || 0) + 1;
     return acc;
@@ -103,7 +99,6 @@ const Dashboard: React.FC<DashboardProps> = ({
       </div>
     ));
 
-  // Animation variant for smooth fade in
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -185,7 +180,6 @@ const Dashboard: React.FC<DashboardProps> = ({
         variants={containerVariants}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
       >
-        {/* Total Tools */}
         <motion.div 
           variants={containerVariants} 
           className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-700/30 transition-colors"
@@ -196,7 +190,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           <span className="text-3xl font-bold">{totalTools}</span>
         </motion.div>
         
-        {/* Favorite Tools */}
         <motion.div 
           variants={containerVariants} 
           className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-700/30 transition-colors"
@@ -207,7 +200,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           <span className="text-3xl font-bold">{favoriteTools}</span>
         </motion.div>
         
-        {/* Monthly Cost */}
         <motion.div 
           variants={containerVariants} 
           className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-700/30 transition-colors"
@@ -218,7 +210,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           <span className="text-3xl font-bold">${totalMonthlyCost}</span>
         </motion.div>
         
-        {/* Upcoming Renewals */}
         <motion.div 
           variants={containerVariants} 
           className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-700/30 transition-colors"
@@ -230,9 +221,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         </motion.div>
       </motion.div>
       
-      {/* Dashboard Widgets */}
       <div className={`grid ${widgetLayout === 'grid' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-6 mb-8`}>
-        {/* Planner Widget */}
         {activeWidgets.planner && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -247,7 +236,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           </motion.div>
         )}
         
-        {/* Expenses Widget */}
         {activeWidgets.expenses && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -259,7 +247,6 @@ const Dashboard: React.FC<DashboardProps> = ({
         )}
       </div>
       
-      {/* Categories */}
       {activeWidgets.categories && (
         <motion.div variants={containerVariants} className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl mb-8">
           <div className="flex justify-between items-center mb-3">
@@ -279,7 +266,6 @@ const Dashboard: React.FC<DashboardProps> = ({
         </motion.div>
       )}
       
-      {/* Upcoming Renewals List */}
       {activeWidgets.renewals && upcomingRenewals.length > 0 && (
         <motion.div 
           variants={containerVariants} 
@@ -291,7 +277,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           </h3>
           <div className="space-y-2">
             {upcomingRenewals.map(tool => {
-              // Calculate days remaining
               const now = new Date();
               now.setHours(0, 0, 0, 0);
               const renewalDate = new Date(tool.renewalDate);
@@ -338,7 +323,6 @@ const Dashboard: React.FC<DashboardProps> = ({
         </motion.div>
       )}
 
-      {/* Add Widget Dialog */}
       <Dialog open={showAddWidgetDialog} onOpenChange={setShowAddWidgetDialog}>
         <DialogContent className="bg-gray-800 text-white border-gray-700">
           <DialogHeader>
@@ -351,7 +335,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           <div className="space-y-3 py-2">
             <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-700/30">
               <div className="flex items-center gap-2">
-                <CalendarCheck className="h-5 w-5 text-purple-400" />
+                <CalendarClock className="h-5 w-5 text-purple-400" />
                 <span>Planner Widget</span>
               </div>
               <Button 
