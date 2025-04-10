@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, PieChart as PieChartIcon, BarChart as BarChartIcon, ArrowRight } from 'lucide-react';
+import { PlusCircle, PieChart as PieChartIcon, BarChart as BarChartIcon, ArrowRight, AlertCircle } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useNavigate } from 'react-router-dom';
@@ -64,6 +64,27 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
   });
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [totalMonthlyAmount, setTotalMonthlyAmount] = useState<number>(0);
+  const [unpaidTotalAmount, setUnpaidTotalAmount] = useState<number>(0);
+
+  // Calculate the unpaid total amount
+  const calculateUnpaidTotal = (expenseItems: any[]) => {
+    if (!expenseItems || expenseItems.length === 0) return 0;
+    
+    return expenseItems.reduce((total: number, expense: any) => {
+      // Skip if expense is null or undefined
+      if (!expense) return total;
+      
+      // Convert amount to number and default to 0 if NaN
+      const amount = Number(expense.amount) || 0;
+      
+      // Only count explicitly unpaid expenses (isPaid === false)
+      if (expense.isPaid === false) {
+        return total + amount;
+      }
+      
+      return total;
+    }, 0);
+  };
 
   // Simple direct calculation function for monthly total
   const calculateMonthlyTotal = (expenseItems: any[]) => {
@@ -109,14 +130,20 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
         const monthlyTotal = calculateMonthlyTotal(parsedExpenses);
         setTotalMonthlyAmount(monthlyTotal);
         
-        console.log('Updated monthly total:', monthlyTotal, 'from expenses:', parsedExpenses);
+        // Calculate and update unpaid total
+        const unpaidTotal = calculateUnpaidTotal(parsedExpenses);
+        setUnpaidTotalAmount(unpaidTotal);
+        
+        console.log('Updated monthly total:', monthlyTotal, 'and unpaid total:', unpaidTotal, 'from expenses:', parsedExpenses);
       } else {
         console.log('No expenses found in localStorage');
         setTotalMonthlyAmount(0);
+        setUnpaidTotalAmount(0);
       }
     } catch (e) {
       console.error('Failed to parse expenses from localStorage', e);
       setTotalMonthlyAmount(0);
+      setUnpaidTotalAmount(0);
     }
   };
 
@@ -176,6 +203,10 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     const newTotal = calculateMonthlyTotal(updatedExpenses);
     setTotalMonthlyAmount(newTotal);
     
+    // Immediately update the unpaid total
+    const newUnpaidTotal = calculateUnpaidTotal(updatedExpenses);
+    setUnpaidTotalAmount(newUnpaidTotal);
+    
     // Update localStorage
     localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
     
@@ -198,7 +229,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     });
     setShowQuickAddDialog(false);
     
-    console.log('Added expense, new monthly total:', newTotal);
+    console.log('Added expense, new monthly total:', newTotal, 'and unpaid total:', newUnpaidTotal);
   };
 
   const handleCategoryClick = (category: string) => {
@@ -368,6 +399,18 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
                 Monthly Cost: ${totalMonthlyAmount.toFixed(2)}
               </div>
             </div>
+            
+            {/* Unpaid expense display section */}
+            {unpaidTotalAmount > 0 && (
+              <div className="flex items-center justify-between bg-red-500/20 text-red-300 px-3 py-2 rounded-lg mt-2">
+                <div className="flex items-center">
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  <span className="text-sm">Unpaid Expenses</span>
+                </div>
+                <div className="font-medium">${unpaidTotalAmount.toFixed(2)}</div>
+              </div>
+            )}
+            
             <div className="flex flex-wrap gap-2">
               {displayData.map((item, index) => (
                 <div 
