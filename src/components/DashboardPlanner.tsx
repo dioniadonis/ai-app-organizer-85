@@ -129,7 +129,7 @@ const DashboardPlanner: React.FC<DashboardPlannerProps> = ({ tasks, goals, onVie
               return (
                 <div key={task.id} className="flex justify-between items-center p-2 rounded bg-white/5 hover:bg-white/10 transition-colors">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-ai-blue"></div>
+                    <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-green-500' : 'bg-ai-blue'}`}></div>
                     <span>{task.title}</span>
                   </div>
                   <span className={`text-xs px-2 py-1 rounded-full ${

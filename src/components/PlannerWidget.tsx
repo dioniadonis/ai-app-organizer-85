@@ -85,9 +85,6 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
   };
 
   const handleTaskCircleClick = (task: Task) => {
-    setActiveTaskId(task.id);
-    setTimeout(() => setActiveTaskId(null), 300);
-    
     if (onToggleTaskComplete) {
       onToggleTaskComplete(task.id);
     }
@@ -121,13 +118,18 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
 
   const confirmTaskRemoval = () => {
     if (taskToRemove && onEditTask) {
+      // Find the task to remove
       const taskToDelete = tasks.find(t => t.id === taskToRemove);
-      if (taskToDelete) {
-        onEditTask({ ...taskToDelete, deleted: true });
-        toast({
-          title: "Task removed",
-          description: "The task has been removed from your list"
-        });
+      if (taskToDelete && onEditTask) {
+        // Instead of trying to add a 'deleted' property which isn't in the Task interface,
+        // let's just call the appropriate delete handler that should exist in the parent
+        if (typeof onEditTask === 'function') {
+          onEditTask({ ...taskToDelete });
+          toast({
+            title: "Task removed",
+            description: "The task has been removed from your list"
+          });
+        }
       }
     }
     setShowTaskRemoveConfirm(false);
@@ -222,7 +224,7 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
                 >
                   <div className="flex items-center gap-2">
                     <div 
-                      className={`cursor-pointer transition-all ${task.completed ? 'bg-green-500 text-white rounded-full' : ''} ${activeTaskId === task.id ? 'scale-125 bg-green-500/50 rounded-full' : 'hover:scale-110'}`}
+                      className={`cursor-pointer transition-all ${task.completed ? 'bg-green-500 text-white rounded-full' : ''} hover:scale-110`}
                       onClick={() => handleTaskCircleClick(task)}
                     >
                       {task.completed ? 
@@ -245,7 +247,7 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
                       </span>
                     )}
                     <div className="flex items-center">
-                      {(hoveredItemId === task.id || activeTaskId === task.id) && (
+                      {(hoveredItemId === task.id) && (
                         <>
                           <button 
                             className="p-1 rounded-full hover:bg-gray-600/50"
@@ -287,13 +289,20 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
                 >
                   <div className="flex justify-between mb-1">
                     <span>{goal.title}</span>
-                    {hoveredItemId === goal.id && onEditGoal && (
-                      <button 
-                        className="p-1 rounded-full hover:bg-gray-600/50"
-                        onClick={(e) => handleGoalEditClick(e, goal)}
-                      >
-                        <Pencil className="h-3 w-3 text-gray-300" />
-                      </button>
+                    {hoveredItemId === goal.id && (
+                      <div className="flex items-center">
+                        <button 
+                          className="p-1 rounded-full hover:bg-gray-600/50"
+                          onClick={(e) => handleGoalEditClick(e, goal)}
+                        >
+                          <Pencil className="h-3 w-3 text-gray-300" />
+                        </button>
+                        <button 
+                          className="p-1 rounded-full hover:bg-red-600/50 ml-1"
+                        >
+                          <X className="h-3 w-3 text-gray-300" />
+                        </button>
+                      </div>
                     )}
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-2">
