@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { BarChart, Bar, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
+import { BarChart, Bar, ResponsiveContainer, XAxis, Tooltip, Cell } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Banknote, Plus, ArrowRight, Receipt, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,26 +21,21 @@ const ExpensesWidget = ({
   onAddExpense, 
   onViewAllExpenses 
 }: ExpensesWidgetProps) => {
-  // If totalExpenses is not provided, calculate it
   const calculatedTotalExpenses = totalExpenses ?? expenses.reduce((sum, expense) => sum + expense.amount, 0);
   
-  // Monthly expenses calculation if not provided
   const calculatedMonthlyExpenses = monthlyExpenses ?? expenses
     .filter(expense => expense.recurring && (expense.frequency === 'monthly' || !expense.frequency))
     .reduce((sum, expense) => sum + expense.amount, 0);
   
-  // If unpaidTotal not provided, calculate it
   const calculatedUnpaidTotal = unpaidTotal ?? expenses
     .filter(expense => expense.isPaid === false)
     .reduce((sum, expense) => sum + expense.amount, 0);
 
-  // Calculate data for the chart
   const recentExpenses = expenses.slice(0, 5).map(expense => ({
     name: expense.category?.substring(0, 10) || 'Other',
     amount: expense.amount
   }));
 
-  // Group expenses by category for chart visualization
   const expensesByCategory = expenses.reduce((acc, expense) => {
     const category = expense.category || 'Other';
     if (!acc[category]) {

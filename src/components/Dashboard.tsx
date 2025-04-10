@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AITool } from '@/types/AITool';
-import { Banknote, Calendar, Package, Star, CheckCircle, XCircle, Grid3X3, Layout, LayoutDashboard, Plus, CalendarClock, Clock, AlertCircle, Receipt } from 'lucide-react';
+import { Banknote, Calendar, Package, Star, CheckCircle, XCircle, Grid3X3, Layout, LayoutDashboard, Plus, CalendarClock, Clock, AlertCircle, Receipt, Sparkles, TrendingUp, AlertTriangle, CreditCard } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { format, isToday, isTomorrow, isPast } from 'date-fns';
+import { format, isToday, isTomorrow, isPast, addDays } from 'date-fns';
 import PlannerWidget from './PlannerWidget';
 import ExpensesWidget from './ExpensesWidget';
 import { Button } from '@/components/ui/button';
@@ -47,7 +47,7 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ 
   aiTools, 
   onCategoryClick, 
-  onRenewalClick, 
+  onRenewalClick,
   onViewPlanner,
   tasks = [],
   goals = [],
@@ -70,6 +70,9 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [renewals, setRenewals] = useState<any[]>([]);
   const [mobileControlsExpanded, setMobileControlsExpanded] = useState(false);
   
+  // New state for insights component
+  const [activeInsight, setActiveInsight] = useState(0);
+
   useEffect(() => {
     const savedExpenses = localStorage.getItem('expenses');
     if (savedExpenses) {
@@ -264,6 +267,79 @@ const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
+  const navigateToPlanner = () => {
+    navigate('/planner');
+  };
+
+  // Generate insights based on current data
+  const getInsights = () => {
+    const insights = [];
+    
+    // Insight 1: Upcoming renewals in the next 7 days
+    const sevenDaysFromNow = addDays(new Date(), 7);
+    const upcomingSevenDays = upcomingRenewals.filter(renewal => {
+      const renewalDate = new Date(renewal.renewalDate);
+      return renewalDate <= sevenDaysFromNow;
+    });
+    
+    if (upcomingSevenDays.length > 0) {
+      insights.push({
+        title: `${upcomingSevenDays.length} renewal${upcomingSevenDays.length > 1 ? 's' : ''} due in 7 days`,
+        description: `Total of $${upcomingSevenDays.reduce((sum, r) => sum + r.subscriptionCost, 0).toFixed(2)}`,
+        icon: <AlertTriangle className="w-5 h-5 text-orange-400" />,
+        action: handleRenewalsStatClick,
+        color: 'bg-orange-500/20 text-orange-300'
+      });
+    }
+    
+    // Insight 2: Unpaid expenses
+    if (unpaidTotal > 0) {
+      insights.push({
+        title: `${unpaidCount} unpaid expense${unpaidCount > 1 ? 's' : ''}`,
+        description: `Total of $${unpaidTotal.toFixed(2)}`,
+        icon: <CreditCard className="w-5 h-5 text-red-400" />,
+        action: handleUnpaidExpensesClick,
+        color: 'bg-red-500/20 text-red-300'
+      });
+    }
+    
+    // Insight 3: Monthly spending
+    insights.push({
+      title: "Monthly spending",
+      description: `$${totalMonthlyCost.toFixed(2)}/month`,
+      icon: <TrendingUp className="w-5 h-5 text-blue-400" />,
+      action: () => navigate('/expenses'),
+      color: 'bg-blue-500/20 text-blue-300'
+    });
+    
+    // Insight 4: Upcoming tasks
+    const incompleteTasks = tasks.filter(task => !task.completed);
+    if (incompleteTasks.length > 0) {
+      insights.push({
+        title: `${incompleteTasks.length} pending task${incompleteTasks.length > 1 ? 's' : ''}`,
+        description: "Click to view your planner",
+        icon: <CalendarClock className="w-5 h-5 text-purple-400" />,
+        action: navigateToPlanner,
+        color: 'bg-purple-500/20 text-purple-300'
+      });
+    }
+    
+    return insights;
+  };
+  
+  const insights = getInsights();
+  
+  // Auto-rotate through insights
+  useEffect(() => {
+    if (insights.length <= 1) return;
+    
+    const timer = setInterval(() => {
+      setActiveInsight(current => (current + 1) % insights.length);
+    }, 8000);
+    
+    return () => clearInterval(timer);
+  }, [insights.length]);
+
   return (
     <motion.div
       variants={containerVariants}
@@ -281,11 +357,37 @@ const Dashboard: React.FC<DashboardProps> = ({
           <h2 className="text-2xl font-bold text-white">Dashboard</h2>
         </motion.div>
         
+        {/* Replace search box with insights */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
           <div className="hidden md:flex items-center text-gray-400 text-sm mr-3">
             <Clock className="w-4 h-4 mr-1" />
             <span>{formattedDate} • {formattedTime}</span>
           </div>
+          
+          {insights.length > 0 && (
+            <div className="w-full sm:w-auto relative overflow-hidden bg-gray-800/50 border border-gray-700/50 rounded-lg px-4 py-2">
+              {insights.map((insight, index) => (
+                <motion.div 
+                  key={index}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: index === activeInsight ? 1 : 0, y: index === activeInsight ? 0 : 10 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                  className={`flex items-center gap-3 cursor-pointer absolute inset-0 px-4 py-2 ${index === activeInsight ? 'z-10' : 'z-0'}`}
+                  onClick={insight.action}
+                >
+                  <div className={`rounded-full p-1 ${insight.color}`}>
+                    {insight.icon}
+                  </div>
+                  <div>
+                    <div className="font-medium">{insight.title}</div>
+                    <div className="text-xs text-gray-400">{insight.description}</div>
+                  </div>
+                  <Sparkles className="w-4 h-4 text-yellow-400 ml-auto animate-pulse" />
+                </motion.div>
+              ))}
+            </div>
+          )}
           
           {isMobile ? (
             <Collapsible 
@@ -340,11 +442,6 @@ const Dashboard: React.FC<DashboardProps> = ({
             </Collapsible>
           ) : (
             <>
-              <SearchBox 
-                onSearch={handleSearch} 
-                className="w-full sm:w-64 md:w-72"
-              />
-              
               <div className="flex items-center gap-2 ml-auto">
                 <Button 
                   variant="ghost" 
