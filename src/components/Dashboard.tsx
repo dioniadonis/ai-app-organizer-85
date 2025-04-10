@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AITool } from '@/types/AITool';
 import { Banknote, Calendar, Package, Star, ExternalLink, CheckCircle, XCircle, Grid3X3, Layout, LayoutDashboard, Plus, CalendarClock } from 'lucide-react';
@@ -11,6 +10,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { toast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
+import SearchBox from './SearchBox';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Task {
   id: string;
@@ -53,6 +54,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   onCategoryToggle
 }) => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [widgetLayout, setWidgetLayout] = useState<'grid' | 'list'>('grid');
   const [showAddWidgetDialog, setShowAddWidgetDialog] = useState(false);
   const [activeWidgets, setActiveWidgets] = useState({
@@ -61,6 +63,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     renewals: true,
     categories: true
   });
+  const [searchTerm, setSearchTerm] = useState('');
   
   const totalTools = aiTools.length;
   const favoriteTools = aiTools.filter(tool => tool.isFavorite).length;
@@ -133,6 +136,25 @@ const Dashboard: React.FC<DashboardProps> = ({
     navigate('/expenses');
   };
 
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+  };
+
+  const handleToggleTaskComplete = (taskId: string | number) => {
+    toast({
+      title: "Task status updated",
+      description: "Task completion status has been toggled",
+    });
+  };
+
+  const handleEditTask = (task: any) => {
+    navigate('/planner');
+  };
+
+  const handleEditGoal = (goal: any) => {
+    navigate('/planner');
+  };
+
   return (
     <motion.div
       variants={containerVariants}
@@ -140,7 +162,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       animate="visible"
       className="py-6"
     >
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <motion.h2 
           className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300"
           initial={{ opacity: 0, y: -10 }}
@@ -150,39 +172,46 @@ const Dashboard: React.FC<DashboardProps> = ({
           Loop Space AI Organizer
         </motion.h2>
         
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8"
-            onClick={() => setWidgetLayout('grid')}
-          >
-            <Grid3X3 className={`h-4 w-4 ${widgetLayout === 'grid' ? 'text-purple-400' : 'text-gray-400'}`} />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 mr-2"
-            onClick={() => setWidgetLayout('list')}
-          >
-            <Layout className={`h-4 w-4 ${widgetLayout === 'list' ? 'text-purple-400' : 'text-gray-400'}`} />
-          </Button>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
+          <SearchBox 
+            onSearch={handleSearch} 
+            className="w-full sm:w-64 md:w-72"
+          />
           
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="text-xs gap-1"
-            onClick={() => setShowAddWidgetDialog(true)}
-          >
-            <Plus className="h-3 w-3" />
-            Add Widget
-          </Button>
+          <div className="flex items-center gap-2 ml-auto">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8"
+              onClick={() => setWidgetLayout('grid')}
+            >
+              <Grid3X3 className={`h-4 w-4 ${widgetLayout === 'grid' ? 'text-purple-400' : 'text-gray-400'}`} />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 mr-2"
+              onClick={() => setWidgetLayout('list')}
+            >
+              <Layout className={`h-4 w-4 ${widgetLayout === 'list' ? 'text-purple-400' : 'text-gray-400'}`} />
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs gap-1"
+              onClick={() => setShowAddWidgetDialog(true)}
+            >
+              <Plus className="h-3 w-3" />
+              Add Widget
+            </Button>
+          </div>
         </div>
       </div>
       
       <motion.div 
         variants={containerVariants}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+        className={`grid grid-cols-1 ${isMobile ? '' : 'sm:grid-cols-2 lg:grid-cols-4'} gap-4 mb-8`}
       >
         <motion.div 
           variants={containerVariants} 
@@ -235,7 +264,10 @@ const Dashboard: React.FC<DashboardProps> = ({
             <PlannerWidget 
               tasks={tasks} 
               goals={goals} 
-              onViewMore={onViewPlanner} 
+              onViewMore={onViewPlanner}
+              onToggleTaskComplete={handleToggleTaskComplete}
+              onEditTask={handleEditTask}
+              onEditGoal={handleEditGoal}
             />
           </motion.div>
         )}

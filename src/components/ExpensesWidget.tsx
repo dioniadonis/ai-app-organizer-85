@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, PieChart as PieChartIcon, BarChart as BarChartIcon, ArrowRight } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ExpensesWidgetProps {
   expenses?: Array<{
@@ -13,6 +14,7 @@ interface ExpensesWidgetProps {
     color?: string;
     date?: string;
     recurring?: boolean;
+    tags?: string[];
   }>;
   onAddExpense?: () => void;
   onViewAllExpenses?: () => void;
@@ -23,7 +25,22 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
   onAddExpense,
   onViewAllExpenses 
 }) => {
-  const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
+  const [chartType, setChartType] = useState<'bar' | 'pie'>('pie');
+  const isMobile = useIsMobile();
+  const [localExpenses, setLocalExpenses] = useState(expenses);
+
+  // Fetch expenses from localStorage on mount
+  useEffect(() => {
+    const savedExpenses = localStorage.getItem('expenses');
+    if (savedExpenses) {
+      try {
+        const parsedExpenses = JSON.parse(savedExpenses);
+        setLocalExpenses(parsedExpenses);
+      } catch (e) {
+        console.error('Failed to parse expenses from localStorage', e);
+      }
+    }
+  }, []);
 
   // Default expenses data if none provided
   const defaultExpenses = [
@@ -34,7 +51,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     { category: 'Others', amount: 50, color: '#33C3F0' },
   ];
 
-  const displayData = expenses.length > 0 ? expenses : defaultExpenses;
+  const displayData = localExpenses.length > 0 ? localExpenses : expenses.length > 0 ? expenses : defaultExpenses;
   const totalExpenses = displayData.reduce((sum, item) => sum + item.amount, 0);
 
   // Format data for pie chart
@@ -43,6 +60,11 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     value: item.amount,
     color: item.color
   }));
+
+  // Get all unique tags from expenses
+  const allTags = localExpenses
+    .flatMap(expense => expense.tags || [])
+    .filter((tag, index, self) => self.indexOf(tag) === index);
 
   return (
     <Card className="bg-gray-800/60 border-gray-700 text-white shadow-md">
@@ -74,7 +96,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
       </CardHeader>
       
       <CardContent>
-        {expenses.length === 0 ? (
+        {displayData.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-36 text-center">
             <p className="text-gray-400 mb-3">No expense data yet</p>
             <Button 
@@ -123,9 +145,12 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    outerRadius={80}
+                    outerRadius={isMobile ? 60 : 80}
                     fill="#8884d8"
                     dataKey="value"
+                    label={({ name, percent }) => 
+                      isMobile ? '' : `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
                   >
                     {pieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -165,6 +190,22 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
                 </div>
               ))}
             </div>
+            
+            {allTags.length > 0 && (
+              <div className="mt-3">
+                <h4 className="text-xs text-gray-400 mb-1">Tags</h4>
+                <div className="flex flex-wrap gap-1">
+                  {allTags.map((tag, index) => (
+                    <div 
+                      key={index} 
+                      className="px-2 py-0.5 rounded-full text-xs bg-purple-500/20 text-purple-300"
+                    >
+                      {tag}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CalendarCheck, CheckCircle, Circle, Clock, ArrowRight } from 'lucide-react';
+import { CalendarCheck, CheckCircle, Circle, Clock, ArrowRight, Edit, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 interface Task {
   id: string | number;
@@ -26,13 +27,22 @@ interface PlannerWidgetProps {
   tasks?: Task[];
   goals?: Goal[];
   onViewMore: () => void;
+  onToggleTaskComplete?: (taskId: string | number) => void;
+  onEditTask?: (task: Task) => void;
+  onEditGoal?: (goal: Goal) => void;
 }
 
 const PlannerWidget: React.FC<PlannerWidgetProps> = ({ 
   tasks = [], 
   goals = [],
-  onViewMore
+  onViewMore,
+  onToggleTaskComplete,
+  onEditTask,
+  onEditGoal
 }) => {
+  const navigate = useNavigate();
+  const [hoveredItemId, setHoveredItemId] = useState<string | number | null>(null);
+  
   // Show max 3 items
   const tasksToShow = tasks.slice(0, 3);
   const goalsToShow = goals.slice(0, 3);
@@ -54,6 +64,26 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
     high: 'bg-red-500/20 text-red-300'
   };
 
+  const handleTaskCircleClick = (task: Task) => {
+    if (onToggleTaskComplete) {
+      onToggleTaskComplete(task.id);
+    }
+  };
+
+  const handleTaskEditClick = (e: React.MouseEvent, task: Task) => {
+    e.stopPropagation();
+    if (onEditTask) {
+      onEditTask(task);
+    }
+  };
+
+  const handleGoalEditClick = (e: React.MouseEvent, goal: Goal) => {
+    e.stopPropagation();
+    if (onEditGoal) {
+      onEditGoal(goal);
+    }
+  };
+
   return (
     <Card className="bg-gray-800/60 border-gray-700 text-white shadow-md">
       <CardHeader>
@@ -73,12 +103,22 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
           {tasksToShow.length > 0 ? (
             <div className="space-y-2">
               {tasksToShow.map(task => (
-                <div key={task.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-700/30">
+                <div 
+                  key={task.id} 
+                  className="flex items-center justify-between p-2 rounded-lg bg-gray-700/30 relative"
+                  onMouseEnter={() => setHoveredItemId(task.id)}
+                  onMouseLeave={() => setHoveredItemId(null)}
+                >
                   <div className="flex items-center gap-2">
-                    {task.completed ? 
-                      <CheckCircle className="h-4 w-4 text-green-400" /> : 
-                      <Circle className="h-4 w-4 text-gray-400" />
-                    }
+                    <div 
+                      className="cursor-pointer transition-transform hover:scale-110"
+                      onClick={() => handleTaskCircleClick(task)}
+                    >
+                      {task.completed ? 
+                        <CheckCircle className="h-4 w-4 text-green-400" /> : 
+                        <Circle className="h-4 w-4 text-gray-400" />
+                      }
+                    </div>
                     <span className={task.completed ? "line-through text-gray-400" : ""}>{task.title}</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -92,6 +132,14 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
                         <Clock className="h-3 w-3" />
                         {formatDate(task.dueDate)}
                       </span>
+                    )}
+                    {hoveredItemId === task.id && onEditTask && (
+                      <button 
+                        className="p-1 rounded-full hover:bg-gray-600/50"
+                        onClick={(e) => handleTaskEditClick(e, task)}
+                      >
+                        <Pencil className="h-3 w-3 text-gray-300" />
+                      </button>
                     )}
                   </div>
                 </div>
@@ -110,13 +158,21 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
           {goalsToShow.length > 0 ? (
             <div className="space-y-2">
               {goalsToShow.map(goal => (
-                <div key={goal.id} className="p-2 rounded-lg bg-gray-700/30">
+                <div 
+                  key={goal.id} 
+                  className="p-2 rounded-lg bg-gray-700/30 relative"
+                  onMouseEnter={() => setHoveredItemId(goal.id)}
+                  onMouseLeave={() => setHoveredItemId(null)}
+                >
                   <div className="flex justify-between mb-1">
                     <span>{goal.title}</span>
-                    {goal.targetDate && (
-                      <span className="text-xs text-gray-400">
-                        Target: {formatDate(goal.targetDate)}
-                      </span>
+                    {hoveredItemId === goal.id && onEditGoal && (
+                      <button 
+                        className="p-1 rounded-full hover:bg-gray-600/50"
+                        onClick={(e) => handleGoalEditClick(e, goal)}
+                      >
+                        <Pencil className="h-3 w-3 text-gray-300" />
+                      </button>
                     )}
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-2">
@@ -127,6 +183,11 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
                   </div>
                   <div className="mt-1 text-xs text-gray-400 text-right">
                     {goal.completedSteps}/{goal.totalSteps} steps · {goal.progress}% complete
+                    {goal.targetDate && (
+                      <span className="ml-2">
+                        Target: {formatDate(goal.targetDate)}
+                      </span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -139,13 +200,21 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
         </div>
       </CardContent>
       
-      <CardFooter>
+      <CardFooter className="flex justify-between">
         <Button 
           variant="ghost" 
-          className="w-full text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
+          className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
+          onClick={() => navigate('/expenses')}
+        >
+          View Expenses
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
           onClick={onViewMore}
         >
-          View All <ArrowRight className="ml-2 h-4 w-4" />
+          View Planner <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </CardFooter>
     </Card>

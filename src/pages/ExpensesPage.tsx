@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -347,7 +346,7 @@ const ExpensesPage: React.FC = () => {
                 className="bg-purple-600 hover:bg-purple-700"
               >
                 <PlusCircle className="w-4 h-4 mr-2" />
-                Add Expense
+                Add New Expense
               </Button>
             </div>
             
@@ -621,6 +620,7 @@ const ExpensesPage: React.FC = () => {
                   }}
                   className="col-span-3 bg-gray-700 border-gray-600"
                   list="categories"
+                  placeholder="Enter or select a category"
                 />
                 <datalist id="categories">
                   {categories.map(category => (
