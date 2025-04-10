@@ -57,4 +57,9 @@ export interface DashboardProps {
   handleCategoryToggle: (category: string) => void;
   customCategories: string[];
   navigateToPlanner: () => void;
+  setShowAddForm: (show: boolean) => void;
+  expandedCategories?: string[];
+  toggleCategoryExpansion?: (category: string) => void;
+  confirmCategoryDelete?: (category: string) => void;
+  setShowAIDialog?: (show: boolean) => void;
 }

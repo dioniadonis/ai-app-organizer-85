@@ -69,7 +69,7 @@ const ExpensesPage: React.FC = () => {
     amount: 0,
     date: new Date().toISOString().split('T')[0],
     recurring: false,
-    frequency: 'monthly'
+    frequency: 'monthly' as 'monthly' | 'weekly' | 'daily' | 'yearly'
   });
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -297,7 +297,7 @@ const ExpensesPage: React.FC = () => {
       amount: 0,
       date: new Date().toISOString().split('T')[0],
       recurring: false,
-      frequency: 'monthly'
+      frequency: 'monthly' as 'monthly' | 'weekly' | 'daily' | 'yearly'
     });
     setIsAddExpenseOpen(false);
 
@@ -692,7 +692,15 @@ const ExpensesPage: React.FC = () => {
                         <Input 
                           placeholder="Frequency"
                           value={newExpense.frequency}
-                          onChange={(e) => setNewExpense(prev => ({...prev, frequency: e.target.value}))}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === 'daily' || value === 'weekly' || value === 'monthly' || value === 'yearly') {
+                              setNewExpense(prev => ({
+                                ...prev,
+                                frequency: value as 'daily' | 'weekly' | 'monthly' | 'yearly'
+                              }));
+                            }
+                          }}
                           className="bg-gray-700/50 border-gray-600 rounded-lg text-white"
                         />
                       )}

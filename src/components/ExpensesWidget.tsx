@@ -22,22 +22,27 @@ const ExpensesWidget = ({
   onAddExpense, 
   onViewAllExpenses 
 }: ExpensesWidgetProps) => {
-  const calculatedTotalExpenses = totalExpenses ?? expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  // Safety check - ensure expenses is an array
+  const safeExpenses = Array.isArray(expenses) ? expenses : [];
   
-  const calculatedMonthlyExpenses = monthlyExpenses ?? expenses
+  const calculatedTotalExpenses = totalExpenses ?? safeExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  
+  const calculatedMonthlyExpenses = monthlyExpenses ?? safeExpenses
     .filter(expense => expense.recurring && (expense.frequency === 'monthly' || !expense.frequency))
     .reduce((sum, expense) => sum + expense.amount, 0);
   
-  const calculatedUnpaidTotal = unpaidTotal ?? expenses
+  const calculatedUnpaidTotal = unpaidTotal ?? safeExpenses
     .filter(expense => expense.isPaid === false)
     .reduce((sum, expense) => sum + expense.amount, 0);
 
-  const recentExpenses = expenses.slice(0, 5).map(expense => ({
+  // Create safe category data for chart
+  const recentExpenses = safeExpenses.slice(0, 5).map(expense => ({
     name: expense.category?.substring(0, 10) || 'Other',
     amount: expense.amount
   }));
 
-  const expensesByCategory = expenses.reduce((acc, expense) => {
+  // Safe handling of expense categories
+  const expensesByCategory = safeExpenses.reduce((acc, expense) => {
     const category = expense.category || 'Other';
     if (!acc[category]) {
       acc[category] = 0;
@@ -166,7 +171,7 @@ const ExpensesWidget = ({
       )}
 
       <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-        {expenses.slice(0, 5).map((expense, index) => (
+        {safeExpenses.slice(0, 5).map((expense, index) => (
           <div 
             key={expense.id || index} 
             className="flex justify-between items-center p-2 bg-gray-700/20 rounded-md hover:bg-gray-700/30 transition-colors"
@@ -180,7 +185,7 @@ const ExpensesWidget = ({
               ></div>
               <div>
                 <div className="flex items-center">
-                  <span className="font-medium">{expense.category}</span>
+                  <span className="font-medium">{expense.category || 'Other'}</span>
                   <RecurringIndicator recurring={expense.recurring} />
                 </div>
                 {expense.description && (

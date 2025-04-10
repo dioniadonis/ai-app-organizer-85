@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusCircle, Grid, ChevronDown, ChevronUp, ArrowLeft, Trash2, ExternalLink, CheckCircle, XCircle, MessageSquareDot, Calendar, Menu, X, LayoutDashboard, Layout } from 'lucide-react';
@@ -1024,14 +1023,17 @@ const Index = () => {
             <Dashboard 
               aiTools={aiTools}
               tasks={tasks}
-              setShowAddForm={setShowAddForm}
+              selectedCategories={selectedCategories}
+              filterByRenewal={filterByRenewal}
               handleRenewalFilter={handleRenewalFilter}
               handleCategoryToggle={handleCategoryToggle}
+              customCategories={customCategories}
+              navigateToPlanner={navigateToPlanner}
+              setShowAddForm={setShowAddForm}
               expandedCategories={expandedCategories}
               toggleCategoryExpansion={toggleCategoryExpansion}
               confirmCategoryDelete={confirmCategoryDelete}
               setShowAIDialog={setShowAIDialog}
-              navigateToPlanner={navigateToPlanner}
             />
           ) : (
             <div className="space-y-4">
@@ -1100,6 +1102,7 @@ const Index = () => {
                                   onDelete={confirmDelete}
                                   onToggleFavorite={handleToggleFavorite}
                                   onTogglePaid={handleTogglePaid}
+                                  isEditing={false}
                                 />
                               )}
                             </div>
@@ -1182,6 +1185,7 @@ const Index = () => {
                                     onDelete={confirmDelete}
                                     onToggleFavorite={handleToggleFavorite}
                                     onTogglePaid={handleTogglePaid}
+                                    isEditing={false}
                                   />
                                 )}
                               </div>
