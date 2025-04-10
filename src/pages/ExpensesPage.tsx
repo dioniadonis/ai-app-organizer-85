@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, 
@@ -14,7 +14,9 @@ import {
   Edit,
   Search,
   SlidersHorizontal,
-  ArrowUpDown
+  ArrowUpDown,
+  Switch,
+  Label
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -35,12 +37,14 @@ interface Expense {
   recurring?: boolean;
   frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
   color?: string;
+  tags?: string[];
 }
 
 const COLORS = ['#9b87f5', '#7E69AB', '#1EAEDB', '#D6BCFA', '#33C3F0', '#6E56CF', '#A78BFA', '#C4B5FD'];
 
 const ExpensesPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeView, setActiveView] = useState<string>('list');
   const [hasNotifications, setHasNotifications] = useState(true);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
@@ -59,31 +63,62 @@ const ExpensesPage: React.FC = () => {
     direction: 'desc'
   });
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Load expenses from localStorage
   useEffect(() => {
     const savedExpenses = localStorage.getItem('expenses');
     if (savedExpenses) {
       setExpenses(JSON.parse(savedExpenses));
     }
-  }, []);
+    
+    const params = new URLSearchParams(location.search);
+    const viewParam = params.get('view');
+    if (viewParam === 'list' || viewParam === 'charts') {
+      setActiveView(viewParam);
+    }
+    
+    const categoryParam = params.get('category');
+    if (categoryParam) {
+      setCategoryFilter([decodeURIComponent(categoryParam)]);
+      setShowFilters(true);
+    }
+    
+    const tagParam = params.get('tag');
+    if (tagParam) {
+      setTagFilter([decodeURIComponent(tagParam)]);
+      setShowFilters(true);
+    }
+    
+    const selectedCategory = localStorage.getItem('selectedExpenseCategory');
+    if (selectedCategory) {
+      setCategoryFilter([selectedCategory]);
+      setShowFilters(true);
+      localStorage.removeItem('selectedExpenseCategory');
+    }
+    
+    const selectedTag = localStorage.getItem('selectedExpenseTag');
+    if (selectedTag) {
+      setTagFilter([selectedTag]);
+      setShowFilters(true);
+      localStorage.removeItem('selectedExpenseTag');
+    }
+  }, [location.search]);
 
-  // Save expenses to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('expenses', JSON.stringify(expenses));
   }, [expenses]);
 
-  // Get unique categories
   const categories = [...new Set(expenses.map(expense => expense.category))];
+  const tags = [...new Set(expenses.flatMap(expense => expense.tags || []))];
 
-  // Filter and sort expenses
   const filteredExpenses = expenses
     .filter(expense => 
       (searchTerm === '' || 
        expense.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
        expense.description?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (categoryFilter.length === 0 || categoryFilter.includes(expense.category))
+      (categoryFilter.length === 0 || categoryFilter.includes(expense.category)) &&
+      (tagFilter.length === 0 || (expense.tags && expense.tags.some(tag => tagFilter.includes(tag))))
     )
     .sort((a, b) => {
       if (sortOrder.field === 'amount') {
@@ -98,7 +133,6 @@ const ExpensesPage: React.FC = () => {
       return 0;
     });
 
-  // Calculate totals by category for charts
   const totalsByCategory = categories.map(category => {
     const total = expenses
       .filter(expense => expense.category === category)
@@ -124,6 +158,20 @@ const ExpensesPage: React.FC = () => {
         ? prev.filter(c => c !== category)
         : [...prev, category]
     );
+  };
+
+  const toggleTagFilter = (tag: string) => {
+    setTagFilter(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
+
+  const clearFilters = () => {
+    setCategoryFilter([]);
+    setTagFilter([]);
+    setSearchTerm('');
   };
 
   const addExpense = () => {
@@ -351,35 +399,101 @@ const ExpensesPage: React.FC = () => {
             </div>
             
             {showFilters && (
-              <div className="mb-6 p-3 rounded-lg bg-gray-700/30">
-                <h3 className="text-sm font-medium mb-2">Filter by category</h3>
-                <div className="flex flex-wrap gap-2">
-                  {categories.map(category => (
-                    <Button
-                      key={category}
-                      variant="outline"
-                      size="sm"
-                      className={`text-xs ${
-                        categoryFilter.includes(category) 
-                          ? "bg-purple-500/30 text-purple-300 border-purple-500"
-                          : ""
-                      }`}
-                      onClick={() => toggleCategoryFilter(category)}
-                    >
-                      {category}
-                    </Button>
-                  ))}
-                  {categories.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs"
-                      onClick={() => setCategoryFilter([])}
-                    >
-                      Clear filters
-                    </Button>
-                  )}
+              <div className="mb-6 p-4 rounded-lg bg-gray-700/30">
+                {categoryFilter.length > 0 && (
+                  <div className="mb-3">
+                    <h3 className="text-sm font-medium mb-2">Category filters</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {categoryFilter.map(category => (
+                        <Button
+                          key={category}
+                          variant="outline"
+                          size="sm"
+                          className="text-xs bg-purple-500/30 text-purple-300 border-purple-500"
+                          onClick={() => toggleCategoryFilter(category)}
+                        >
+                          {category}
+                          <span className="ml-1">×</span>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {tagFilter.length > 0 && (
+                  <div className="mb-3">
+                    <h3 className="text-sm font-medium mb-2">Tag filters</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {tagFilter.map(tag => (
+                        <Button
+                          key={tag}
+                          variant="outline"
+                          size="sm"
+                          className="text-xs bg-blue-500/30 text-blue-300 border-blue-500"
+                          onClick={() => toggleTagFilter(tag)}
+                        >
+                          {tag}
+                          <span className="ml-1">×</span>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Filter by category</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {categories.map(category => (
+                      <Button
+                        key={category}
+                        variant="outline"
+                        size="sm"
+                        className={`text-xs ${
+                          categoryFilter.includes(category) 
+                            ? "bg-purple-500/30 text-purple-300 border-purple-500"
+                            : ""
+                        }`}
+                        onClick={() => toggleCategoryFilter(category)}
+                      >
+                        {category}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
+                
+                {tags.length > 0 && (
+                  <div className="mt-3">
+                    <h3 className="text-sm font-medium mb-2">Filter by tag</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map(tag => (
+                        <Button
+                          key={tag}
+                          variant="outline"
+                          size="sm"
+                          className={`text-xs ${
+                            tagFilter.includes(tag) 
+                              ? "bg-blue-500/30 text-blue-300 border-blue-500"
+                              : ""
+                          }`}
+                          onClick={() => toggleTagFilter(tag)}
+                        >
+                          {tag}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {(categoryFilter.length > 0 || tagFilter.length > 0 || searchTerm) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs mt-3"
+                    onClick={clearFilters}
+                  >
+                    Clear all filters
+                  </Button>
+                )}
               </div>
             )}
 
@@ -630,7 +744,7 @@ const ExpensesPage: React.FC = () => {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <label htmlFor="amount" className="text-right text-sm font-medium">
-                  Amount ($)
+                  Expense Cost ($)
                 </label>
                 <Input
                   id="amount"
@@ -645,6 +759,7 @@ const ExpensesPage: React.FC = () => {
                     }
                   }}
                   className="col-span-3 bg-gray-700 border-gray-600"
+                  style={{ appearance: 'textfield' }}
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -687,22 +802,20 @@ const ExpensesPage: React.FC = () => {
                   Recurring
                 </label>
                 <div className="flex items-center col-span-3">
-                  <input
-                    type="checkbox"
+                  <Switch
                     id="recurring"
                     checked={editingExpense ? !!editingExpense.recurring : !!newExpense.recurring}
-                    onChange={(e) => {
+                    onCheckedChange={(checked) => {
                       if (editingExpense) {
-                        setEditingExpense({...editingExpense, recurring: e.target.checked});
+                        setEditingExpense({...editingExpense, recurring: checked});
                       } else {
-                        setNewExpense({...newExpense, recurring: e.target.checked});
+                        setNewExpense({...newExpense, recurring: checked});
                       }
                     }}
-                    className="mr-2"
                   />
-                  <label htmlFor="recurring" className="text-sm">
+                  <Label htmlFor="recurring" className="ml-2">
                     This is a recurring expense
-                  </label>
+                  </Label>
                 </div>
               </div>
               {(editingExpense?.recurring || newExpense.recurring) && (

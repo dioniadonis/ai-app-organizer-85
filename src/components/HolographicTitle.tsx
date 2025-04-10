@@ -7,8 +7,8 @@ interface HolographicTitleProps {
 
 const HolographicTitle: React.FC<HolographicTitleProps> = ({ title }) => {
   return (
-    <div className="relative py-4">
-      <h1 className="text-4xl font-bold text-white">
+    <div className="py-3">
+      <h1 className="text-3xl font-medium text-white">
         {title}
       </h1>
     </div>

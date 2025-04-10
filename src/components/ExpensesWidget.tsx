@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, PieChart as PieChartIcon, BarChart as BarChartIcon, ArrowRight } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useNavigate } from 'react-router-dom';
 import { 
   Dialog,
   DialogContent,
@@ -39,6 +40,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
 }) => {
   const [chartType, setChartType] = useState<'bar' | 'pie'>('pie');
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [localExpenses, setLocalExpenses] = useState(expenses);
   const [showQuickAddDialog, setShowQuickAddDialog] = useState(false);
   const [newExpense, setNewExpense] = useState({
@@ -46,6 +48,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     amount: 0,
     recurring: false
   });
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   // Fetch expenses from localStorage on mount
   useEffect(() => {
@@ -59,30 +62,6 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
       }
     }
   }, []);
-
-  // Default expenses data if none provided
-  const defaultExpenses = [
-    { category: 'Food', amount: 250, color: '#9b87f5' },
-    { category: 'Transport', amount: 150, color: '#7E69AB' },
-    { category: 'Utilities', amount: 100, color: '#1EAEDB' },
-    { category: 'Entertainment', amount: 75, color: '#D6BCFA' },
-    { category: 'Others', amount: 50, color: '#33C3F0' },
-  ];
-
-  const displayData = localExpenses.length > 0 ? localExpenses : expenses.length > 0 ? expenses : defaultExpenses;
-  const totalExpenses = displayData.reduce((sum, item) => sum + item.amount, 0);
-
-  // Format data for pie chart
-  const pieData = displayData.map(item => ({
-    name: item.category,
-    value: item.amount,
-    color: item.color
-  }));
-
-  // Get all unique tags from expenses
-  const allTags = localExpenses
-    .flatMap(expense => expense.tags || [])
-    .filter((tag, index, self) => self.indexOf(tag) === index);
 
   const handleAddExpense = () => {
     if (onAddExpense) {
@@ -126,22 +105,72 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     setShowQuickAddDialog(false);
   };
 
+  const handleCategoryClick = (category: string) => {
+    setSelectedCategory(category);
+    if (onViewAllExpenses) {
+      // Add category to localStorage for the expenses page to read
+      localStorage.setItem('selectedExpenseCategory', category);
+      navigate('/expenses?view=list&category=' + encodeURIComponent(category));
+    }
+  };
+
+  const handleTagClick = (tag: string) => {
+    localStorage.setItem('selectedExpenseTag', tag);
+    navigate('/expenses?view=list&tag=' + encodeURIComponent(tag));
+  };
+
+  // Only show real data, no defaults
+  const displayData = localExpenses.length > 0 ? localExpenses : [];
+  const totalExpenses = displayData.reduce((sum, item) => sum + item.amount, 0);
+
+  // Format data for pie chart
+  const pieData = displayData.map(item => ({
+    name: item.category,
+    value: item.amount,
+    color: item.color
+  }));
+
+  // Get all unique tags from expenses
+  const allTags = localExpenses
+    .flatMap(expense => expense.tags || [])
+    .filter((tag, index, self) => self.indexOf(tag) === index);
+
+  const renderEmptyState = () => {
+    return (
+      <div className="flex flex-col items-center justify-center h-48 text-center">
+        <div className="text-gray-400 mb-6">
+          <p className="mb-2">No expense data yet</p>
+          <p className="text-sm text-gray-500">Track your recurring expenses and subscriptions</p>
+        </div>
+        <Button 
+          onClick={handleAddExpense}
+          className="bg-purple-600 hover:bg-purple-700"
+        >
+          <PlusCircle className="h-4 w-4 mr-2" />
+          Add New Expense
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <Card className="bg-gray-800/60 border-gray-700 text-white shadow-md">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg font-medium">Expenses Overview</CardTitle>
           <div className="flex items-center gap-2">
-            <Tabs value={chartType} onValueChange={(value) => setChartType(value as 'bar' | 'pie')}>
-              <TabsList className="bg-gray-700/50">
-                <TabsTrigger value="bar" className="data-[state=active]:bg-purple-600">
-                  <BarChartIcon className="h-4 w-4" />
-                </TabsTrigger>
-                <TabsTrigger value="pie" className="data-[state=active]:bg-purple-600">
-                  <PieChartIcon className="h-4 w-4" />
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+            {displayData.length > 0 && (
+              <Tabs value={chartType} onValueChange={(value) => setChartType(value as 'bar' | 'pie')}>
+                <TabsList className="bg-gray-700/50">
+                  <TabsTrigger value="bar" className="data-[state=active]:bg-purple-600">
+                    <BarChartIcon className="h-4 w-4" />
+                  </TabsTrigger>
+                  <TabsTrigger value="pie" className="data-[state=active]:bg-purple-600">
+                    <PieChartIcon className="h-4 w-4" />
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            )}
             <Button 
               variant="ghost" 
               size="icon" 
@@ -157,18 +186,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
       
       <CardContent>
         {displayData.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-36 text-center">
-            <p className="text-gray-400 mb-3">No expense data yet</p>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleAddExpense}
-              className="border-purple-500 text-purple-400 hover:bg-purple-500/20"
-            >
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add Your First Expense
-            </Button>
-          </div>
+          renderEmptyState()
         ) : (
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
@@ -192,9 +210,17 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
                       color: 'white'
                     }} 
                   />
-                  <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
+                  <Bar 
+                    dataKey="amount" 
+                    radius={[4, 4, 0, 0]}
+                    onClick={(data) => handleCategoryClick(data.category)}
+                    cursor="pointer"
+                  >
                     {displayData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color || `#${Math.floor(Math.random()*16777215).toString(16)}`} />
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={entry.color || `#${Math.floor(Math.random()*16777215).toString(16)}`} 
+                      />
                     ))}
                   </Bar>
                 </BarChart>
@@ -211,6 +237,8 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
                     label={({ name, percent }) => 
                       isMobile ? '' : `${name}: ${(percent * 100).toFixed(0)}%`
                     }
+                    onClick={(entry) => handleCategoryClick(entry.name)}
+                    cursor="pointer"
                   >
                     {pieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -239,8 +267,9 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
               {displayData.map((item, index) => (
                 <div 
                   key={index} 
-                  className="px-2 py-1 rounded-full text-xs flex items-center gap-1"
+                  className="px-2 py-1 rounded-full text-xs flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
                   style={{ backgroundColor: item.color ? `${item.color}40` : undefined }}
+                  onClick={() => handleCategoryClick(item.category)}
                 >
                   <div 
                     className="w-2 h-2 rounded-full" 
@@ -261,7 +290,8 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
                   {allTags.map((tag, index) => (
                     <div 
                       key={index} 
-                      className="px-2 py-0.5 rounded-full text-xs bg-purple-500/20 text-purple-300"
+                      className="px-2 py-0.5 rounded-full text-xs bg-purple-500/20 text-purple-300 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => handleTagClick(tag)}
                     >
                       {tag}
                     </div>
@@ -306,7 +336,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount ($)</Label>
+              <Label htmlFor="amount">Expense Cost ($)</Label>
               <Input 
                 id="amount" 
                 type="number" 
@@ -316,6 +346,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
                 value={newExpense.amount || ''}
                 onChange={(e) => setNewExpense({...newExpense, amount: parseFloat(e.target.value) || 0})}
                 className="bg-gray-700 border-gray-600"
+                style={{ appearance: 'textfield' }}
               />
             </div>
             <div className="flex items-center space-x-2">
