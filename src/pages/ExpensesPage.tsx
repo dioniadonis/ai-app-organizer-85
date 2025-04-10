@@ -16,6 +16,7 @@ import {
   Search,
   SlidersHorizontal,
   ArrowUpDown,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -23,7 +24,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { format } from 'date-fns';
+import { format, isToday, isTomorrow, isPast } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PieChart as Pie, Pie as PieSegment, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { Switch } from "@/components/ui/switch";
@@ -66,11 +67,29 @@ const ExpensesPage: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [overdueExpenses, setOverdueExpenses] = useState<Expense[]>([]);
 
   useEffect(() => {
     const savedExpenses = localStorage.getItem('expenses');
     if (savedExpenses) {
-      setExpenses(JSON.parse(savedExpenses));
+      const parsedExpenses = JSON.parse(savedExpenses);
+      setExpenses(parsedExpenses);
+      
+      // Find overdue expenses
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const overdue = parsedExpenses.filter((expense: Expense) => {
+        const expenseDate = new Date(expense.date);
+        expenseDate.setHours(0, 0, 0, 0);
+        return expense.recurring && isPast(expenseDate) && !isToday(expenseDate);
+      });
+      
+      setOverdueExpenses(overdue);
+      
+      if (overdue.length > 0 && !location.search.includes('overdue=true')) {
+        setHasNotifications(true);
+      }
     }
     
     const params = new URLSearchParams(location.search);
@@ -108,6 +127,14 @@ const ExpensesPage: React.FC = () => {
 
   useEffect(() => {
     localStorage.setItem('expenses', JSON.stringify(expenses));
+  }, [expenses]);
+
+  // Update upcoming renewals in App state when expenses change
+  useEffect(() => {
+    // This data will be used across components
+    localStorage.setItem('renewals', JSON.stringify(
+      expenses.filter(expense => expense.recurring)
+    ));
   }, [expenses]);
 
   const categories = [...new Set(expenses.map(expense => expense.category))];
@@ -248,6 +275,29 @@ const ExpensesPage: React.FC = () => {
     }
   };
 
+  const viewOverdueExpenses = () => {
+    setHasNotifications(false);
+    setActiveView('list');
+    
+    // Filter to show only overdue expenses
+    const overdueCategories = [...new Set(overdueExpenses.map(e => e.category))];
+    setCategoryFilter(overdueCategories);
+    setShowFilters(true);
+  };
+
+  // Custom tooltip styling for charts
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-gray-800 border border-gray-700 px-3 py-2 rounded-md shadow-md">
+          <p className="text-white font-medium">{payload[0].name}</p>
+          <p className="text-purple-300">${payload[0].value}</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -291,7 +341,7 @@ const ExpensesPage: React.FC = () => {
                 <PopoverTrigger asChild>
                   <Button variant="ghost" size="icon" className="relative">
                     <Bell className="w-5 h-5" />
-                    {hasNotifications && (
+                    {overdueExpenses.length > 0 && hasNotifications && (
                       <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
                     )}
                   </Button>
@@ -302,7 +352,21 @@ const ExpensesPage: React.FC = () => {
                       <h3 className="font-medium">Notifications</h3>
                     </div>
                   </div>
-                  {/* Notification content would go here */}
+                  <div className="p-3">
+                    {overdueExpenses.length > 0 ? (
+                      <div>
+                        <div className="flex items-center gap-2 text-red-400 mb-2">
+                          <AlertCircle className="h-4 w-4" />
+                          <span>You have {overdueExpenses.length} overdue recurring expenses</span>
+                        </div>
+                        <Button size="sm" onClick={viewOverdueExpenses} className="w-full mt-2">
+                          View Overdue Expenses
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="text-gray-400 text-center py-4">No new notifications</div>
+                    )}
+                  </div>
                 </PopoverContent>
               </Popover>
               
@@ -392,7 +456,7 @@ const ExpensesPage: React.FC = () => {
               </div>
               <Button
                 onClick={() => setIsAddExpenseOpen(true)}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-purple-600 hover:bg-purple-700 bg-opacity-70"
               >
                 <PlusCircle className="w-4 h-4 mr-2" />
                 Add New Expense
@@ -524,57 +588,74 @@ const ExpensesPage: React.FC = () => {
                       <div className="w-20 text-center">Actions</div>
                     </div>
 
-                    {filteredExpenses.map(expense => (
-                      <motion.div
-                        key={expense.id}
-                        className="bg-gray-700/30 rounded-lg p-3 flex items-center"
-                        whileHover={{ scale: 1.01 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <div className="flex-1 flex items-center">
-                          <div 
-                            className="w-3 h-3 rounded-full mr-2" 
-                            style={{ backgroundColor: expense.color }}
-                          ></div>
-                          <div>
-                            <div>{expense.category}</div>
-                            {expense.description && (
-                              <div className="text-xs text-gray-400">{expense.description}</div>
+                    {filteredExpenses.map(expense => {
+                      const expenseDate = new Date(expense.date);
+                      expenseDate.setHours(0, 0, 0, 0);
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      const isOverdue = expense.recurring && isPast(expenseDate) && !isToday(expenseDate);
+                      
+                      return (
+                        <motion.div
+                          key={expense.id}
+                          className={`bg-gray-700/30 rounded-lg p-3 flex items-center ${
+                            isOverdue ? 'border-l-4 border-red-500' : ''
+                          }`}
+                          whileHover={{ scale: 1.01 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <div className="flex-1 flex items-center">
+                            <div 
+                              className="w-3 h-3 rounded-full mr-2" 
+                              style={{ backgroundColor: expense.color }}
+                            ></div>
+                            <div>
+                              <div className="flex items-center">
+                                {expense.category}
+                                {isOverdue && (
+                                  <span className="ml-2 px-2 py-0.5 bg-red-500/20 text-red-300 rounded-full text-xs flex items-center">
+                                    <AlertCircle className="h-3 w-3 mr-1" /> Overdue
+                                  </span>
+                                )}
+                              </div>
+                              {expense.description && (
+                                <div className="text-xs text-gray-400">{expense.description}</div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex-1 font-medium">${expense.amount.toFixed(2)}</div>
+                          <div className="flex-1 text-gray-400">
+                            {format(new Date(expense.date), 'MMM dd, yyyy')}
+                            {expense.recurring && (
+                              <span className="ml-2 text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">
+                                {expense.frequency}
+                              </span>
                             )}
                           </div>
-                        </div>
-                        <div className="flex-1 font-medium">${expense.amount.toFixed(2)}</div>
-                        <div className="flex-1 text-gray-400">
-                          {format(new Date(expense.date), 'MMM dd, yyyy')}
-                          {expense.recurring && (
-                            <span className="ml-2 text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">
-                              {expense.frequency}
-                            </span>
-                          )}
-                        </div>
-                        <div className="w-20 flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full"
-                            onClick={() => {
-                              setEditingExpense(expense);
-                              setIsAddExpenseOpen(true);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                            onClick={() => deleteExpense(expense.id)}
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </motion.div>
-                    ))}
+                          <div className="w-20 flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-full"
+                              onClick={() => {
+                                setEditingExpense(expense);
+                                setIsAddExpenseOpen(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-full text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                              onClick={() => deleteExpense(expense.id)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
 
                     <div className="flex justify-between items-center p-4 bg-purple-500/10 rounded-lg mt-6">
                       <span>Total Expenses</span>
@@ -586,7 +667,7 @@ const ExpensesPage: React.FC = () => {
                     <p className="mb-4">No expenses found</p>
                     <Button
                       onClick={() => setIsAddExpenseOpen(true)}
-                      className="bg-purple-600 hover:bg-purple-700"
+                      className="bg-purple-600 hover:bg-purple-700 bg-opacity-70"
                     >
                       <PlusCircle className="w-4 h-4 mr-2" />
                       Add Your First Expense
@@ -646,14 +727,7 @@ const ExpensesPage: React.FC = () => {
                               <BarChart data={totalsByCategory}>
                                 <XAxis dataKey="category" tick={{ fill: '#9b87f5' }} />
                                 <YAxis tick={{ fill: '#9b87f5' }} />
-                                <Tooltip
-                                  formatter={(value: number) => [`$${value}`, 'Amount']}
-                                  contentStyle={{
-                                    backgroundColor: '#1f2937',
-                                    borderColor: '#374151',
-                                    color: 'white'
-                                  }}
-                                />
+                                <Tooltip content={<CustomTooltip />} />
                                 <Bar 
                                   dataKey="amount" 
                                   radius={[4, 4, 0, 0]}
@@ -662,6 +736,7 @@ const ExpensesPage: React.FC = () => {
                                     setActiveView('list');
                                   }}
                                   cursor="pointer"
+                                  activeBar={{ fill: null }}
                                 >
                                   {totalsByCategory.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={entry.color} />
@@ -704,7 +779,7 @@ const ExpensesPage: React.FC = () => {
                     <p className="mb-4">No expense data to visualize</p>
                     <Button
                       onClick={() => setIsAddExpenseOpen(true)}
-                      className="bg-purple-600 hover:bg-purple-700"
+                      className="bg-purple-600 hover:bg-purple-700 bg-opacity-70"
                     >
                       <PlusCircle className="w-4 h-4 mr-2" />
                       Add Your First Expense
@@ -852,7 +927,7 @@ const ExpensesPage: React.FC = () => {
                         });
                       }
                     }}
-                    className="col-span-3 p-2 rounded-md bg-gray-700 border border-gray-600"
+                    className="col-span-3 p-2 rounded-md bg-gray-700 border border-gray-600 text-white"
                   >
                     <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>

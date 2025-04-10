@@ -144,13 +144,26 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
         </div>
         <Button 
           onClick={handleAddExpense}
-          className="bg-purple-600 hover:bg-purple-700"
+          className="bg-purple-600 hover:bg-purple-700 bg-opacity-70"
         >
           <PlusCircle className="h-4 w-4 mr-2" />
           Add New Expense
         </Button>
       </div>
     );
+  };
+
+  // Custom tooltip styling
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-gray-800 border border-gray-700 px-3 py-2 rounded-md shadow-md">
+          <p className="text-white font-medium">{payload[0].name}</p>
+          <p className="text-purple-300">${payload[0].value}</p>
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
@@ -203,18 +216,13 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
                     axisLine={{ stroke: '#555' }}
                     tickLine={{ stroke: '#555' }}
                   />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1f2937', 
-                      borderColor: '#374151',
-                      color: 'white'
-                    }} 
-                  />
+                  <Tooltip content={<CustomTooltip />} />
                   <Bar 
                     dataKey="amount" 
                     radius={[4, 4, 0, 0]}
                     onClick={(data) => handleCategoryClick(data.category)}
                     cursor="pointer"
+                    activeBar={{ fill: null }}
                   >
                     {displayData.map((entry, index) => (
                       <Cell 

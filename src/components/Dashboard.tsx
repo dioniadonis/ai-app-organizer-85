@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { AITool } from '@/types/AITool';
-import { Banknote, Calendar, Package, Star, CheckCircle, XCircle, Grid3X3, Layout, LayoutDashboard, Plus, CalendarClock, Clock } from 'lucide-react';
+import { Banknote, Calendar, Package, Star, CheckCircle, XCircle, Grid3X3, Layout, LayoutDashboard, Plus, CalendarClock, Clock, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { format, isToday, isTomorrow } from 'date-fns';
+import { format, isToday, isTomorrow, isPast } from 'date-fns';
 import PlannerWidget from './PlannerWidget';
 import ExpensesWidget from './ExpensesWidget';
 import { Button } from '@/components/ui/button';
@@ -68,6 +67,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [renewals, setRenewals] = useState<any[]>([]);
   
   // Update expenses from localStorage
   useEffect(() => {
@@ -76,6 +76,10 @@ const Dashboard: React.FC<DashboardProps> = ({
       try {
         const parsedExpenses = JSON.parse(savedExpenses);
         setExpenses(parsedExpenses);
+        
+        // Filter recurring expenses for renewals
+        const recurringExpenses = parsedExpenses.filter((expense: any) => expense.recurring);
+        setRenewals(recurringExpenses);
       } catch (e) {
         console.error('Failed to parse expenses from localStorage', e);
       }
@@ -84,6 +88,18 @@ const Dashboard: React.FC<DashboardProps> = ({
     // Update the current time every minute
     const timerID = setInterval(() => setCurrentDateTime(new Date()), 60000);
     return () => clearInterval(timerID);
+  }, []);
+  
+  // Keep renewals in sync with expenses changes
+  useEffect(() => {
+    const renewalsFromStorage = localStorage.getItem('renewals');
+    if (renewalsFromStorage) {
+      try {
+        setRenewals(JSON.parse(renewalsFromStorage));
+      } catch (e) {
+        console.error('Failed to parse renewals from localStorage', e);
+      }
+    }
   }, []);
   
   const totalTools = aiTools.length;
@@ -106,12 +122,31 @@ const Dashboard: React.FC<DashboardProps> = ({
   const thirtyDaysLater = new Date();
   thirtyDaysLater.setDate(today.getDate() + 30);
   
-  const upcomingRenewals = aiTools.filter(tool => {
+  // Include both AI tools and recurring expenses in the upcoming renewals
+  const toolRenewals = aiTools.filter(tool => {
     if (!tool.renewalDate) return false;
     const renewalDate = new Date(tool.renewalDate);
     renewalDate.setHours(0, 0, 0, 0);
     return renewalDate >= today && renewalDate <= thirtyDaysLater;
   });
+  
+  // Format recurring expenses as renewals
+  const expenseRenewals = renewals.map(expense => {
+    // Use the date or today if none provided
+    const date = expense.date || new Date().toISOString().split('T')[0];
+    return {
+      id: expense.id || `expense-${Date.now()}-${Math.random()}`,
+      name: expense.category,
+      category: expense.category,
+      subscriptionCost: expense.amount,
+      renewalDate: date,
+      isPaid: false, // Default to unpaid
+      isExpense: true // Flag to identify as expense vs AI tool
+    };
+  });
+  
+  // Combine both types of renewals
+  const upcomingRenewals = [...toolRenewals, ...expenseRenewals];
 
   const categoryCount = aiTools.reduce((acc, tool) => {
     acc[tool.category] = (acc[tool.category] || 0) + 1;
@@ -189,6 +224,17 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   const formattedDate = format(currentDateTime, 'EEEE, MMMM d, yyyy');
   const formattedTime = format(currentDateTime, 'h:mm a');
+
+  const handleRenewalClick = (renewal: any) => {
+    if (renewal.isExpense) {
+      // Navigate to expenses page with this category filtered
+      localStorage.setItem('selectedExpenseCategory', renewal.category);
+      navigate('/expenses?view=list&category=' + encodeURIComponent(renewal.category));
+    } else {
+      // Handle AI tool renewals
+      onCategoryClick(renewal.category);
+    }
+  };
 
   return (
     <motion.div
@@ -356,43 +402,60 @@ const Dashboard: React.FC<DashboardProps> = ({
             Upcoming Renewals
           </h3>
           <div className="space-y-2">
-            {upcomingRenewals.map(tool => {
+            {upcomingRenewals.map(renewal => {
               const now = new Date();
               now.setHours(0, 0, 0, 0);
-              const renewalDate = new Date(tool.renewalDate);
+              const renewalDate = new Date(renewal.renewalDate);
               renewalDate.setHours(0, 0, 0, 0);
               
               const daysRemaining = Math.round((renewalDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+              const isOverdue = isPast(renewalDate) && !isToday(renewalDate);
               
               let daysText = "";
               if (isToday(renewalDate)) {
                 daysText = "Due today!";
               } else if (isTomorrow(renewalDate)) {
                 daysText = "Due tomorrow";
+              } else if (isOverdue) {
+                daysText = "Overdue";
               } else {
                 daysText = `${daysRemaining} days left`;
               }
               
               return (
                 <div 
-                  key={tool.id} 
-                  className="flex justify-between items-center p-2 rounded hover:bg-white/5 transition-colors cursor-pointer"
-                  onClick={() => onCategoryClick(tool.category)}
+                  key={renewal.id} 
+                  className={`flex justify-between items-center p-2 rounded hover:bg-white/5 transition-colors cursor-pointer ${
+                    isOverdue ? 'border-l-4 border-red-500 pl-2' : ''
+                  }`}
+                  onClick={() => handleRenewalClick(renewal)}
                 >
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></div>
-                    <span>{tool.name}</span>
-                    {tool.isPaid !== undefined && (
-                      <span className={`ml-2 ${tool.isPaid ? "text-green-400" : "text-red-400"} flex items-center`}>
-                        {tool.isPaid ? <CheckCircle className="w-4 h-4 mr-1" /> : <XCircle className="w-4 h-4 mr-1" />}
-                        {tool.isPaid ? "Paid" : "Unpaid"}
+                    <div className={`w-2 h-2 rounded-full ${isOverdue ? 'bg-red-400' : 'bg-purple-400'} animate-pulse`}></div>
+                    <span>{renewal.name}</span>
+                    {renewal.isPaid !== undefined && (
+                      <span className={`ml-2 ${renewal.isPaid ? "text-green-400" : "text-red-400"} flex items-center`}>
+                        {renewal.isPaid ? <CheckCircle className="w-4 h-4 mr-1" /> : <XCircle className="w-4 h-4 mr-1" />}
+                        {renewal.isPaid ? "Paid" : "Unpaid"}
+                      </span>
+                    )}
+                    {renewal.isExpense && (
+                      <span className="ml-1 px-1 bg-blue-500/20 text-blue-300 rounded-full text-xs">
+                        {renewal.frequency || 'recurring'}
                       </span>
                     )}
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-green-400">${tool.subscriptionCost}/mo</span>
-                    <span className="text-gray-400">{tool.renewalDate}</span>
-                    <span className={`px-2 py-1 rounded-full text-xs ${daysRemaining <= 3 ? "bg-red-500/20 text-red-300" : "bg-blue-500/20 text-blue-300"}`}>
+                    <span className="text-green-400">${renewal.subscriptionCost}{renewal.isExpense ? '' : '/mo'}</span>
+                    <span className="text-gray-400">{format(new Date(renewal.renewalDate), 'MMM dd, yyyy')}</span>
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      isOverdue 
+                        ? "bg-red-500/20 text-red-300" 
+                        : daysRemaining <= 3 
+                          ? "bg-orange-500/20 text-orange-300" 
+                          : "bg-blue-500/20 text-blue-300"
+                    }`}>
+                      {isOverdue && <AlertCircle className="inline-block h-3 w-3 mr-1" />}
                       {daysText}
                     </span>
                   </div>
