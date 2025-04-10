@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BarChart, Bar, ResponsiveContainer, XAxis, Tooltip, Cell } from 'recharts';
 import { Card } from '@/components/ui/card';
@@ -88,9 +89,9 @@ const ExpensesWidget = ({
         </div>
         <Button 
           variant="ghost" 
-          size="sm" 
-          className="text-purple-400 hover:text-purple-300"
+          size="sm"
           onClick={onViewAllExpenses}
+          className="text-purple-400 hover:text-purple-300 flex items-center gap-1"
         >
           View All <ArrowRight className="w-3 h-3 ml-1" />
         </Button>
@@ -197,13 +198,7 @@ const ExpensesWidget = ({
         ))}
       </div>
 
-      <Button 
-        onClick={onAddExpense} 
-        className="w-full mt-4 bg-purple-600 hover:bg-purple-700"
-      >
-        <Plus className="w-4 h-4 mr-2" />
-        Add New Expense
-      </Button>
+      {/* Removed the purple Add New Expense button */}
     </Card>
   );
 };

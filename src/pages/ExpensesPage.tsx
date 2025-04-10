@@ -384,6 +384,10 @@ const ExpensesPage: React.FC = () => {
     }
   };
 
+  const toggleAddExpenseForm = () => {
+    setIsAddExpenseOpen(!isAddExpenseOpen);
+  };
+
   return (
     <AnimatePresence mode="wait">
       <motion.div 
@@ -534,11 +538,11 @@ const ExpensesPage: React.FC = () => {
                 </Button>
               </div>
               <Button
-                onClick={() => setIsAddExpenseOpen(true)}
-                className="bg-purple-600 hover:bg-purple-700 bg-opacity-70"
+                onClick={toggleAddExpenseForm}
+                className="bg-ai-blue/30 text-ai-blue hover:bg-ai-blue/40 border border-ai-blue/50"
               >
                 <PlusCircle className="w-4 h-4 mr-2" />
-                Add New Expense
+                {isAddExpenseOpen ? 'Cancel' : 'Add New Expense'}
               </Button>
             </div>
             
@@ -640,6 +644,69 @@ const ExpensesPage: React.FC = () => {
                 )}
               </div>
             )}
+
+            <AnimatePresence>
+              {isAddExpenseOpen && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mb-6 p-4 bg-gray-800/40 rounded-lg border border-gray-700"
+                >
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center gap-2">
+                      <PlusCircle className="w-4 h-4 mr-2" />
+                      Add New Expense
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Input 
+                        placeholder="Category"
+                        value={newExpense.category}
+                        onChange={(e) => setNewExpense(prev => ({...prev, category: e.target.value}))}
+                        className="bg-gray-700/50 border-gray-600 rounded-lg text-white"
+                      />
+                      <Input 
+                        placeholder="Amount"
+                        value={newExpense.amount}
+                        onChange={(e) => setNewExpense(prev => ({...prev, amount: Number(e.target.value)}))}
+                        className="bg-gray-700/50 border-gray-600 rounded-lg text-white"
+                      />
+                      <Input 
+                        placeholder="Date"
+                        value={newExpense.date}
+                        onChange={(e) => setNewExpense(prev => ({...prev, date: e.target.value}))}
+                        className="bg-gray-700/50 border-gray-600 rounded-lg text-white"
+                      />
+                      <Input 
+                        placeholder="Description"
+                        value={newExpense.description}
+                        onChange={(e) => setNewExpense(prev => ({...prev, description: e.target.value}))}
+                        className="bg-gray-700/50 border-gray-600 rounded-lg text-white"
+                      />
+                      <Switch 
+                        checked={newExpense.recurring}
+                        onCheckedChange={(checked) => setNewExpense(prev => ({...prev, recurring: checked}))}
+                        className="bg-gray-700/50 border-gray-600 rounded-lg text-white"
+                      />
+                      {newExpense.recurring && (
+                        <Input 
+                          placeholder="Frequency"
+                          value={newExpense.frequency}
+                          onChange={(e) => setNewExpense(prev => ({...prev, frequency: e.target.value}))}
+                          className="bg-gray-700/50 border-gray-600 rounded-lg text-white"
+                        />
+                      )}
+                    </div>
+                    <Button 
+                      onClick={addExpense}
+                      className="bg-purple-600 hover:bg-purple-700 bg-opacity-70"
+                    >
+                      Add Expense
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <Tabs value={activeView}>
               <TabsContent value="list" className="pt-2">
@@ -762,8 +829,8 @@ const ExpensesPage: React.FC = () => {
                   <div className="text-center py-8 text-gray-400">
                     <p className="mb-4">No expenses found</p>
                     <Button
-                      onClick={() => setIsAddExpenseOpen(true)}
-                      className="bg-purple-600/70 hover:bg-purple-700 backdrop-blur-sm border border-white/10 shadow-lg transition-all hover:scale-[1.02]"
+                      onClick={toggleAddExpenseForm}
+                      className="bg-ai-blue/30 text-ai-blue hover:bg-ai-blue/40 border border-ai-blue/50 backdrop-blur-sm shadow-lg transition-all hover:scale-[1.02]"
                     >
                       <PlusCircle className="w-4 h-4 mr-2" />
                       Add Your First Expense
@@ -852,8 +919,8 @@ const ExpensesPage: React.FC = () => {
                   <div className="text-center py-8 text-gray-400">
                     <p className="mb-4">No expense data to display</p>
                     <Button
-                      onClick={() => setIsAddExpenseOpen(true)}
-                      className="bg-purple-600/70 hover:bg-purple-700 backdrop-blur-sm border border-white/10 shadow-lg transition-all hover:scale-[1.02]"
+                      onClick={toggleAddExpenseForm}
+                      className="bg-ai-blue/30 text-ai-blue hover:bg-ai-blue/40 border border-ai-blue/50 backdrop-blur-sm shadow-lg transition-all hover:scale-[1.02]"
                     >
                       <PlusCircle className="w-4 h-4 mr-2" />
                       Add Your First Expense

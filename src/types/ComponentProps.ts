@@ -21,7 +21,9 @@ export interface MobileMenuProps {
   setShowAddForm: (show: boolean) => void;
 }
 
-export interface HeaderProps extends MobileMenuProps, FilterBarProps {}
+export interface HeaderProps extends MobileMenuProps, FilterBarProps {
+  isMobile: boolean;
+}
 
 export interface AddFormProps {
   newTool: Omit<AITool, 'id' | 'isFavorite' | 'isPaid'>;
@@ -34,4 +36,25 @@ export interface AddFormProps {
   allCategoriesForSelect: string[];
   handleAddCustomCategory: () => void;
   handleAddTool: () => void;
+}
+
+export interface AIToolCardProps {
+  tool: AITool;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+  onToggleFavorite: (id: string) => void;
+  onTogglePaid: (id: string) => void;
+  isEditing: boolean;
+}
+
+export interface DashboardProps {
+  aiTools: AITool[];
+  tasks: any[];
+  selectedCategories: string[];
+  filterByRenewal: boolean;
+  handleRenewalFilter: () => void;
+  handleCategoryToggle: (category: string) => void;
+  setShowAddForm: (show: boolean) => void;
+  customCategories: string[];
+  navigateToPlanner: () => void;
 }
