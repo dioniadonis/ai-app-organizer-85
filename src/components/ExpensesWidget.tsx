@@ -6,6 +6,18 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, PieChart as PieChartIcon, BarChart as BarChartIcon, ArrowRight } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { toast } from '@/components/ui/use-toast';
 
 interface ExpensesWidgetProps {
   expenses?: Array<{
@@ -28,6 +40,12 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
   const [chartType, setChartType] = useState<'bar' | 'pie'>('pie');
   const isMobile = useIsMobile();
   const [localExpenses, setLocalExpenses] = useState(expenses);
+  const [showQuickAddDialog, setShowQuickAddDialog] = useState(false);
+  const [newExpense, setNewExpense] = useState({
+    category: '',
+    amount: 0,
+    recurring: false
+  });
 
   // Fetch expenses from localStorage on mount
   useEffect(() => {
@@ -66,6 +84,48 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     .flatMap(expense => expense.tags || [])
     .filter((tag, index, self) => self.indexOf(tag) === index);
 
+  const handleAddExpense = () => {
+    if (onAddExpense) {
+      onAddExpense();
+    } else {
+      setShowQuickAddDialog(true);
+    }
+  };
+
+  const handleQuickAddExpense = () => {
+    if (!newExpense.category || newExpense.amount <= 0) {
+      toast({
+        title: "Invalid expense",
+        description: "Please enter a category and a valid amount",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const color = `#${Math.floor(Math.random()*16777215).toString(16)}`;
+    const newExpenseItem = {
+      ...newExpense,
+      color,
+      date: new Date().toISOString().split('T')[0]
+    };
+
+    const updatedExpenses = [...localExpenses, newExpenseItem];
+    setLocalExpenses(updatedExpenses);
+    localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
+    
+    toast({
+      title: "Expense added",
+      description: `${newExpense.category}: $${newExpense.amount} ${newExpense.recurring ? '(recurring)' : ''}`,
+    });
+    
+    setNewExpense({
+      category: '',
+      amount: 0,
+      recurring: false
+    });
+    setShowQuickAddDialog(false);
+  };
+
   return (
     <Card className="bg-gray-800/60 border-gray-700 text-white shadow-md">
       <CardHeader className="pb-2">
@@ -86,7 +146,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
               variant="ghost" 
               size="icon" 
               className="h-8 w-8 rounded-full hover:bg-purple-500/20"
-              onClick={onAddExpense}
+              onClick={handleAddExpense}
             >
               <PlusCircle className="h-5 w-5" />
             </Button>
@@ -102,7 +162,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
             <Button 
               variant="outline" 
               size="sm"
-              onClick={onAddExpense}
+              onClick={handleAddExpense}
               className="border-purple-500 text-purple-400 hover:bg-purple-500/20"
             >
               <PlusCircle className="h-4 w-4 mr-2" />
@@ -187,6 +247,9 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
                     style={{ backgroundColor: item.color }}
                   ></div>
                   <span>{item.category}: ${item.amount}</span>
+                  {item.recurring && (
+                    <span className="ml-1 px-1 bg-blue-500/20 text-blue-300 rounded-full text-xs">recurring</span>
+                  )}
                 </div>
               ))}
             </div>
@@ -221,6 +284,59 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
           </Button>
         </CardFooter>
       )}
+
+      {/* Quick Add Expense Dialog */}
+      <Dialog open={showQuickAddDialog} onOpenChange={setShowQuickAddDialog}>
+        <DialogContent className="bg-gray-800 border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Add New Expense</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Quickly add a new expense to your tracker.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Input 
+                id="category" 
+                placeholder="e.g., Food, Transport, Entertainment" 
+                value={newExpense.category}
+                onChange={(e) => setNewExpense({...newExpense, category: e.target.value})}
+                className="bg-gray-700 border-gray-600"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount ($)</Label>
+              <Input 
+                id="amount" 
+                type="number" 
+                min="0.01" 
+                step="0.01" 
+                placeholder="0.00"
+                value={newExpense.amount || ''}
+                onChange={(e) => setNewExpense({...newExpense, amount: parseFloat(e.target.value) || 0})}
+                className="bg-gray-700 border-gray-600"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="recurring"
+                checked={newExpense.recurring}
+                onCheckedChange={(checked) => setNewExpense({...newExpense, recurring: checked})}
+              />
+              <Label htmlFor="recurring">Recurring expense</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowQuickAddDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleQuickAddExpense}>
+              Add Expense
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
