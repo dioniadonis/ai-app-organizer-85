@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import SearchBox from './SearchBox';
 import { useIsMobile } from '@/hooks/use-mobile';
 import HolographicTitle from './HolographicTitle';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface Task {
   id: string;
@@ -68,6 +69,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [expenses, setExpenses] = useState<any[]>([]);
   const [renewals, setRenewals] = useState<any[]>([]);
+  const [mobileControlsExpanded, setMobileControlsExpanded] = useState(false);
   
   useEffect(() => {
     const savedExpenses = localStorage.getItem('expenses');
@@ -247,39 +249,94 @@ const Dashboard: React.FC<DashboardProps> = ({
             <span>{formattedDate} • {formattedTime}</span>
           </div>
           
-          <SearchBox 
-            onSearch={handleSearch} 
-            className="w-full sm:w-64 md:w-72"
-          />
-          
-          <div className="flex items-center gap-2 ml-auto">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8"
-              onClick={() => setWidgetLayout('grid')}
+          {isMobile ? (
+            <Collapsible 
+              open={mobileControlsExpanded} 
+              onOpenChange={setMobileControlsExpanded}
+              className="w-full"
             >
-              <Grid3X3 className={`h-4 w-4 ${widgetLayout === 'grid' ? 'text-purple-400' : 'text-gray-400'}`} />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 mr-2"
-              onClick={() => setWidgetLayout('list')}
-            >
-              <Layout className={`h-4 w-4 ${widgetLayout === 'list' ? 'text-purple-400' : 'text-gray-400'}`} />
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-xs gap-1"
-              onClick={() => setShowAddWidgetDialog(true)}
-            >
-              <Plus className="h-3 w-3" />
-              Add Widget
-            </Button>
-          </div>
+              <div className="flex items-center justify-between w-full">
+                <SearchBox 
+                  onSearch={handleSearch} 
+                  className="flex-1 mr-2"
+                />
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-8 w-8">
+                    {mobileControlsExpanded ? <Layout className="h-4 w-4" /> : <Grid3X3 className="h-4 w-4" />}
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+              
+              <CollapsibleContent className="space-y-2 mt-2">
+                <div className="flex items-center justify-between pt-2">
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8"
+                      onClick={() => setWidgetLayout('grid')}
+                    >
+                      <Grid3X3 className={`h-4 w-4 ${widgetLayout === 'grid' ? 'text-purple-400' : 'text-gray-400'}`} />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8"
+                      onClick={() => setWidgetLayout('list')}
+                    >
+                      <Layout className={`h-4 w-4 ${widgetLayout === 'list' ? 'text-purple-400' : 'text-gray-400'}`} />
+                    </Button>
+                  </div>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs gap-1"
+                    onClick={() => setShowAddWidgetDialog(true)}
+                  >
+                    <Plus className="h-3 w-3" />
+                    Add Widget
+                  </Button>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          ) : (
+            <>
+              <SearchBox 
+                onSearch={handleSearch} 
+                className="w-full sm:w-64 md:w-72"
+              />
+              
+              <div className="flex items-center gap-2 ml-auto">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8"
+                  onClick={() => setWidgetLayout('grid')}
+                >
+                  <Grid3X3 className={`h-4 w-4 ${widgetLayout === 'grid' ? 'text-purple-400' : 'text-gray-400'}`} />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 mr-2"
+                  onClick={() => setWidgetLayout('list')}
+                >
+                  <Layout className={`h-4 w-4 ${widgetLayout === 'list' ? 'text-purple-400' : 'text-gray-400'}`} />
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-xs gap-1"
+                  onClick={() => setShowAddWidgetDialog(true)}
+                >
+                  <Plus className="h-3 w-3" />
+                  Add Widget
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
       

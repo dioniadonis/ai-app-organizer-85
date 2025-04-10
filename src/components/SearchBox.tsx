@@ -24,7 +24,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, className }) => {
         value={searchTerm}
         onChange={handleChange}
         placeholder="Search"
-        className="pl-10 bg-gray-700/50 border-gray-600 rounded-lg text-white"
+        className="pl-10 bg-gray-700/50 border-gray-600 rounded-lg text-white h-9 min-w-0"
       />
     </div>
   );
