@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Check, X, Edit, Trash, CalendarIcon, Clock, AlertCircle } from 'lucide-react';
+import { Plus, Check, X, Edit, Trash, CalendarIcon, Clock, AlertCircle, Circle } from 'lucide-react';
 import { 
   Dialog, 
   DialogContent, 
@@ -18,7 +18,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Add activeTab to the interface
 interface PlannerProps {
   activeTab: string;
   plannerData: {
@@ -84,7 +83,6 @@ const Planner: React.FC<PlannerProps> = ({ activeTab, plannerData, setPlannerDat
   const [newRecurringTaskPriority, setNewRecurringTaskPriority] = useState<Task['priority']>('medium');
 
   useEffect(() => {
-    // Load data from localStorage on component mount
     const storedData = localStorage.getItem('plannerData');
     if (storedData) {
       setPlannerData(JSON.parse(storedData));
@@ -92,7 +90,6 @@ const Planner: React.FC<PlannerProps> = ({ activeTab, plannerData, setPlannerDat
   }, [setPlannerData]);
 
   useEffect(() => {
-    // Save data to localStorage whenever plannerData changes
     localStorage.setItem('plannerData', JSON.stringify(plannerData));
   }, [plannerData]);
 
@@ -134,7 +131,8 @@ const Planner: React.FC<PlannerProps> = ({ activeTab, plannerData, setPlannerDat
       targetDate: newGoalTargetDate ? newGoalTargetDate.toISOString() : undefined,
       progress: 0,
       completedSteps: 0,
-      totalSteps: newGoalTotalSteps
+      totalSteps: newGoalTotalSteps,
+      type: 'short'
     };
 
     setPlannerData({
@@ -606,7 +604,6 @@ const Planner: React.FC<PlannerProps> = ({ activeTab, plannerData, setPlannerDat
         </motion.div>
       )}
 
-      {/* Task Dialog */}
       <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
         <DialogContent className="bg-gray-800 text-white border-gray-700">
           <DialogHeader>
@@ -705,7 +702,6 @@ const Planner: React.FC<PlannerProps> = ({ activeTab, plannerData, setPlannerDat
         </DialogContent>
       </Dialog>
 
-      {/* Goal Dialog */}
       <Dialog open={isGoalDialogOpen} onOpenChange={setIsGoalDialogOpen}>
         <DialogContent className="bg-gray-800 text-white border-gray-700">
           <DialogHeader>
@@ -790,7 +786,6 @@ const Planner: React.FC<PlannerProps> = ({ activeTab, plannerData, setPlannerDat
         </DialogContent>
       </Dialog>
 
-      {/* Recurring Task Dialog */}
       <Dialog open={isRecurringTaskDialogOpen} onOpenChange={setIsRecurringTaskDialogOpen}>
         <DialogContent className="bg-gray-800 text-white border-gray-700">
           <DialogHeader>

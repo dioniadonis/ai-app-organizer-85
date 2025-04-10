@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { AITool } from '@/types/AITool';
 import { Banknote, Calendar, Package, Star, ExternalLink, CheckCircle, XCircle, Grid3X3, Layout, LayoutDashboard, Plus, CalendarClock } from 'lucide-react';
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { useNavigate } from 'react-router-dom';
 
 interface Task {
   id: string;
@@ -50,6 +52,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   selectedCategories,
   onCategoryToggle
 }) => {
+  const navigate = useNavigate();
   const [widgetLayout, setWidgetLayout] = useState<'grid' | 'list'>('grid');
   const [showAddWidgetDialog, setShowAddWidgetDialog] = useState(false);
   const [activeWidgets, setActiveWidgets] = useState({
@@ -123,10 +126,11 @@ const Dashboard: React.FC<DashboardProps> = ({
   };
   
   const handleAddExpense = () => {
-    toast({
-      title: "Add Expense",
-      description: "Expense feature will be available soon",
-    });
+    navigate('/expenses');
+  };
+
+  const handleViewAllExpenses = () => {
+    navigate('/expenses');
   };
 
   return (
@@ -143,7 +147,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.3 }}
         >
-          Dashboard
+          Loop Space AI Organizer
         </motion.h2>
         
         <div className="flex items-center gap-2">
@@ -183,10 +187,10 @@ const Dashboard: React.FC<DashboardProps> = ({
         <motion.div 
           variants={containerVariants} 
           className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-700/30 transition-colors"
-          onClick={() => onCategoryClick('')}
+          onClick={() => navigate('/expenses')}
         >
           <Package className="w-8 h-8 mb-2 text-blue-400" />
-          <span className="text-gray-400 text-sm">Total Subscriptions</span>
+          <span className="text-gray-400 text-sm">Total Expenses</span>
           <span className="text-3xl font-bold">{totalTools}</span>
         </motion.div>
         
@@ -203,7 +207,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         <motion.div 
           variants={containerVariants} 
           className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-700/30 transition-colors"
-          onClick={() => onCategoryClick('')}
+          onClick={() => navigate('/expenses')}
         >
           <Banknote className="w-8 h-8 mb-2 text-green-400" />
           <span className="text-gray-400 text-sm">Monthly Cost</span>
@@ -242,7 +246,10 @@ const Dashboard: React.FC<DashboardProps> = ({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
           >
-            <ExpensesWidget onAddExpense={handleAddExpense} />
+            <ExpensesWidget 
+              onAddExpense={handleAddExpense}
+              onViewAllExpenses={handleViewAllExpenses}
+            />
           </motion.div>
         )}
       </div>
