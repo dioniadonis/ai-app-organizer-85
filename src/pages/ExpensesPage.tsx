@@ -81,6 +81,7 @@ const ExpensesPage: React.FC = () => {
   const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [overdueExpenses, setOverdueExpenses] = useState<Expense[]>([]);
+  const [filterUnpaid, setFilterUnpaid] = useState(false);
 
   useEffect(() => {
     const savedExpenses = localStorage.getItem('expenses');
@@ -134,7 +135,6 @@ const ExpensesPage: React.FC = () => {
             const parsedExpenses = JSON.parse(savedExpenses);
             const renewalExpenses = parsedExpenses.filter((expense: Expense) => expense.recurring);
             if (renewalExpenses.length > 0) {
-              // Here's the fix - we need to explicitly map the categories to ensure they're strings
               const categories = [...new Set(renewalExpenses.map((e: Expense) => e.category))];
               setCategoryFilter(categories as string[]);
               setShowFilters(true);
@@ -151,7 +151,6 @@ const ExpensesPage: React.FC = () => {
         if (savedExpenses) {
           try {
             const parsedExpenses = JSON.parse(savedExpenses);
-            // Filter for expenses marked as explicitly unpaid
             const unpaidExpenses = parsedExpenses.filter((expense: Expense) => expense.isPaid === false);
             if (unpaidExpenses.length > 0) {
               toast({
@@ -160,7 +159,6 @@ const ExpensesPage: React.FC = () => {
               });
             }
             setActiveView('list');
-            // Set a special flag to highlight unpaid expenses
             sessionStorage.setItem('highlightUnpaid', 'true');
           } catch (e) {
             console.error('Failed to parse expenses for unpaid view', e);
@@ -183,17 +181,12 @@ const ExpensesPage: React.FC = () => {
       localStorage.removeItem('selectedExpenseTag');
     }
     
-    // Check for highlight unpaid flag
     const highlightUnpaid = sessionStorage.getItem('highlightUnpaid');
     if (highlightUnpaid === 'true') {
-      // Clear the flag but apply the filter for unpaid expenses
       sessionStorage.removeItem('highlightUnpaid');
       setFilterUnpaid(true);
     }
   }, [location.search]);
-
-  // Add state for unpaid filter
-  const [filterUnpaid, setFilterUnpaid] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('expenses', JSON.stringify(expenses));
@@ -842,3 +835,38 @@ const ExpensesPage: React.FC = () => {
                                   activeBar={{ fill: null }}
                                 >
                                   {totalsByCategory.map((entry, index) => (
+                                    <Cell 
+                                      key={`cell-${index}`} 
+                                      fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]} 
+                                    />
+                                  ))}
+                                </Bar>
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-400">
+                    <p className="mb-4">No expense data to display</p>
+                    <Button
+                      onClick={() => setIsAddExpenseOpen(true)}
+                      className="bg-purple-600/70 hover:bg-purple-700 backdrop-blur-sm border border-white/10 shadow-lg transition-all hover:scale-[1.02]"
+                    >
+                      <PlusCircle className="w-4 h-4 mr-2" />
+                      Add Your First Expense
+                    </Button>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </motion.div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+export default ExpensesPage;
