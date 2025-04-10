@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -33,6 +32,19 @@ interface ExpensesWidgetProps {
   onViewAllExpenses?: () => void;
 }
 
+const CHART_COLORS = [
+  '#9b87f5',  // Primary Purple
+  '#7E69AB',  // Secondary Purple
+  '#6E56CF',  // Vivid Purple
+  '#A78BFA',  // Bright Purple
+  '#0EA5E9',  // Ocean Blue
+  '#1EAEDB',  // Bright Blue
+  '#33C3F0',  // Sky Blue
+  '#D6BCFA',  // Light Purple
+  '#C4B5FD',  // Soft Purple
+  '#8B5CF6',  // Bold Purple
+];
+
 const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({ 
   expenses = [], 
   onAddExpense,
@@ -50,7 +62,6 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
   });
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  // Fetch expenses from localStorage on mount
   useEffect(() => {
     const savedExpenses = localStorage.getItem('expenses');
     if (savedExpenses) {
@@ -108,7 +119,6 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
   const handleCategoryClick = (category: string) => {
     setSelectedCategory(category);
     if (onViewAllExpenses) {
-      // Add category to localStorage for the expenses page to read
       localStorage.setItem('selectedExpenseCategory', category);
       navigate('/expenses?view=list&category=' + encodeURIComponent(category));
     }
@@ -119,18 +129,15 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     navigate('/expenses?view=list&tag=' + encodeURIComponent(tag));
   };
 
-  // Only show real data, no defaults
   const displayData = localExpenses.length > 0 ? localExpenses : [];
   const totalExpenses = displayData.reduce((sum, item) => sum + item.amount, 0);
 
-  // Format data for pie chart
-  const pieData = displayData.map(item => ({
+  const pieData = displayData.map((item, index) => ({
     name: item.category,
     value: item.amount,
-    color: item.color
+    color: item.color || CHART_COLORS[index % CHART_COLORS.length]
   }));
 
-  // Get all unique tags from expenses
   const allTags = localExpenses
     .flatMap(expense => expense.tags || [])
     .filter((tag, index, self) => self.indexOf(tag) === index);
@@ -144,7 +151,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
         </div>
         <Button 
           onClick={handleAddExpense}
-          className="bg-purple-600 hover:bg-purple-700 bg-opacity-70"
+          className="bg-purple-600/70 hover:bg-purple-700 backdrop-blur-sm border border-white/10 shadow-lg transition-all hover:scale-[1.02]"
         >
           <PlusCircle className="h-4 w-4 mr-2" />
           Add New Expense
@@ -153,7 +160,6 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
     );
   };
 
-  // Custom tooltip styling
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -227,7 +233,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
                     {displayData.map((entry, index) => (
                       <Cell 
                         key={`cell-${index}`} 
-                        fill={entry.color || `#${Math.floor(Math.random()*16777215).toString(16)}`} 
+                        fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]} 
                       />
                     ))}
                   </Bar>
@@ -249,7 +255,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
                     cursor="pointer"
                   >
                     {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                      <Cell key={`cell-${index}`} fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip
@@ -323,7 +329,6 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
         </CardFooter>
       )}
 
-      {/* Quick Add Expense Dialog */}
       <Dialog open={showQuickAddDialog} onOpenChange={setShowQuickAddDialog}>
         <DialogContent className="bg-gray-800 border-gray-700 text-white">
           <DialogHeader>

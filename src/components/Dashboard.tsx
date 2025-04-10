@@ -226,6 +226,21 @@ const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
+  const handleRenewalsStatClick = () => {
+    if (upcomingRenewals.length > 0) {
+      navigate('/expenses?view=list&filter=renewals');
+      toast({
+        title: "Showing upcoming renewals",
+        description: `${upcomingRenewals.length} upcoming renewals loaded`,
+      });
+    } else {
+      toast({
+        title: "No upcoming renewals",
+        description: "You don't have any upcoming renewals in the next 30 days",
+      });
+    }
+  };
+
   return (
     <motion.div
       variants={containerVariants}
@@ -377,7 +392,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         <motion.div 
           variants={containerVariants} 
           className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-700/30 transition-colors"
-          onClick={onRenewalClick}
+          onClick={handleRenewalsStatClick}
         >
           <Calendar className="w-8 h-8 mb-2 text-purple-400" />
           <span className="text-gray-400 text-sm">Upcoming Renewals</span>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -42,7 +41,18 @@ interface Expense {
   tags?: string[];
 }
 
-const COLORS = ['#9b87f5', '#7E69AB', '#1EAEDB', '#D6BCFA', '#33C3F0', '#6E56CF', '#A78BFA', '#C4B5FD'];
+const CHART_COLORS = [
+  '#9b87f5',  // Primary Purple
+  '#7E69AB',  // Secondary Purple
+  '#6E56CF',  // Vivid Purple
+  '#A78BFA',  // Bright Purple
+  '#0EA5E9',  // Ocean Blue
+  '#1EAEDB',  // Bright Blue
+  '#33C3F0',  // Sky Blue
+  '#D6BCFA',  // Light Purple
+  '#C4B5FD',  // Soft Purple
+  '#8B5CF6',  // Bold Purple
+];
 
 const ExpensesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -75,7 +85,6 @@ const ExpensesPage: React.FC = () => {
       const parsedExpenses = JSON.parse(savedExpenses);
       setExpenses(parsedExpenses);
       
-      // Find overdue expenses
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
@@ -123,15 +132,27 @@ const ExpensesPage: React.FC = () => {
       setShowFilters(true);
       localStorage.removeItem('selectedExpenseTag');
     }
-  }, [location.search]);
+    
+    const filterParam = params.get('filter');
+    if (filterParam === 'renewals') {
+      const filtered = expenses.filter(expense => expense.recurring);
+      if (filtered.length > 0) {
+        const categories = [...new Set(filtered.map(e => e.category))];
+        setCategoryFilter(categories);
+        setShowFilters(true);
+        toast({
+          title: "Showing upcoming renewals",
+          description: `${filtered.length} recurring expenses loaded`,
+        });
+      }
+    }
+  }, [location.search, expenses]);
 
   useEffect(() => {
     localStorage.setItem('expenses', JSON.stringify(expenses));
   }, [expenses]);
 
-  // Update upcoming renewals in App state when expenses change
   useEffect(() => {
-    // This data will be used across components
     localStorage.setItem('renewals', JSON.stringify(
       expenses.filter(expense => expense.recurring)
     ));
@@ -279,13 +300,11 @@ const ExpensesPage: React.FC = () => {
     setHasNotifications(false);
     setActiveView('list');
     
-    // Filter to show only overdue expenses
     const overdueCategories = [...new Set(overdueExpenses.map(e => e.category))];
     setCategoryFilter(overdueCategories);
     setShowFilters(true);
   };
 
-  // Custom tooltip styling for charts
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -667,7 +686,7 @@ const ExpensesPage: React.FC = () => {
                     <p className="mb-4">No expenses found</p>
                     <Button
                       onClick={() => setIsAddExpenseOpen(true)}
-                      className="bg-purple-600 hover:bg-purple-700 bg-opacity-70"
+                      className="bg-purple-600/70 hover:bg-purple-700 backdrop-blur-sm border border-white/10 shadow-lg transition-all hover:scale-[1.02]"
                     >
                       <PlusCircle className="w-4 h-4 mr-2" />
                       Add Your First Expense
@@ -699,7 +718,7 @@ const ExpensesPage: React.FC = () => {
                                   label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                                 >
                                   {totalsByCategory.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                    <Cell key={`cell-${index}`} fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]} />
                                   ))}
                                 </PieSegment>
                                 <Tooltip
@@ -739,7 +758,7 @@ const ExpensesPage: React.FC = () => {
                                   activeBar={{ fill: null }}
                                 >
                                   {totalsByCategory.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                    <Cell key={`cell-${index}`} fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]} />
                                   ))}
                                 </Bar>
                               </BarChart>
@@ -779,7 +798,7 @@ const ExpensesPage: React.FC = () => {
                     <p className="mb-4">No expense data to visualize</p>
                     <Button
                       onClick={() => setIsAddExpenseOpen(true)}
-                      className="bg-purple-600 hover:bg-purple-700 bg-opacity-70"
+                      className="bg-purple-600/70 hover:bg-purple-700 backdrop-blur-sm border border-white/10 shadow-lg transition-all hover:scale-[1.02]"
                     >
                       <PlusCircle className="w-4 h-4 mr-2" />
                       Add Your First Expense

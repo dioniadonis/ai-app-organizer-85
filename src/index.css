@@ -62,4 +62,25 @@
   .ai-gradient-text {
     @apply bg-ai-gradient text-transparent bg-clip-text font-bold;
   }
+  
+  .glass-button {
+    @apply bg-purple-600/70 hover:bg-purple-700 backdrop-blur-sm border border-white/10 
+      shadow-lg transition-all hover:scale-[1.02];
+  }
+  
+  .chart-color-purple-1 {
+    @apply fill-[#9b87f5];
+  }
+  
+  .chart-color-purple-2 {
+    @apply fill-[#7E69AB];
+  }
+  
+  .chart-color-blue-1 {
+    @apply fill-[#1EAEDB];
+  }
+  
+  .chart-color-blue-2 {
+    @apply fill-[#33C3F0];
+  }
 }
