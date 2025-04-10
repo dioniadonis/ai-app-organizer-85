@@ -1,268 +1,74 @@
-import React, { useState, useEffect } from 'react';
-import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+
+import React from 'react';
+import { BarChart, Bar, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
+import { Card } from '@/components/ui/card';
+import { Banknote, Plus, ArrowRight, Receipt, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, PieChart as PieChartIcon, BarChart as BarChartIcon, ArrowRight, AlertCircle, Receipt } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { toast } from '@/hooks/use-toast';
 
 interface ExpensesWidgetProps {
-  expenses?: Array<{
-    category: string;
-    amount: number;
-    color?: string;
-    date?: string;
-    recurring?: boolean;
-    tags?: string[];
-    isPaid?: boolean;
-  }>;
-  onAddExpense?: () => void;
-  onViewAllExpenses?: () => void;
+  expenses: any[];
+  totalExpenses?: number;
+  monthlyExpenses?: number;
+  unpaidTotal?: number;
+  onAddExpense: () => void;
+  onViewAllExpenses: () => void;
 }
 
-const CHART_COLORS = [
-  '#9b87f5',  // Primary Purple
-  '#7E69AB',  // Secondary Purple
-  '#6E56CF',  // Vivid Purple
-  '#A78BFA',  // Bright Purple
-  '#0EA5E9',  // Ocean Blue
-  '#1EAEDB',  // Bright Blue
-  '#33C3F0',  // Sky Blue
-  '#D6BCFA',  // Light Purple
-  '#C4B5FD',  // Soft Purple
-  '#8B5CF6',  // Bold Purple
-];
-
-const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({ 
-  expenses = [], 
-  onAddExpense,
+const ExpensesWidget = ({ 
+  expenses, 
+  totalExpenses, 
+  monthlyExpenses, 
+  unpaidTotal = 0,
+  onAddExpense, 
   onViewAllExpenses 
-}) => {
-  const [chartType, setChartType] = useState<'bar' | 'pie'>('pie');
-  const isMobile = useIsMobile();
-  const navigate = useNavigate();
-  const [localExpenses, setLocalExpenses] = useState(expenses);
-  const [showQuickAddDialog, setShowQuickAddDialog] = useState(false);
-  const [newExpense, setNewExpense] = useState<{
-    category: string;
-    amount: number;
-    recurring: boolean;
-    isPaid?: boolean;
-  }>({
-    category: '',
-    amount: 0,
-    recurring: false
-  });
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [totalMonthlyAmount, setTotalMonthlyAmount] = useState<number>(0);
-  const [unpaidTotalAmount, setUnpaidTotalAmount] = useState<number>(0);
-
-  const calculateUnpaidTotal = (expenseItems: any[]) => {
-    if (!expenseItems || expenseItems.length === 0) return 0;
-    
-    return expenseItems.reduce((total: number, expense: any) => {
-      if (!expense) return total;
-      
-      const amount = Number(expense.amount) || 0;
-      
-      if (expense.isPaid === false) {
-        return total + amount;
-      }
-      
-      return total;
-    }, 0);
-  };
-
-  const calculateMonthlyTotal = (expenseItems: any[]) => {
-    if (!expenseItems || expenseItems.length === 0) return 0;
-    
-    return expenseItems.reduce((total: number, expense: any) => {
-      if (!expense) return total;
-      
-      const amount = Number(expense.amount) || 0;
-      
-      if (expense.recurring) {
-        return total + amount;
-      }
-      
-      if (expense.date) {
-        const expenseDate = new Date(expense.date);
-        const currentMonth = new Date().getMonth();
-        const currentYear = new Date().getFullYear();
-        
-        if (expenseDate.getMonth() === currentMonth && 
-            expenseDate.getFullYear() === currentYear) {
-          return total + amount;
-        }
-      }
-      
-      return total;
-    }, 0);
-  };
-
-  const fetchAndUpdateExpenses = () => {
-    try {
-      const savedExpenses = localStorage.getItem('expenses');
-      if (savedExpenses) {
-        const parsedExpenses = JSON.parse(savedExpenses);
-        setLocalExpenses(parsedExpenses);
-        
-        const monthlyTotal = calculateMonthlyTotal(parsedExpenses);
-        setTotalMonthlyAmount(monthlyTotal);
-        
-        const unpaidTotal = calculateUnpaidTotal(parsedExpenses);
-        setUnpaidTotalAmount(unpaidTotal);
-        
-        console.log('Updated monthly total:', monthlyTotal, 'and unpaid total:', unpaidTotal, 'from expenses:', parsedExpenses);
-      } else {
-        console.log('No expenses found in localStorage');
-        setTotalMonthlyAmount(0);
-        setUnpaidTotalAmount(0);
-      }
-    } catch (e) {
-      console.error('Failed to parse expenses from localStorage', e);
-      setTotalMonthlyAmount(0);
-      setUnpaidTotalAmount(0);
-    }
-  };
-
-  useEffect(() => {
-    fetchAndUpdateExpenses();
-    
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'expenses') {
-        console.log('Storage event detected - expenses updated');
-        fetchAndUpdateExpenses();
-      }
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    
-    const intervalId = setInterval(fetchAndUpdateExpenses, 1000);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(intervalId);
-    };
-  }, []);
-
-  const handleAddExpense = () => {
-    if (onAddExpense) {
-      onAddExpense();
-    } else {
-      setShowQuickAddDialog(true);
-    }
-  };
-
-  const handleQuickAddExpense = () => {
-    if (!newExpense.category || newExpense.amount <= 0) {
-      toast({
-        title: "Invalid expense",
-        description: "Please enter a category and a valid amount",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const color = CHART_COLORS[Math.floor(Math.random() * CHART_COLORS.length)];
-    const newExpenseItem = {
-      ...newExpense,
-      color,
-      date: new Date().toISOString().split('T')[0]
-    };
-
-    const updatedExpenses = [...localExpenses, newExpenseItem];
-    setLocalExpenses(updatedExpenses);
-    
-    const newTotal = calculateMonthlyTotal(updatedExpenses);
-    setTotalMonthlyAmount(newTotal);
-    
-    const newUnpaidTotal = calculateUnpaidTotal(updatedExpenses);
-    setUnpaidTotalAmount(newUnpaidTotal);
-    
-    localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
-    
-    window.dispatchEvent(new StorageEvent('storage', {
-      key: 'expenses',
-      newValue: JSON.stringify(updatedExpenses),
-      url: window.location.href
-    }));
-
-    toast({
-      title: "Expense added",
-      description: `${newExpense.category}: $${newExpense.amount.toFixed(2)} ${newExpense.recurring ? '(recurring)' : ''}`,
-    });
-    
-    setNewExpense({
-      category: '',
-      amount: 0,
-      recurring: false,
-      isPaid: true
-    });
-    setShowQuickAddDialog(false);
-    
-    console.log('Added expense, new monthly total:', newTotal, 'and unpaid total:', newUnpaidTotal);
-  };
-
-  const handleCategoryClick = (category: string) => {
-    setSelectedCategory(category);
-    if (onViewAllExpenses) {
-      localStorage.setItem('selectedExpenseCategory', category);
-      navigate('/expenses?view=list&category=' + encodeURIComponent(category));
-    }
-  };
-
-  const handleTagClick = (tag: string) => {
-    localStorage.setItem('selectedExpenseTag', tag);
-    navigate('/expenses?view=list&tag=' + encodeURIComponent(tag));
-  };
-
-  const viewUnpaidExpenses = () => {
-    navigate('/expenses?view=list&filter=unpaid');
-  };
-
-  const displayData = localExpenses.length > 0 ? localExpenses : [];
-  const totalExpenses = displayData.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+}: ExpensesWidgetProps) => {
+  // If totalExpenses is not provided, calculate it
+  const calculatedTotalExpenses = totalExpenses ?? expenses.reduce((sum, expense) => sum + expense.amount, 0);
   
-  const unpaidExpenses = displayData.filter(expense => expense.isPaid === false);
+  // Monthly expenses calculation if not provided
+  const calculatedMonthlyExpenses = monthlyExpenses ?? expenses
+    .filter(expense => expense.recurring && (expense.frequency === 'monthly' || !expense.frequency))
+    .reduce((sum, expense) => sum + expense.amount, 0);
+  
+  // If unpaidTotal not provided, calculate it
+  const calculatedUnpaidTotal = unpaidTotal ?? expenses
+    .filter(expense => expense.isPaid === false)
+    .reduce((sum, expense) => sum + expense.amount, 0);
 
-  const pieData = displayData.map((item, index) => ({
-    name: item.category,
-    value: Number(item.amount) || 0,
-    color: item.color || CHART_COLORS[index % CHART_COLORS.length]
+  // Calculate data for the chart
+  const recentExpenses = expenses.slice(0, 5).map(expense => ({
+    name: expense.category?.substring(0, 10) || 'Other',
+    amount: expense.amount
   }));
 
-  const allTags = localExpenses
-    .flatMap(expense => expense.tags || [])
-    .filter((tag, index, self) => self.indexOf(tag) === index);
+  // Group expenses by category for chart visualization
+  const expensesByCategory = expenses.reduce((acc, expense) => {
+    const category = expense.category || 'Other';
+    if (!acc[category]) {
+      acc[category] = 0;
+    }
+    acc[category] += expense.amount;
+    return acc;
+  }, {});
 
-  const renderEmptyState = () => {
+  const chartData = Object.entries(expensesByCategory)
+    .map(([name, amount]) => ({ 
+      name: name.length > 10 ? name.substring(0, 10) + '...' : name, 
+      amount 
+    }))
+    .sort((a, b) => (b.amount as number) - (a.amount as number))
+    .slice(0, 6);
+
+  const chartColors = [
+    '#9b87f5', '#7E69AB', '#6E56CF', '#A78BFA', '#0EA5E9', '#1EAEDB',
+  ];
+
+  const RecurringIndicator = ({ recurring }: { recurring?: boolean }) => {
+    if (!recurring) return null;
     return (
-      <div className="flex flex-col items-center justify-center h-48 text-center">
-        <div className="text-gray-400 mb-6">
-          <p className="mb-2">No expense data yet</p>
-          <p className="text-sm text-gray-500">Track your recurring expenses and subscriptions</p>
-        </div>
-        <Button 
-          onClick={handleAddExpense}
-          className="bg-purple-600/70 hover:bg-purple-700 backdrop-blur-sm border border-white/10 shadow-lg transition-all hover:scale-[1.02]"
-        >
-          <PlusCircle className="h-4 w-4 mr-2" />
-          Add New Expense
-        </Button>
+      <div className="flex items-center gap-1 text-xs text-purple-400 ml-1">
+        <CalendarClock className="w-3 h-3" />
+        <span>recurring</span>
       </div>
     );
   };
@@ -270,9 +76,9 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-gray-800 border border-gray-700 px-3 py-2 rounded-md shadow-md">
-          <p className="text-white font-medium">{payload[0].name}</p>
-          <p className="text-purple-300">${payload[0].value.toFixed(2)}</p>
+        <div className="bg-gray-800 border border-gray-700 p-2 rounded-md shadow-md">
+          <p className="font-medium">{payload[0].payload.name}</p>
+          <p className="text-purple-400">${payload[0].value.toFixed(2)}</p>
         </div>
       );
     }
@@ -280,272 +86,130 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
   };
 
   return (
-    <Card className="bg-gray-800/60 border-gray-700 text-white shadow-md">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-lg font-medium">Expenses Overview</CardTitle>
-          <div className="flex items-center gap-2">
-            {displayData.length > 0 && (
-              <Tabs value={chartType} onValueChange={(value) => setChartType(value as 'bar' | 'pie')}>
-                <TabsList className="bg-gray-700/50">
-                  <TabsTrigger value="bar" className="data-[state=active]:bg-purple-600">
-                    <BarChartIcon className="h-4 w-4" />
-                  </TabsTrigger>
-                  <TabsTrigger value="pie" className="data-[state=active]:bg-purple-600">
-                    <PieChartIcon className="h-4 w-4" />
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            )}
+    <Card className="bg-gray-800/50 border border-gray-700 p-4">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center">
+          <Banknote className="w-5 h-5 text-green-400 mr-2" />
+          <h3 className="text-lg font-medium">Expenses Overview</h3>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="text-purple-400 hover:text-purple-300"
+          onClick={onViewAllExpenses}
+        >
+          View All <ArrowRight className="w-3 h-3 ml-1" />
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div className="bg-gray-700/30 rounded-lg p-3">
+          <div className="text-gray-400 text-sm mb-1">Total Expenses</div>
+          <div className="text-xl font-bold">${calculatedTotalExpenses.toFixed(2)}</div>
+        </div>
+        <div className="bg-gray-700/30 rounded-lg p-3">
+          <div className="text-gray-400 text-sm mb-1">Monthly</div>
+          <div className="text-xl font-bold">${calculatedMonthlyExpenses.toFixed(2)}</div>
+        </div>
+      </div>
+
+      {chartData.length > 0 ? (
+        <div className="mb-4">
+          <div className="mb-2 text-sm font-medium">Expense Distribution</div>
+          <div className="h-40">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} barGap={4}>
+                <XAxis 
+                  dataKey="name" 
+                  tick={{ fill: '#9b87f5', fontSize: 11 }} 
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar 
+                  dataKey="amount" 
+                  fill="#9b87f5" 
+                  radius={[4, 4, 0, 0]} 
+                  barSize={24}
+                  animationDuration={1000}
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      ) : (
+        <div className="h-40 flex items-center justify-center bg-gray-700/20 rounded-lg mb-4">
+          <div className="text-gray-400 text-center">
+            <p>No expense data available</p>
             <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 rounded-full hover:bg-purple-500/20 bg-transparent"
-              onClick={handleAddExpense}
+              variant="outline" 
+              size="sm" 
+              className="mt-2"
+              onClick={onAddExpense}
             >
-              <PlusCircle className="h-5 w-5" />
+              <Plus className="w-3 h-3 mr-1" />
+              Add Your First Expense
             </Button>
           </div>
         </div>
-        <CardDescription className="text-gray-400">Monthly breakdown by category</CardDescription>
-      </CardHeader>
-      
-      <CardContent>
-        {displayData.length === 0 ? (
-          renderEmptyState()
-        ) : (
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              {chartType === 'bar' ? (
-                <BarChart data={displayData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                  <XAxis 
-                    dataKey="category" 
-                    tick={{ fill: '#9b87f5' }} 
-                    axisLine={{ stroke: '#555' }}
-                    tickLine={{ stroke: '#555' }}
-                  />
-                  <YAxis 
-                    tick={{ fill: '#9b87f5' }} 
-                    axisLine={{ stroke: '#555' }}
-                    tickLine={{ stroke: '#555' }}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar 
-                    dataKey="amount" 
-                    radius={[4, 4, 0, 0]}
-                    onClick={(data) => handleCategoryClick(data.category)}
-                    cursor="pointer"
-                    activeBar={{ fill: null }}
-                  >
-                    {displayData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]} 
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              ) : (
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={isMobile ? 60 : 80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, percent }) => 
-                      isMobile ? '' : `${name}: ${(percent * 100).toFixed(0)}%`
-                    }
-                    onClick={(entry) => handleCategoryClick(entry.name)}
-                    cursor="pointer"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ 
-                      backgroundColor: '#1f2937', 
-                      borderColor: '#374151',
-                      color: 'white'
-                    }}
-                    formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
-                  />
-                </PieChart>
-              )}
-            </ResponsiveContainer>
-          </div>
-        )}
-        
-        {displayData.length > 0 && (
-          <div className="mt-4 space-y-2">
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="text-gray-400">
-                Total Expenses: ${totalExpenses.toFixed(2)}
-              </div>
-              <div className="text-gray-400 text-right">
-                Monthly Cost: ${totalMonthlyAmount.toFixed(2)}
-              </div>
-            </div>
-            
-            {unpaidTotalAmount > 0 && (
-              <div className="flex flex-col bg-red-500/20 text-red-300 px-3 py-2 rounded-lg mt-2">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center">
-                    <AlertCircle className="h-4 w-4 mr-2" />
-                    <span className="text-sm font-medium">Unpaid Expenses</span>
-                  </div>
-                  <div className="font-medium">${unpaidTotalAmount.toFixed(2)}</div>
-                </div>
-                
-                {unpaidExpenses.length > 0 && (
-                  <div className="flex flex-col gap-1 mt-1">
-                    {unpaidExpenses.slice(0, 2).map((expense, idx) => (
-                      <div key={idx} className="flex justify-between text-xs">
-                        <span>{expense.category}</span>
-                        <span>${expense.amount.toFixed(2)}</span>
-                      </div>
-                    ))}
-                    {unpaidExpenses.length > 2 && (
-                      <Button 
-                        variant="link" 
-                        className="text-xs text-red-300 p-0 h-auto mt-1"
-                        onClick={viewUnpaidExpenses}
-                      >
-                        View all {unpaidExpenses.length} unpaid expenses <ArrowRight className="h-3 w-3 ml-1" />
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-            
-            <div className="flex flex-wrap gap-2">
-              {displayData.map((item, index) => (
-                <div 
-                  key={index} 
-                  className="px-2 py-1 rounded-full text-xs flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
-                  style={{ backgroundColor: item.color ? `${item.color}40` : undefined }}
-                  onClick={() => handleCategoryClick(item.category)}
-                >
-                  <div 
-                    className="w-2 h-2 rounded-full" 
-                    style={{ backgroundColor: item.color }}
-                  ></div>
-                  <span>{item.category}: ${Number(item.amount).toFixed(2)}</span>
-                  {item.recurring && (
-                    <span className="ml-1 px-1 bg-blue-500/20 text-blue-300 rounded-full text-xs">recurring</span>
-                  )}
-                  {item.isPaid === false && (
-                    <span className="ml-1 px-1 bg-red-500/20 text-red-300 rounded-full text-xs">unpaid</span>
-                  )}
-                </div>
-              ))}
-            </div>
-            
-            {allTags.length > 0 && (
-              <div className="mt-3">
-                <h4 className="text-xs text-gray-400 mb-1">Tags</h4>
-                <div className="flex flex-wrap gap-1">
-                  {allTags.map((tag, index) => (
-                    <div 
-                      key={index} 
-                      className="px-2 py-0.5 rounded-full text-xs bg-purple-500/20 text-purple-300 cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={() => handleTagClick(tag)}
-                    >
-                      {tag}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </CardContent>
-
-      {displayData.length > 0 && (
-        <CardFooter className="flex flex-col gap-2">
-          {unpaidTotalAmount > 0 && (
-            <Button 
-              variant="outline" 
-              className="w-full border-red-500/50 text-red-300 hover:bg-red-500/10 hover:text-red-200"
-              onClick={viewUnpaidExpenses}
-            >
-              <Receipt className="mr-2 h-4 w-4" /> View Unpaid Expenses
-            </Button>
-          )}
-          <Button 
-            variant="ghost" 
-            className="w-full text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
-            onClick={onViewAllExpenses}
-          >
-            View All Expenses <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </CardFooter>
       )}
 
-      <Dialog open={showQuickAddDialog} onOpenChange={setShowQuickAddDialog}>
-        <DialogContent className="bg-gray-800 border-gray-700 text-white">
-          <DialogHeader>
-            <DialogTitle>Add New Expense</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Quickly add a new expense to your tracker.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Input 
-                id="category" 
-                placeholder="e.g., Food, Transport, Entertainment" 
-                value={newExpense.category}
-                onChange={(e) => setNewExpense({...newExpense, category: e.target.value})}
-                className="bg-gray-700 border-gray-600"
-              />
+      {calculatedUnpaidTotal > 0 && (
+        <div className="bg-red-500/20 rounded-lg p-3 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <Receipt className="w-4 h-4 text-red-400" />
+              <span className="text-sm font-medium">Unpaid Expenses</span>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="amount">Expense Cost ($)</Label>
-              <Input 
-                id="amount" 
-                type="number" 
-                min="0.01" 
-                step="0.01" 
-                placeholder="0.00"
-                value={newExpense.amount || ''}
-                onChange={(e) => setNewExpense({...newExpense, amount: parseFloat(e.target.value) || 0})}
-                className="bg-gray-700 border-gray-600"
-                style={{ appearance: 'textfield' }}
-              />
+            <span className="text-red-300 font-bold">${calculatedUnpaidTotal.toFixed(2)}</span>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+        {expenses.slice(0, 5).map((expense, index) => (
+          <div 
+            key={expense.id || index} 
+            className="flex justify-between items-center p-2 bg-gray-700/20 rounded-md hover:bg-gray-700/30 transition-colors"
+          >
+            <div className="flex items-center">
+              <div 
+                className="w-2 h-2 rounded-full mr-2" 
+                style={{ 
+                  backgroundColor: expense.color || chartColors[index % chartColors.length] 
+                }}
+              ></div>
+              <div>
+                <div className="flex items-center">
+                  <span className="font-medium">{expense.category}</span>
+                  <RecurringIndicator recurring={expense.recurring} />
+                </div>
+                {expense.description && (
+                  <div className="text-xs text-gray-400">{expense.description.substring(0, 20)}</div>
+                )}
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="recurring"
-                checked={newExpense.recurring}
-                onCheckedChange={(checked) => setNewExpense({...newExpense, recurring: checked})}
-              />
-              <Label htmlFor="recurring">Recurring expense</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="isPaid"
-                checked={newExpense.isPaid !== false}
-                onCheckedChange={(checked) => setNewExpense({...newExpense, isPaid: checked})}
-              />
-              <Label htmlFor="isPaid">Mark as paid</Label>
+            <div className="flex items-center">
+              <span className="font-medium">${expense.amount.toFixed(2)}</span>
+              {expense.isPaid === false && (
+                <span className="ml-2 text-xs bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded-full">Unpaid</span>
+              )}
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowQuickAddDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleQuickAddExpense}>
-              Add Expense
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        ))}
+      </div>
+
+      <Button 
+        onClick={onAddExpense} 
+        className="w-full mt-4 bg-purple-600 hover:bg-purple-700"
+      >
+        <Plus className="w-4 h-4 mr-2" />
+        Add New Expense
+      </Button>
     </Card>
   );
 };

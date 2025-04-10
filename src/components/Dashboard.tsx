@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AITool } from '@/types/AITool';
 import { Banknote, Calendar, Package, Star, CheckCircle, XCircle, Grid3X3, Layout, LayoutDashboard, Plus, CalendarClock, Clock, AlertCircle, Receipt } from 'lucide-react';
@@ -103,7 +102,6 @@ const Dashboard: React.FC<DashboardProps> = ({
   const totalTools = aiTools.length;
   const favoriteTools = aiTools.filter(tool => tool.isFavorite).length;
   
-  // Calculate total monthly cost including both recurring expenses and AI tool renewals
   const totalMonthlyCost = expenses.reduce((sum, expense) => {
     if (expense.recurring && (expense.frequency === 'monthly' || !expense.frequency)) {
       return sum + expense.amount;
@@ -113,7 +111,6 @@ const Dashboard: React.FC<DashboardProps> = ({
     return sum + (tool.subscriptionCost || 0);
   }, 0);
   
-  // Calculate total expenses including both expenses and AI tool costs
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0) + 
     aiTools.reduce((sum, tool) => sum + (tool.subscriptionCost || 0), 0);
   
@@ -145,10 +142,11 @@ const Dashboard: React.FC<DashboardProps> = ({
   
   const upcomingRenewals = [...toolRenewals, ...expenseRenewals];
 
-  // Calculate unpaid totals for dashboard
   const unpaidTotal = expenses
     .filter(expense => expense.isPaid === false)
     .reduce((sum, expense) => sum + expense.amount, 0);
+
+  const unpaidCount = expenses.filter(expense => expense.isPaid === false).length;
 
   const categoryCount = aiTools.reduce((acc, tool) => {
     acc[tool.category] = (acc[tool.category] || 0) + 1;
@@ -451,6 +449,9 @@ const Dashboard: React.FC<DashboardProps> = ({
           >
             <ExpensesWidget 
               expenses={expenses}
+              totalExpenses={totalExpenses} 
+              monthlyExpenses={totalMonthlyCost}
+              unpaidTotal={unpaidTotal}
               onAddExpense={handleAddExpense}
               onViewAllExpenses={handleViewAllExpenses}
             />
