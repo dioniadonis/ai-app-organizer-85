@@ -174,7 +174,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-8 w-8 rounded-full hover:bg-purple-500/20"
+              className="h-8 w-8 rounded-full hover:bg-purple-500/20 bg-transparent"
               onClick={handleAddExpense}
             >
               <PlusCircle className="h-5 w-5" />

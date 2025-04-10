@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -653,7 +654,15 @@ const ExpensesPage: React.FC = () => {
                                     color: 'white'
                                   }}
                                 />
-                                <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
+                                <Bar 
+                                  dataKey="amount" 
+                                  radius={[4, 4, 0, 0]}
+                                  onClick={(data) => {
+                                    setCategoryFilter([data.category]);
+                                    setActiveView('list');
+                                  }}
+                                  cursor="pointer"
+                                >
                                   {totalsByCategory.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={entry.color} />
                                   ))}
@@ -669,8 +678,12 @@ const ExpensesPage: React.FC = () => {
                       {totalsByCategory.map((category, index) => (
                         <div
                           key={index}
-                          className="px-3 py-1.5 rounded-full text-sm flex items-center gap-2"
+                          className="px-3 py-1.5 rounded-full text-sm flex items-center gap-2 cursor-pointer"
                           style={{ backgroundColor: `${category.color}30` }}
+                          onClick={() => {
+                            setCategoryFilter([category.category]);
+                            setActiveView('list');
+                          }}
                         >
                           <div
                             className="w-3 h-3 rounded-full"

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { AITool } from '@/types/AITool';
-import { Banknote, Calendar, Package, Star, CheckCircle, XCircle, Grid3X3, Layout, LayoutDashboard, Plus, CalendarClock } from 'lucide-react';
+import { Banknote, Calendar, Package, Star, CheckCircle, XCircle, Grid3X3, Layout, LayoutDashboard, Plus, CalendarClock, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format, isToday, isTomorrow } from 'date-fns';
 import PlannerWidget from './PlannerWidget';
@@ -12,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { useNavigate } from 'react-router-dom';
 import SearchBox from './SearchBox';
 import { useIsMobile } from '@/hooks/use-mobile';
+import HolographicTitle from './HolographicTitle';
 
 interface Task {
   id: string;
@@ -64,10 +66,40 @@ const Dashboard: React.FC<DashboardProps> = ({
     categories: true
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const [expenses, setExpenses] = useState<any[]>([]);
+  
+  // Update expenses from localStorage
+  useEffect(() => {
+    const savedExpenses = localStorage.getItem('expenses');
+    if (savedExpenses) {
+      try {
+        const parsedExpenses = JSON.parse(savedExpenses);
+        setExpenses(parsedExpenses);
+      } catch (e) {
+        console.error('Failed to parse expenses from localStorage', e);
+      }
+    }
+    
+    // Update the current time every minute
+    const timerID = setInterval(() => setCurrentDateTime(new Date()), 60000);
+    return () => clearInterval(timerID);
+  }, []);
   
   const totalTools = aiTools.length;
   const favoriteTools = aiTools.filter(tool => tool.isFavorite).length;
-  const totalMonthlyCost = aiTools.reduce((sum, tool) => sum + tool.subscriptionCost, 0);
+  
+  // Calculate monthly cost from all expenses
+  const totalMonthlyCost = expenses.reduce((sum, expense) => {
+    // Only count recurring expenses as monthly cost
+    if (expense.recurring) {
+      return sum + expense.amount;
+    }
+    return sum;
+  }, 0);
+  
+  // Calculate total expenses
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -155,6 +187,9 @@ const Dashboard: React.FC<DashboardProps> = ({
     navigate('/planner');
   };
 
+  const formattedDate = format(currentDateTime, 'EEEE, MMMM d, yyyy');
+  const formattedTime = format(currentDateTime, 'h:mm a');
+
   return (
     <motion.div
       variants={containerVariants}
@@ -163,16 +198,21 @@ const Dashboard: React.FC<DashboardProps> = ({
       className="py-6"
     >
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <motion.h2 
-          className="text-2xl font-bold text-white"
+        <motion.div
+          className="flex items-center gap-3"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.3 }}
         >
-          Dashboard
-        </motion.h2>
+          <h2 className="text-2xl font-bold text-white">Dashboard</h2>
+        </motion.div>
         
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
+          <div className="hidden md:flex items-center text-gray-400 text-sm mr-3">
+            <Clock className="w-4 h-4 mr-1" />
+            <span>{formattedDate} • {formattedTime}</span>
+          </div>
+          
           <SearchBox 
             onSearch={handleSearch} 
             className="w-full sm:w-64 md:w-72"
@@ -220,7 +260,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         >
           <Package className="w-8 h-8 mb-2 text-blue-400" />
           <span className="text-gray-400 text-sm">Total Expenses</span>
-          <span className="text-3xl font-bold">{totalTools}</span>
+          <span className="text-3xl font-bold">${totalExpenses.toFixed(2)}</span>
         </motion.div>
         
         <motion.div 
@@ -240,7 +280,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         >
           <Banknote className="w-8 h-8 mb-2 text-green-400" />
           <span className="text-gray-400 text-sm">Monthly Cost</span>
-          <span className="text-3xl font-bold">${totalMonthlyCost}</span>
+          <span className="text-3xl font-bold">${totalMonthlyCost.toFixed(2)}</span>
         </motion.div>
         
         <motion.div 
@@ -279,6 +319,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             transition={{ duration: 0.3, delay: 0.1 }}
           >
             <ExpensesWidget 
+              expenses={expenses}
               onAddExpense={handleAddExpense}
               onViewAllExpenses={handleViewAllExpenses}
             />
