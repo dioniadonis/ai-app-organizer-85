@@ -26,12 +26,16 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { toast } from '@/components/ui/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { useIsMobile } from '@/hooks/use-mobile';
+import TimeInput from '@/components/TimeInput';
+import CustomStepInput from '@/components/CustomStepInput';
+import SearchBox from '@/components/SearchBox';
 
 interface Task {
   id: number;
   title: string;
   description?: string;
   dueDate?: string;
+  dueTime?: string;
   completed: boolean;
   notify?: boolean;
   notifyInterval?: 'daily' | 'weekly' | '3days' | 'custom';
@@ -46,14 +50,29 @@ interface Goal {
   progress: number;
   completedSteps: number;
   totalSteps: number;
+  steps?: string[];
   type: 'daily' | 'short' | 'long';
 }
 
 interface PlannerProps {
   activeTab?: string;
+  onAddTask: (taskData: any) => boolean;
+  onEditTask: (taskId: number, taskData: any) => boolean;
+  onDeleteTask: (taskId: number) => boolean;
+  onAddGoal: (goalData: any) => boolean;
+  onEditGoal: (goalId: number, goalData: any) => boolean;
+  onDeleteGoal: (goalId: number) => boolean;
 }
 
-const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
+const Planner: React.FC<PlannerProps> = ({ 
+  activeTab = "tasks",
+  onAddTask,
+  onEditTask,
+  onDeleteTask,
+  onAddGoal,
+  onEditGoal,
+  onDeleteGoal
+}) => {
   const isMobile = useIsMobile();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -70,6 +89,7 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
     title: '',
     description: '',
     dueDate: '',
+    dueTime: '',
     completed: false,
     notify: false,
     priority: 'medium',
@@ -82,6 +102,7 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
     progress: 0,
     completedSteps: 0,
     totalSteps: 1,
+    steps: [],
     type: 'short',
   });
 
@@ -103,6 +124,7 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
           title: 'Complete the AI marketplace project',
           description: 'Finish building the AI marketplace dashboard with all features',
           dueDate: addDays(new Date(), 7).toISOString().split('T')[0],
+          dueTime: '09:00',
           completed: false,
           notify: true,
           priority: 'high',
@@ -111,6 +133,7 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
           id: 2,
           title: 'Research AI tools for content generation',
           dueDate: addDays(new Date(), 2).toISOString().split('T')[0],
+          dueTime: '14:30',
           completed: true,
           priority: 'medium',
         } as Task,
@@ -139,6 +162,7 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
           progress: 35,
           completedSteps: 7,
           totalSteps: 20,
+          steps: ['Research cheaper alternatives', 'Analyze current usage', 'Negotiate with vendors'],
           type: 'short',
         } as Goal,
         {
@@ -148,6 +172,7 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
           progress: 15,
           completedSteps: 3,
           totalSteps: 20,
+          steps: ['Complete module 1', 'Take practice exam', 'Schedule final test'],
           type: 'long',
         } as Goal,
       ];
@@ -164,6 +189,10 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
   useEffect(() => {
     localStorage.setItem('goals', JSON.stringify(goals));
   }, [goals]);
+
+  useEffect(() => {
+    setActiveTabState(activeTab);
+  }, [activeTab]);
   
   const addTask = () => {
     if (!newTask.title) {
@@ -180,62 +209,74 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
       title: newTask.title,
       description: newTask.description,
       dueDate: newTask.dueDate,
+      dueTime: newTask.dueTime,
       completed: false,
       notify: newTask.notify,
       notifyInterval: newTask.notifyInterval,
       priority: newTask.priority,
     } as Task;
     
-    setTasks(prev => [...prev, taskToAdd]);
-    setNewTask({
-      title: '',
-      description: '',
-      dueDate: '',
-      completed: false,
-      notify: false,
-      priority: 'medium',
-    });
-    setIsAddTaskOpen(false);
-    
-    toast({
-      title: "Task added",
-      description: "Your task has been added successfully",
-    });
+    if (onAddTask(taskToAdd)) {
+      setTasks(prev => [...prev, taskToAdd]);
+      setNewTask({
+        title: '',
+        description: '',
+        dueDate: '',
+        dueTime: '',
+        completed: false,
+        notify: false,
+        priority: 'medium',
+      });
+      setIsAddTaskOpen(false);
+      
+      toast({
+        title: "Task added",
+        description: "Your task has been added successfully",
+      });
+    }
   };
   
   const updateTask = () => {
     if (!editingTask) return;
     
-    setTasks(prev => 
-      prev.map(task => 
-        task.id === editingTask.id ? editingTask : task
-      )
-    );
-    
-    setEditingTask(null);
-    setIsAddTaskOpen(false);
-    
-    toast({
-      title: "Task updated",
-      description: "Your task has been updated successfully",
-    });
+    if (onEditTask(editingTask.id, editingTask)) {
+      setTasks(prev => 
+        prev.map(task => 
+          task.id === editingTask.id ? editingTask : task
+        )
+      );
+      
+      setEditingTask(null);
+      setIsAddTaskOpen(false);
+      
+      toast({
+        title: "Task updated",
+        description: "Your task has been updated successfully",
+      });
+    }
   };
   
   const deleteTask = (id: number) => {
-    setTasks(prev => prev.filter(task => task.id !== id));
-    
-    toast({
-      title: "Task deleted",
-      description: "Your task has been deleted",
-    });
+    if (onDeleteTask(id)) {
+      setTasks(prev => prev.filter(task => task.id !== id));
+      
+      toast({
+        title: "Task deleted",
+        description: "Your task has been deleted",
+      });
+    }
   };
   
   const toggleTaskComplete = (id: number) => {
-    setTasks(prev => 
-      prev.map(task => 
-        task.id === id ? { ...task, completed: !task.completed } : task
-      )
-    );
+    const task = tasks.find(t => t.id === id);
+    if (task) {
+      onEditTask(id, { ...task, completed: !task.completed });
+      setTasks(prev => 
+        prev.map(task => 
+          task.id === id ? { ...task, completed: !task.completed } : task
+        )
+      );
+    }
   };
   
   const addGoal = () => {
@@ -256,25 +297,29 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
       progress: 0,
       completedSteps: 0,
       totalSteps: newGoal.totalSteps || 1,
+      steps: newGoal.steps,
       type: newGoal.type || 'short',
     };
     
-    setGoals(prev => [...prev, goalToAdd]);
-    setNewGoal({
-      title: '',
-      description: '',
-      targetDate: '',
-      progress: 0,
-      completedSteps: 0,
-      totalSteps: 1,
-      type: 'short',
-    });
-    setIsAddGoalOpen(false);
-    
-    toast({
-      title: "Goal added",
-      description: "Your goal has been added successfully",
-    });
+    if (onAddGoal(goalToAdd)) {
+      setGoals(prev => [...prev, goalToAdd]);
+      setNewGoal({
+        title: '',
+        description: '',
+        targetDate: '',
+        progress: 0,
+        completedSteps: 0,
+        totalSteps: 1,
+        steps: [],
+        type: 'short',
+      });
+      setIsAddGoalOpen(false);
+      
+      toast({
+        title: "Goal added",
+        description: "Your goal has been added successfully",
+      });
+    }
   };
   
   const updateGoal = () => {
@@ -288,45 +333,51 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
       progress
     };
     
-    setGoals(prev => 
-      prev.map(goal => 
-        goal.id === editingGoal.id ? updatedGoal : goal
-      )
-    );
-    
-    setEditingGoal(null);
-    setIsAddGoalOpen(false);
-    
-    toast({
-      title: "Goal updated",
-      description: "Your goal has been updated successfully",
-    });
+    if (onEditGoal(editingGoal.id, updatedGoal)) {
+      setGoals(prev => 
+        prev.map(goal => 
+          goal.id === editingGoal.id ? updatedGoal : goal
+        )
+      );
+      
+      setEditingGoal(null);
+      setIsAddGoalOpen(false);
+      
+      toast({
+        title: "Goal updated",
+        description: "Your goal has been updated successfully",
+      });
+    }
   };
   
   const deleteGoal = (id: number) => {
-    setGoals(prev => prev.filter(goal => goal.id !== id));
-    
-    toast({
-      title: "Goal deleted",
-      description: "Your goal has been deleted",
-    });
+    if (onDeleteGoal(id)) {
+      setGoals(prev => prev.filter(goal => goal.id !== id));
+      
+      toast({
+        title: "Goal deleted",
+        description: "Your goal has been deleted",
+      });
+    }
   };
   
   const updateGoalProgress = (id: number, completedSteps: number) => {
-    setGoals(prev => 
-      prev.map(goal => {
-        if (goal.id === id) {
-          const newCompletedSteps = Math.min(completedSteps, goal.totalSteps);
-          const progress = Math.round((newCompletedSteps / goal.totalSteps) * 100);
-          return {
-            ...goal,
-            completedSteps: newCompletedSteps,
-            progress
-          };
-        }
-        return goal;
-      })
-    );
+    const goal = goals.find(g => g.id === id);
+    if (goal) {
+      const newCompletedSteps = Math.min(completedSteps, goal.totalSteps);
+      const progress = Math.round((newCompletedSteps / goal.totalSteps) * 100);
+      const updatedGoal = {
+        ...goal,
+        completedSteps: newCompletedSteps,
+        progress
+      };
+      
+      onEditGoal(id, updatedGoal);
+      
+      setGoals(prev => 
+        prev.map(g => g.id === id ? updatedGoal : g)
+      );
+    }
   };
   
   // Filter tasks based on search term, priority, status, and time frame
@@ -402,6 +453,10 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
       default: return 'bg-gray-500/20 text-gray-400';
     }
   };
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+  };
   
   return (
     <div className="h-full flex flex-col">
@@ -410,12 +465,9 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
         
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input 
-              placeholder="Search..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-full sm:w-64 bg-gray-700/50 border-gray-600"
+            <SearchBox 
+              onSearch={handleSearchChange}
+              className="w-full sm:w-64"
             />
           </div>
           
@@ -556,6 +608,12 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
                         <div className="flex items-center text-xs text-gray-400 mt-2">
                           <CalendarDays className="h-3 w-3 mr-1" />
                           {formatDate(task.dueDate)}
+                          {task.dueTime && (
+                            <span className="ml-2 flex items-center">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {task.dueTime}
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -589,6 +647,7 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
                           title: '',
                           description: '',
                           dueDate: '',
+                          dueTime: '',
                           completed: false,
                           notify: false,
                           priority: 'medium',
@@ -613,6 +672,7 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
                 title: '',
                 description: '',
                 dueDate: '',
+                dueTime: '',
                 completed: false,
                 notify: false,
                 priority: 'medium',
@@ -689,6 +749,20 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
                       ></div>
                     </div>
                     
+                    {goal.steps && goal.steps.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-xs text-gray-400">Steps:</p>
+                        <div className="ml-1 mt-1">
+                          {goal.steps.map((step, idx) => (
+                            <div key={idx} className="text-sm flex items-start gap-1 mt-1">
+                              <span className="text-gray-500">•</span>
+                              <span>{step}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="flex justify-between items-center mt-3">
                       <span className="text-sm">{goal.completedSteps} of {goal.totalSteps} steps completed</span>
                       
@@ -738,6 +812,7 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
                           progress: 0,
                           completedSteps: 0,
                           totalSteps: 1,
+                          steps: [],
                           type: 'short',
                         });
                         setIsAddGoalOpen(true);
@@ -763,6 +838,7 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
                 progress: 0,
                 completedSteps: 0,
                 totalSteps: 1,
+                steps: [],
                 type: 'short',
               });
               setIsAddGoalOpen(true);
@@ -826,6 +902,20 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
                   }
                 }}
                 className="bg-gray-700 border-gray-600"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <TimeInput
+                label="Due Time (optional)"
+                value={editingTask ? editingTask.dueTime || '' : newTask.dueTime || ''}
+                onChange={(value) => {
+                  if (editingTask) {
+                    setEditingTask({...editingTask, dueTime: value});
+                  } else {
+                    setNewTask({...newTask, dueTime: value});
+                  }
+                }}
               />
             </div>
             
@@ -1004,6 +1094,20 @@ const Planner: React.FC<PlannerProps> = ({ activeTab = "tasks" }) => {
                   <SelectItem value="long">Long-term</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Goal Steps (optional)</label>
+              <CustomStepInput
+                initialSteps={editingGoal ? editingGoal.steps || [] : []}
+                onChange={(steps) => {
+                  if (editingGoal) {
+                    setEditingGoal({...editingGoal, steps});
+                  } else {
+                    setNewGoal({...newGoal, steps});
+                  }
+                }}
+              />
             </div>
             
             <div className="space-y-2">
