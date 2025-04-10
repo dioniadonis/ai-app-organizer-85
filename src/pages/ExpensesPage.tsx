@@ -82,22 +82,26 @@ const ExpensesPage: React.FC = () => {
   useEffect(() => {
     const savedExpenses = localStorage.getItem('expenses');
     if (savedExpenses) {
-      const parsedExpenses = JSON.parse(savedExpenses);
-      setExpenses(parsedExpenses);
-      
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const overdue = parsedExpenses.filter((expense: Expense) => {
-        const expenseDate = new Date(expense.date);
-        expenseDate.setHours(0, 0, 0, 0);
-        return expense.recurring && isPast(expenseDate) && !isToday(expenseDate);
-      });
-      
-      setOverdueExpenses(overdue);
-      
-      if (overdue.length > 0 && !location.search.includes('overdue=true')) {
-        setHasNotifications(true);
+      try {
+        const parsedExpenses = JSON.parse(savedExpenses);
+        setExpenses(parsedExpenses);
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const overdue = parsedExpenses.filter((expense: Expense) => {
+          const expenseDate = new Date(expense.date);
+          expenseDate.setHours(0, 0, 0, 0);
+          return expense.recurring && isPast(expenseDate) && !isToday(expenseDate);
+        });
+        
+        setOverdueExpenses(overdue);
+        
+        if (overdue.length > 0 && !location.search.includes('overdue=true')) {
+          setHasNotifications(true);
+        }
+      } catch (e) {
+        console.error('Failed to parse expenses from localStorage', e);
       }
     }
     
@@ -122,15 +126,22 @@ const ExpensesPage: React.FC = () => {
     if (location.search) {
       const filterParam = params.get('filter');
       if (filterParam === 'renewals') {
-        const renewalExpenses = parsedExpenses ? parsedExpenses.filter((expense: Expense) => expense.recurring) : [];
-        if (renewalExpenses.length > 0) {
-          const categories = [...new Set(renewalExpenses.map((e: Expense) => e.category))];
-          setCategoryFilter(categories);
-          setShowFilters(true);
-          toast({
-            title: "Showing upcoming renewals",
-            description: `${renewalExpenses.length} recurring expenses loaded`,
-          });
+        if (savedExpenses) {
+          try {
+            const parsedExpenses = JSON.parse(savedExpenses);
+            const renewalExpenses = parsedExpenses.filter((expense: Expense) => expense.recurring);
+            if (renewalExpenses.length > 0) {
+              const categories = [...new Set(renewalExpenses.map((e: Expense) => e.category))];
+              setCategoryFilter(categories);
+              setShowFilters(true);
+              toast({
+                title: "Showing upcoming renewals",
+                description: `${renewalExpenses.length} recurring expenses loaded`,
+              });
+            }
+          } catch (e) {
+            console.error('Failed to parse expenses for renewals', e);
+          }
         }
       }
     }

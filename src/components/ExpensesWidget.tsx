@@ -63,15 +63,34 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   useEffect(() => {
-    const savedExpenses = localStorage.getItem('expenses');
-    if (savedExpenses) {
-      try {
-        const parsedExpenses = JSON.parse(savedExpenses);
-        setLocalExpenses(parsedExpenses);
-      } catch (e) {
-        console.error('Failed to parse expenses from localStorage', e);
+    const fetchExpenses = () => {
+      const savedExpenses = localStorage.getItem('expenses');
+      if (savedExpenses) {
+        try {
+          const parsedExpenses = JSON.parse(savedExpenses);
+          setLocalExpenses(parsedExpenses);
+        } catch (e) {
+          console.error('Failed to parse expenses from localStorage', e);
+        }
       }
-    }
+    };
+
+    fetchExpenses();
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'expenses') {
+        fetchExpenses();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    const intervalId = setInterval(fetchExpenses, 2000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(intervalId);
+    };
   }, []);
 
   const handleAddExpense = () => {
@@ -92,7 +111,7 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
       return;
     }
 
-    const color = `#${Math.floor(Math.random()*16777215).toString(16)}`;
+    const color = CHART_COLORS[Math.floor(Math.random() * CHART_COLORS.length)];
     const newExpenseItem = {
       ...newExpense,
       color,
@@ -101,8 +120,16 @@ const ExpensesWidget: React.FC<ExpensesWidgetProps> = ({
 
     const updatedExpenses = [...localExpenses, newExpenseItem];
     setLocalExpenses(updatedExpenses);
+    
     localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
     
+    const storageEvent = new StorageEvent('storage', {
+      key: 'expenses',
+      newValue: JSON.stringify(updatedExpenses),
+      url: window.location.href
+    });
+    window.dispatchEvent(storageEvent);
+
     toast({
       title: "Expense added",
       description: `${newExpense.category}: $${newExpense.amount} ${newExpense.recurring ? '(recurring)' : ''}`,
