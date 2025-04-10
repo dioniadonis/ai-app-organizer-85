@@ -8,5 +8,5 @@ export interface AITool {
   renewalDate: string;
   isFavorite: boolean;
   website?: string;
-  isPaid?: boolean; // New field to track paid/unpaid status
+  isPaid?: boolean; // Field to track paid/unpaid status
 }

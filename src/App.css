@@ -1,3 +1,4 @@
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -40,3 +41,27 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Holographic animation effects */
+@keyframes holo-shine {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.holographic-text {
+  background: linear-gradient(90deg, #9b87f5, #7e69ab, #6e59a5, #d6bcfa, #8b5cf6, #1eaedb, #33c3f0);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: holo-shine 6s ease infinite;
+  text-shadow: 0 0 10px rgba(155, 135, 245, 0.5);
+}
+
