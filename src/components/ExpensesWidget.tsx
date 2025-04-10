@@ -143,7 +143,7 @@ const ExpensesWidget = ({
             <Button 
               variant="outline" 
               size="sm" 
-              className="mt-2"
+              className="mt-2 bg-ai-blue/30 text-ai-blue hover:bg-ai-blue/40 border border-ai-blue/50"
               onClick={onAddExpense}
             >
               <Plus className="w-3 h-3 mr-1" />
@@ -197,8 +197,6 @@ const ExpensesWidget = ({
           </div>
         ))}
       </div>
-
-      {/* Removed the purple Add New Expense button */}
     </Card>
   );
 };

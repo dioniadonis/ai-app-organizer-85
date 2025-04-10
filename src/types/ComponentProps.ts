@@ -1,5 +1,6 @@
 
 import { AITool } from './AITool';
+import { Dispatch, SetStateAction } from 'react';
 
 export interface FilterBarProps {
   selectedCategories: string[];
@@ -54,7 +55,6 @@ export interface DashboardProps {
   filterByRenewal: boolean;
   handleRenewalFilter: () => void;
   handleCategoryToggle: (category: string) => void;
-  setShowAddForm: (show: boolean) => void;
   customCategories: string[];
   navigateToPlanner: () => void;
 }
