@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -131,8 +132,9 @@ const ExpensesPage: React.FC = () => {
             const parsedExpenses = JSON.parse(savedExpenses);
             const renewalExpenses = parsedExpenses.filter((expense: Expense) => expense.recurring);
             if (renewalExpenses.length > 0) {
+              // Here's the fix - we need to explicitly map the categories to ensure they're strings
               const categories = [...new Set(renewalExpenses.map((e: Expense) => e.category))];
-              setCategoryFilter(categories);
+              setCategoryFilter(categories as string[]);
               setShowFilters(true);
               toast({
                 title: "Showing upcoming renewals",
