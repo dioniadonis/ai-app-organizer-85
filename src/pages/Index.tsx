@@ -17,7 +17,9 @@ import { toast } from '@/components/ui/use-toast';
 import HolographicTitle from '@/components/HolographicTitle';
 import { useNavigate } from 'react-router-dom';
 import Planner from '@/components/Planner';
+
 const initialAITools: AITool[] = [];
+
 interface Task {
   id: string;
   title: string;
@@ -26,6 +28,7 @@ interface Task {
   completed: boolean;
   notify: boolean;
 }
+
 interface Goal {
   id: string;
   title: string;
@@ -35,6 +38,7 @@ interface Goal {
   totalSteps: number;
   type: 'daily' | 'short' | 'long';
 }
+
 const Index = () => {
   const navigate = useNavigate();
   const [aiTools, setAiTools] = useState<AITool[]>(() => {
@@ -85,7 +89,6 @@ const Index = () => {
   const [showCategoryDeleteConfirm, setShowCategoryDeleteConfirm] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
 
-  // AI Assistant feature
   const [showAIDialog, setShowAIDialog] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiResponse, setAiResponse] = useState('');
@@ -95,6 +98,7 @@ const Index = () => {
     const allCategories = Array.from(new Set(aiTools.map(tool => tool.category)));
     return allCategories.filter(cat => !defaultCategories.includes(cat));
   });
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('aiTools', JSON.stringify(aiTools));
@@ -103,16 +107,19 @@ const Index = () => {
     const allCategories = Array.from(new Set(aiTools.map(tool => tool.category)));
     setCustomCategories(allCategories.filter(cat => !defaultCategories.includes(cat)));
   }, [aiTools]);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('tasks', JSON.stringify(tasks));
     }
   }, [tasks]);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('goals', JSON.stringify(goals));
     }
   }, [goals]);
+
   useEffect(() => {
     if (selectedCategories.length > 0 && !expandedCategories.includes('Favorites')) {
       setExpandedCategories(prev => [...prev, 'Favorites']);
@@ -123,6 +130,7 @@ const Index = () => {
       }
     });
   }, [selectedCategories, expandedCategories]);
+
   const handleAddTool = () => {
     if (!newTool.name.trim() || !newTool.description.trim() || newTool.subscriptionCost > 0 && !newTool.renewalDate) {
       toast({
@@ -155,9 +163,11 @@ const Index = () => {
       variant: "default"
     });
   };
+
   const handleEdit = (id: string) => {
     setEditingId(id);
   };
+
   const handleSave = (id: string) => {
     const toolToSave = editedTools[id] || aiTools.find(t => t.id === id);
     if (toolToSave && toolToSave.subscriptionCost > 0 && !toolToSave.renewalDate) {
@@ -180,14 +190,17 @@ const Index = () => {
       variant: "default"
     });
   };
+
   const handleCancel = (id: string) => {
     setEditingId(null);
     setEditedTools({});
   };
+
   const confirmDelete = (id: string) => {
     setToolToDelete(id);
     setShowDeleteConfirm(true);
   };
+
   const handleDelete = () => {
     if (toolToDelete) {
       const toolName = aiTools.find(t => t.id === toolToDelete)?.name;
@@ -201,10 +214,12 @@ const Index = () => {
       });
     }
   };
+
   const confirmCategoryDelete = (category: string) => {
     setCategoryToDelete(category);
     setShowCategoryDeleteConfirm(true);
   };
+
   const handleCategoryDelete = () => {
     if (categoryToDelete) {
       setAiTools(prevTools => prevTools.map(tool => tool.category === categoryToDelete ? {
@@ -224,6 +239,7 @@ const Index = () => {
       });
     }
   };
+
   const handleUpdate = (id: string, updates: Partial<AITool>) => {
     setEditedTools(prev => ({
       ...prev,
@@ -233,6 +249,7 @@ const Index = () => {
       }
     }));
   };
+
   const handleToggleFavorite = (id: string) => {
     setAiTools(prevTools => prevTools.map(tool => tool.id === id ? {
       ...tool,
@@ -246,6 +263,7 @@ const Index = () => {
       variant: "default"
     });
   };
+
   const handleTogglePaid = (id: string) => {
     setAiTools(prevTools => prevTools.map(tool => tool.id === id ? {
       ...tool,
@@ -259,32 +277,29 @@ const Index = () => {
       variant: "default"
     });
   };
+
   const handleInputChange = (field: keyof Omit<AITool, 'id' | 'isFavorite' | 'isPaid'>, value: string | number) => {
     setNewTool(prev => ({
       ...prev,
       [field]: value
     }));
   };
+
   const toggleCategoryExpansion = (category: string) => {
     setExpandedCategories(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
   };
 
-  // AI Assistant functionality
   const processAIPrompt = () => {
     if (!aiPrompt.trim()) return;
     setIsAiProcessing(true);
 
-    // Simulated AI processing
     setTimeout(() => {
       let result = '';
 
-      // Basic expense analysis
       if (aiPrompt.toLowerCase().includes('total') || aiPrompt.toLowerCase().includes('sum')) {
         const total = aiTools.reduce((sum, tool) => sum + tool.subscriptionCost, 0);
         result = `Your total monthly subscription cost is $${total}.`;
-      }
-      // Category analysis
-      else if (aiPrompt.toLowerCase().includes('category') || aiPrompt.toLowerCase().includes('categories')) {
+      } else if (aiPrompt.toLowerCase().includes('category') || aiPrompt.toLowerCase().includes('categories')) {
         const categoryCounts = {};
         const categoryTotals = {};
         aiTools.forEach(tool => {
@@ -295,9 +310,7 @@ const Index = () => {
         Object.keys(categoryCounts).forEach(category => {
           result += `- ${category}: ${categoryCounts[category]} subscriptions ($${categoryTotals[category]}/month)\n`;
         });
-      }
-      // Upcoming renewals
-      else if (aiPrompt.toLowerCase().includes('renewal') || aiPrompt.toLowerCase().includes('due')) {
+      } else if (aiPrompt.toLowerCase().includes('renewal') || aiPrompt.toLowerCase().includes('due')) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const thirtyDaysLater = new Date();
@@ -318,9 +331,7 @@ const Index = () => {
             result += `- ${tool.name} ($${tool.subscriptionCost}/month) - due ${daysText} (${tool.renewalDate})\n`;
           });
         }
-      }
-      // Payment status
-      else if (aiPrompt.toLowerCase().includes('paid') || aiPrompt.toLowerCase().includes('unpaid')) {
+      } else if (aiPrompt.toLowerCase().includes('paid') || aiPrompt.toLowerCase().includes('unpaid')) {
         const paid = aiTools.filter(tool => tool.isPaid);
         const unpaid = aiTools.filter(tool => tool.subscriptionCost > 0 && !tool.isPaid);
         result = `Payment status summary:\n- Paid: ${paid.length} subscriptions\n- Unpaid: ${unpaid.length} subscriptions`;
@@ -330,26 +341,20 @@ const Index = () => {
             result += `- ${tool.name} ($${tool.subscriptionCost}/month) - due on ${tool.renewalDate}\n`;
           });
         }
-      }
-      // Add task or expense
-      else if (aiPrompt.toLowerCase().includes('add task') || aiPrompt.toLowerCase().includes('create task') || aiPrompt.toLowerCase().includes('schedule task')) {
-        // Simple NLP to extract task details
+      } else if (aiPrompt.toLowerCase().includes('add task') || aiPrompt.toLowerCase().includes('create task') || aiPrompt.toLowerCase().includes('schedule task')) {
         let title = aiPrompt.replace(/add task|create task|schedule task/i, '').trim();
         let dueDate = '';
 
-        // Extract date if mentioned (simplistic approach)
         const datePatterns = [/on\s+(\d{4}-\d{2}-\d{2})/i, /on\s+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i, /for\s+(\d{4}-\d{2}-\d{2})/i, /for\s+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i, /by\s+(\d{4}-\d{2}-\d{2})/i, /by\s+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i];
         for (const pattern of datePatterns) {
           const match = aiPrompt.match(pattern);
           if (match && match[1]) {
             dueDate = match[1];
-            // Remove the date part from the title
             title = title.replace(pattern, '').trim();
             break;
           }
         }
 
-        // Handle special date words
         if (aiPrompt.toLowerCase().includes('today')) {
           const today = new Date();
           dueDate = today.toISOString().split('T')[0];
@@ -373,10 +378,7 @@ const Index = () => {
         } else {
           result = "I couldn't understand the task details. Please try again with a clearer description.";
         }
-      }
-      // Add subscription/expense  
-      else if (aiPrompt.toLowerCase().includes('add subscription') || aiPrompt.toLowerCase().includes('add expense')) {
-        // Simple NLP to extract expense details
+      } else if (aiPrompt.toLowerCase().includes('add subscription') || aiPrompt.toLowerCase().includes('add expense')) {
         const costPattern = /\$(\d+(\.\d{1,2})?)/;
         const costMatch = aiPrompt.match(costPattern);
         let name = aiPrompt.replace(/add subscription|add expense/i, '').trim();
@@ -384,25 +386,21 @@ const Index = () => {
         let category = 'General AI';
         let renewalDate = '';
 
-        // Extract cost if mentioned
         if (costMatch && costMatch[1]) {
           cost = parseFloat(costMatch[1]);
           name = name.replace(costPattern, '').trim();
         }
 
-        // Extract date if mentioned
         const datePatterns = [/on\s+(\d{4}-\d{2}-\d{2})/i, /on\s+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i, /due\s+(\d{4}-\d{2}-\d{2})/i, /due\s+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i];
         for (const pattern of datePatterns) {
           const match = aiPrompt.match(pattern);
           if (match && match[1]) {
             renewalDate = match[1];
-            // Remove the date part from the name
             name = name.replace(pattern, '').trim();
             break;
           }
         }
 
-        // Extract category if mentioned
         const categoryPattern = /in\s+(\w+(\s+\w+)*)\s+category/i;
         const categoryMatch = aiPrompt.match(categoryPattern);
         if (categoryMatch && categoryMatch[1]) {
@@ -425,23 +423,24 @@ const Index = () => {
         } else {
           result = "I couldn't understand the subscription details. Please try again with a clearer description.";
         }
-      }
-      // Help or unknown
-      else {
+      } else {
         result = "I can help you analyze your subscriptions and tasks. Try asking about:\n\n" + "- Total monthly costs\n" + "- Category breakdown\n" + "- Upcoming renewals\n" + "- Payment status of your subscriptions\n" + "- Add task [task name] on [date]\n" + "- Add subscription [name] $[amount] on [date] in [category] category";
       }
       setAiResponse(result);
       setIsAiProcessing(false);
     }, 1500);
   };
+
   const handleDragStart = (index: number) => {
     setIsDragging(true);
     setDraggedIndex(index);
   };
+
   const handleDragEnd = () => {
     setIsDragging(false);
     setDraggedIndex(null);
   };
+
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>, targetIndex: number, category: string) => {
     event.preventDefault();
     if (draggedIndex === null || draggedIndex === targetIndex) return;
@@ -476,6 +475,7 @@ const Index = () => {
     setAiTools(newTools);
     setDraggedIndex(targetIndex);
   };
+
   const handleAddCustomCategory = () => {
     if (customCategory.trim()) {
       setNewTool(prev => ({
@@ -494,32 +494,34 @@ const Index = () => {
       });
     }
   };
+
   const handleCategoryToggle = (category: string) => {
     setSelectedCategories(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
 
-    // When selecting a category, make sure we're in list view
     if (!selectedCategories.includes(category)) {
       setView('list');
     }
 
-    // When a category is selected, disable the renewal filter
     setFilterByRenewal(false);
   };
+
   const handleRenewalFilter = () => {
     setFilterByRenewal(true);
     setSelectedCategories([]);
     setView('list');
   };
+
   const clearFilters = () => {
     setSelectedCategories([]);
     setFilterByRenewal(false);
   };
+
   const navigateToPlanner = () => {
     navigate('/planner');
   };
+
   let filteredTools = aiTools.filter(tool => tool.name.toLowerCase().includes(searchTerm.toLowerCase()) || tool.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  // Multi-category filter
   if (selectedCategories.includes('Favorites')) {
     filteredTools = filteredTools.filter(tool => tool.isFavorite);
   }
@@ -538,6 +540,7 @@ const Index = () => {
       return renewalDate >= today && renewalDate <= thirtyDaysLater;
     });
   }
+
   const favoriteTools = filteredTools.filter(tool => tool.isFavorite);
   const categorizedTools = filteredTools.reduce((acc, tool) => {
     if (!tool.isFavorite) {
@@ -549,10 +552,11 @@ const Index = () => {
   });
   const sortedCategories = Object.keys(categorizedTools).sort();
   const allCategoriesForSelect = Array.from(new Set(aiTools.map(tool => tool.category))).sort();
+
   return <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-100">
       <div className="max-w-6xl mx-auto p-4 sm:p-6">
         <header className="mb-8">
-          <HolographicTitle title="Subscription Manager" />
+          <HolographicTitle title="Loop Space AI Organizer" />
           <p className="text-center text-gray-400 mb-6">
             Organize, track, and manage your subscriptions in one place
           </p>
@@ -706,7 +710,16 @@ const Index = () => {
             </motion.div>}
         </AnimatePresence>
 
-        {view === 'dashboard' && <Dashboard aiTools={aiTools} onCategoryClick={handleCategoryToggle} onRenewalClick={handleRenewalFilter} onViewPlanner={navigateToPlanner} tasks={tasks} goals={goals} selectedCategories={selectedCategories} onCategoryToggle={handleCategoryToggle} />}
+        {view === 'dashboard' && <Dashboard 
+          aiTools={aiTools} 
+          onCategoryClick={handleCategoryToggle} 
+          onRenewalClick={handleRenewalFilter} 
+          onViewPlanner={navigateToPlanner} 
+          tasks={tasks} 
+          goals={goals} 
+          selectedCategories={selectedCategories} 
+          onCategoryToggle={handleCategoryToggle} 
+        />}
 
         {view === 'list' && <div className="space-y-6">
             {!selectedCategories.includes('Favorites') && <div className="mb-6">
@@ -771,7 +784,6 @@ const Index = () => {
           </div>}
       </div>
 
-      {/* AI Assistant Dialog */}
       <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
         <DialogContent className="bg-gray-800 text-white border-gray-700 max-w-2xl">
           <DialogHeader>
@@ -905,4 +917,5 @@ const Index = () => {
       </footer>
     </div>;
 };
+
 export default Index;

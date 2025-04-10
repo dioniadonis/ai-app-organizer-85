@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AITool } from '@/types/AITool';
 import { Banknote, Calendar, Package, Star, CheckCircle, XCircle, Grid3X3, Layout, LayoutDashboard, Plus, CalendarClock } from 'lucide-react';
@@ -170,7 +169,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.3 }}
         >
-          Loop Space AI Organizer
+          Subscription Manager
         </motion.h2>
         
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
