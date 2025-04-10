@@ -69,7 +69,6 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [expenses, setExpenses] = useState<any[]>([]);
   const [renewals, setRenewals] = useState<any[]>([]);
   
-  // Update expenses from localStorage
   useEffect(() => {
     const savedExpenses = localStorage.getItem('expenses');
     if (savedExpenses) {
@@ -77,7 +76,6 @@ const Dashboard: React.FC<DashboardProps> = ({
         const parsedExpenses = JSON.parse(savedExpenses);
         setExpenses(parsedExpenses);
         
-        // Filter recurring expenses for renewals
         const recurringExpenses = parsedExpenses.filter((expense: any) => expense.recurring);
         setRenewals(recurringExpenses);
       } catch (e) {
@@ -85,12 +83,10 @@ const Dashboard: React.FC<DashboardProps> = ({
       }
     }
     
-    // Update the current time every minute
     const timerID = setInterval(() => setCurrentDateTime(new Date()), 60000);
     return () => clearInterval(timerID);
   }, []);
   
-  // Keep renewals in sync with expenses changes
   useEffect(() => {
     const renewalsFromStorage = localStorage.getItem('renewals');
     if (renewalsFromStorage) {
@@ -105,16 +101,13 @@ const Dashboard: React.FC<DashboardProps> = ({
   const totalTools = aiTools.length;
   const favoriteTools = aiTools.filter(tool => tool.isFavorite).length;
   
-  // Calculate monthly cost from all expenses
   const totalMonthlyCost = expenses.reduce((sum, expense) => {
-    // Only count recurring expenses as monthly cost
     if (expense.recurring) {
       return sum + expense.amount;
     }
     return sum;
   }, 0);
   
-  // Calculate total expenses
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   
   const today = new Date();
@@ -122,7 +115,6 @@ const Dashboard: React.FC<DashboardProps> = ({
   const thirtyDaysLater = new Date();
   thirtyDaysLater.setDate(today.getDate() + 30);
   
-  // Include both AI tools and recurring expenses in the upcoming renewals
   const toolRenewals = aiTools.filter(tool => {
     if (!tool.renewalDate) return false;
     const renewalDate = new Date(tool.renewalDate);
@@ -130,9 +122,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     return renewalDate >= today && renewalDate <= thirtyDaysLater;
   });
   
-  // Format recurring expenses as renewals
   const expenseRenewals = renewals.map(expense => {
-    // Use the date or today if none provided
     const date = expense.date || new Date().toISOString().split('T')[0];
     return {
       id: expense.id || `expense-${Date.now()}-${Math.random()}`,
@@ -140,12 +130,12 @@ const Dashboard: React.FC<DashboardProps> = ({
       category: expense.category,
       subscriptionCost: expense.amount,
       renewalDate: date,
-      isPaid: false, // Default to unpaid
-      isExpense: true // Flag to identify as expense vs AI tool
+      isPaid: false,
+      isExpense: true,
+      frequency: expense.frequency || 'monthly'
     };
   });
   
-  // Combine both types of renewals
   const upcomingRenewals = [...toolRenewals, ...expenseRenewals];
 
   const categoryCount = aiTools.reduce((acc, tool) => {
@@ -227,11 +217,9 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   const handleRenewalClick = (renewal: any) => {
     if (renewal.isExpense) {
-      // Navigate to expenses page with this category filtered
       localStorage.setItem('selectedExpenseCategory', renewal.category);
       navigate('/expenses?view=list&category=' + encodeURIComponent(renewal.category));
     } else {
-      // Handle AI tool renewals
       onCategoryClick(renewal.category);
     }
   };
