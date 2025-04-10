@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusCircle, Grid, ChevronDown, ChevronUp, ArrowLeft, Trash2, ExternalLink, CheckCircle, XCircle, MessageSquareDot, Calendar, Menu, X, LayoutDashboard, Layout } from 'lucide-react';
@@ -804,3 +805,482 @@ const Index = () => {
         const costPattern = /\$(\d+(\.\d{1,2})?)/;
         const costMatch = aiPrompt.match(costPattern);
         let name = aiPrompt.replace(/add subscription|add expense/i, '').trim();
+        let cost = 0;
+        let category = 'General AI';
+        let renewalDate = '';
+
+        if (costMatch && costMatch[1]) {
+          cost = parseFloat(costMatch[1]);
+          name = name.replace(costPattern, '').trim();
+        }
+
+        const datePatterns = [/on\s+(\d{4}-\d{2}-\d{2})/i, /on\s+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i, /due\s+(\d{4}-\d{2}-\d{2})/i, /due\s+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i];
+        for (const pattern of datePatterns) {
+          const match = aiPrompt.match(pattern);
+          if (match && match[1]) {
+            renewalDate = match[1];
+            name = name.replace(pattern, '').trim();
+            break;
+          }
+        }
+
+        const categoryPattern = /in\s+(\w+(\s+\w+)*)\s+category/i;
+        const categoryMatch = aiPrompt.match(categoryPattern);
+        if (categoryMatch && categoryMatch[1]) {
+          category = categoryMatch[1];
+          name = name.replace(categoryPattern, '').trim();
+        }
+        if (name) {
+          const newSubscription: AITool = {
+            id: crypto.randomUUID(),
+            name: name,
+            description: `Added via AI Assistant: ${aiPrompt}`,
+            category: category,
+            subscriptionCost: cost,
+            renewalDate: renewalDate,
+            isFavorite: false,
+            isPaid: false
+          };
+          setAiTools(prev => [...prev, newSubscription]);
+          result = `Subscription added: "${name}" ($${cost}/month)${renewalDate ? ` due on ${renewalDate}` : ''} in category "${category}"`;
+        } else {
+          result = "I couldn't understand the subscription details. Please try again with a clearer description.";
+        }
+      } else {
+        result = "I can help you analyze your subscriptions and tasks. Try asking about:\n\n" + 
+                "- Total monthly costs\n" + 
+                "- Category breakdown\n" + 
+                "- Upcoming renewals\n" + 
+                "- Payment status of your subscriptions\n" + 
+                "- Add task [task name] on [date]\n" + 
+                "- Add subscription [name] $[amount] on [date] in [category] category";
+      }
+      setAiResponse(result);
+      setIsAiProcessing(false);
+    }, 1500);
+  };
+
+  const handleDragStart = (index: number) => {
+    setIsDragging(true);
+    setDraggedIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    setDraggedIndex(null);
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>, targetIndex: number, category: string) => {
+    event.preventDefault();
+    if (draggedIndex === null || draggedIndex === targetIndex) return;
+    const currentCategoryTools = [...(category === 'Favorites' ? favoriteTools : categorizedTools[category] || [])];
+    const newTools = [...aiTools];
+    let draggedItem: AITool;
+    if (draggedIndex < favoriteTools.length && category === 'Favorites') {
+      draggedItem = favoriteTools[draggedIndex];
+    } else if (draggedIndex < favoriteTools.length) {
+      draggedItem = favoriteTools[draggedIndex];
+      const oldIndex = newTools.findIndex(t => t.id === draggedItem.id);
+      newTools.splice(oldIndex, 1);
+    } else {
+      const sourceCategory = Object.keys(categorizedTools).find(cat => {
+        const start = favoriteTools.length + (sortedCategories.indexOf(cat) > -1 ? sortedCategories.indexOf(cat) : 0);
+        const end = start + categorizedTools[cat].length;
+        return draggedIndex >= start && draggedIndex < end;
+      });
+      if (!sourceCategory) return;
+      const sourceIndex = categorizedTools[sourceCategory].findIndex(tool => newTools.indexOf(tool) === draggedIndex);
+      draggedItem = categorizedTools[sourceCategory][sourceIndex];
+      const oldIndex = newTools.findIndex(t => t.id === draggedItem.id);
+      newTools.splice(oldIndex, 1);
+    }
+    const targetAbsoluteIndex = category === 'Favorites' ? targetIndex : favoriteTools.length + sortedCategories.indexOf(category) + targetIndex;
+    newTools.splice(targetAbsoluteIndex, 0, draggedItem);
+    if (category === 'Favorites') {
+      newTools[targetAbsoluteIndex].isFavorite = true;
+    } else if (draggedIndex < favoriteTools.length) {
+      newTools[targetAbsoluteIndex].isFavorite = false;
+    }
+    setAiTools(newTools);
+    setDraggedIndex(targetIndex);
+  };
+
+  const handleAddCustomCategory = () => {
+    if (customCategory.trim()) {
+      setNewTool(prev => ({
+        ...prev,
+        category: customCategory.trim()
+      }));
+      setCustomCategory("");
+      setShowCustomCategoryInput(false);
+      if (!customCategories.includes(customCategory.trim())) {
+        setCustomCategories(prev => [...prev, customCategory.trim()]);
+      }
+      toast({
+        title: "New Category",
+        description: `Category "${customCategory.trim()}" has been created and selected.`,
+        variant: "default"
+      });
+    }
+  };
+
+  const handleCategoryToggle = (category: string) => {
+    setSelectedCategories(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
+
+    if (!selectedCategories.includes(category)) {
+      setView('list');
+    }
+
+    setFilterByRenewal(false);
+  };
+
+  const handleRenewalFilter = () => {
+    setFilterByRenewal(true);
+    setSelectedCategories([]);
+    setView('list');
+  };
+
+  const clearFilters = () => {
+    setSelectedCategories([]);
+    setFilterByRenewal(false);
+  };
+
+  const navigateToPlanner = () => {
+    navigate('/planner');
+  };
+
+  let filteredTools = aiTools.filter(tool => tool.name.toLowerCase().includes(searchTerm.toLowerCase()) || tool.description.toLowerCase().includes(searchTerm.toLowerCase()));
+
+  if (selectedCategories.includes('Favorites')) {
+    filteredTools = filteredTools.filter(tool => tool.isFavorite);
+  }
+  if (selectedCategories.length > 0 && !selectedCategories.includes('Favorites')) {
+    filteredTools = filteredTools.filter(tool => selectedCategories.includes(tool.category));
+  }
+  if (filterByRenewal) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const thirtyDaysLater = new Date();
+    thirtyDaysLater.setDate(today.getDate() + 30);
+    filteredTools = filteredTools.filter(tool => {
+      if (!tool.renewalDate) return false;
+      const renewalDate = new Date(tool.renewalDate);
+      renewalDate.setHours(0, 0, 0, 0);
+      return renewalDate >= today && renewalDate <= thirtyDaysLater;
+    });
+  }
+
+  const favoriteTools = filteredTools.filter(tool => tool.isFavorite);
+  const categorizedTools = filteredTools.reduce((acc, tool) => {
+    if (!tool.isFavorite) {
+      (acc[tool.category] = acc[tool.category] || []).push(tool);
+    }
+    return acc;
+  }, {} as {
+    [category: string]: AITool[];
+  });
+  const sortedCategories = Object.keys(categorizedTools).sort();
+  const allCategoriesForSelect = Array.from(new Set(aiTools.map(tool => tool.category))).sort();
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-100">
+      <div className="max-w-6xl mx-auto p-4 sm:p-6">
+        <Header 
+          isMobile={isMobile}
+          mobileMenuOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
+          view={view}
+          setView={setView}
+          clearFilters={clearFilters}
+          navigateToPlanner={navigateToPlanner}
+          setShowAIDialog={setShowAIDialog}
+          showAddForm={showAddForm}
+          setShowAddForm={setShowAddForm}
+          selectedCategories={selectedCategories}
+          filterByRenewal={filterByRenewal}
+          handleCategoryToggle={handleCategoryToggle}
+          setFilterByRenewal={setFilterByRenewal}
+        />
+
+        <AnimatePresence>
+          {showAddForm && (
+            <AddForm 
+              newTool={newTool}
+              handleInputChange={handleInputChange}
+              customCategory={customCategory}
+              setCustomCategory={setCustomCategory}
+              showCustomCategoryInput={showCustomCategoryInput}
+              setShowCustomCategoryInput={setShowCustomCategoryInput}
+              customCategories={customCategories}
+              allCategoriesForSelect={allCategoriesForSelect}
+              handleAddCustomCategory={handleAddCustomCategory}
+              handleAddTool={handleAddTool}
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {view === 'dashboard' ? (
+            <Dashboard 
+              aiTools={aiTools}
+              tasks={tasks}
+              setShowAddForm={setShowAddForm}
+              handleRenewalFilter={handleRenewalFilter}
+              handleCategoryToggle={handleCategoryToggle}
+              expandedCategories={expandedCategories}
+              toggleCategoryExpansion={toggleCategoryExpansion}
+              confirmCategoryDelete={confirmCategoryDelete}
+              setShowAIDialog={setShowAIDialog}
+              navigateToPlanner={navigateToPlanner}
+            />
+          ) : (
+            <div className="space-y-4">
+              {filteredTools.length === 0 ? (
+                <div className="text-center py-12 glass-card">
+                  <h3 className="text-xl font-semibold mb-2">No subscriptions found</h3>
+                  {searchTerm ? (
+                    <p className="text-gray-400">No results for "{searchTerm}"</p>
+                  ) : (
+                    <>
+                      <p className="text-gray-400 mb-4">Add your first subscription to get started</p>
+                      <Button 
+                        onClick={() => setShowAddForm(true)}
+                        className="bg-ai-purple hover:bg-ai-purple/90"
+                      >
+                        <PlusCircle className="w-4 h-4 mr-2" />
+                        Add New Subscription
+                      </Button>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {favoriteTools.length > 0 && (
+                    <div className="mb-8">
+                      <div 
+                        className="flex items-center cursor-pointer mb-2" 
+                        onClick={() => toggleCategoryExpansion('Favorites')}
+                      >
+                        <h2 className="text-xl font-semibold">⭐ Favorites</h2>
+                        {expandedCategories.includes('Favorites') ? (
+                          <ChevronUp className="ml-2 w-5 h-5 text-gray-400" />
+                        ) : (
+                          <ChevronDown className="ml-2 w-5 h-5 text-gray-400" />
+                        )}
+                      </div>
+                      
+                      {expandedCategories.includes('Favorites') && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {favoriteTools.map((tool, index) => (
+                            <div 
+                              key={tool.id}
+                              draggable={!editingId}
+                              onDragStart={() => handleDragStart(index)}
+                              onDragEnd={handleDragEnd}
+                              onDragOver={(e) => handleDragOver(e, index, 'Favorites')}
+                              className={`${isDragging && draggedIndex === index ? 'opacity-50' : 'opacity-100'}`}
+                            >
+                              {editingId === tool.id ? (
+                                <EditableAIToolCard
+                                  tool={tool}
+                                  onSave={handleSave}
+                                  onCancel={handleCancel}
+                                  onUpdate={handleUpdate}
+                                  customCategories={customCategories}
+                                />
+                              ) : (
+                                <AIToolCard
+                                  tool={tool}
+                                  onEdit={handleEdit}
+                                  onDelete={confirmDelete}
+                                  onToggleFavorite={handleToggleFavorite}
+                                  onTogglePaid={handleTogglePaid}
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {sortedCategories.map((category) => (
+                    <div key={category} className="mb-8">
+                      <div className="flex items-center justify-between mb-2">
+                        <div 
+                          className="flex items-center cursor-pointer" 
+                          onClick={() => toggleCategoryExpansion(category)}
+                        >
+                          <h2 className="text-xl font-semibold">
+                            {getAIToolIcon(category)}
+                            {category}
+                          </h2>
+                          {expandedCategories.includes(category) ? (
+                            <ChevronUp className="ml-2 w-5 h-5 text-gray-400" />
+                          ) : (
+                            <ChevronDown className="ml-2 w-5 h-5 text-gray-400" />
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCategoryToggle(category);
+                            }}
+                            className="ml-2 h-7 text-xs"
+                          >
+                            Filter
+                          </Button>
+                        </div>
+                        
+                        {!["General AI", "Writing", "Image Generation", "Code Generation", "Chatbots", "Video Generation"].includes(category) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => confirmCategoryDelete(category)}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                      
+                      {expandedCategories.includes(category) && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {categorizedTools[category].map((tool, index) => {
+                            const absoluteIndex = favoriteTools.length + 
+                              sortedCategories.slice(0, sortedCategories.indexOf(category)).reduce(
+                                (sum, cat) => sum + categorizedTools[cat].length, 0
+                              ) + index;
+                            
+                            return (
+                              <div 
+                                key={tool.id}
+                                draggable={!editingId}
+                                onDragStart={() => handleDragStart(absoluteIndex)}
+                                onDragEnd={handleDragEnd}
+                                onDragOver={(e) => handleDragOver(e, index, category)}
+                                className={`${isDragging && draggedIndex === absoluteIndex ? 'opacity-50' : 'opacity-100'}`}
+                              >
+                                {editingId === tool.id ? (
+                                  <EditableAIToolCard
+                                    tool={tool}
+                                    onSave={handleSave}
+                                    onCancel={handleCancel}
+                                    onUpdate={handleUpdate}
+                                    customCategories={customCategories}
+                                  />
+                                ) : (
+                                  <AIToolCard
+                                    tool={tool}
+                                    onEdit={handleEdit}
+                                    onDelete={confirmDelete}
+                                    onToggleFavorite={handleToggleFavorite}
+                                    onTogglePaid={handleTogglePaid}
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </div>
+          )}
+        </AnimatePresence>
+
+        <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Deletion</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this subscription? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
+              <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <AlertDialog open={showCategoryDeleteConfirm} onOpenChange={setShowCategoryDeleteConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Category</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will move all subscriptions in the "{categoryToDelete}" category to "General AI". 
+                This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setShowCategoryDeleteConfirm(false)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleCategoryDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="ai-gradient-text flex items-center gap-2">
+                <MessageSquareDot className="h-5 w-5 text-ai-cyan" />
+                AI Assistant
+              </DialogTitle>
+              <DialogDescription>
+                Ask questions about your subscriptions or add new items using natural language
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 max-h-[300px] overflow-y-auto">
+              {aiResponse ? (
+                <div className="whitespace-pre-line">{aiResponse}</div>
+              ) : (
+                <div className="text-gray-400 text-center">
+                  Ask me about your subscriptions, tasks, or to add new items
+                </div>
+              )}
+            </div>
+            
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <Input
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  placeholder="Ask a question or give a command..."
+                  className="bg-black/20 border-gray-700 text-white"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      processAIPrompt();
+                    }
+                  }}
+                />
+                <div className="text-xs text-gray-500 mt-1">
+                  Try: "What's my total monthly cost?" or "Add subscription Netflix $15.99 on 2023-04-15"
+                </div>
+              </div>
+              <Button 
+                disabled={isAiProcessing || !aiPrompt.trim()} 
+                onClick={processAIPrompt}
+                className="bg-ai-cyan hover:bg-ai-cyan/90"
+              >
+                {isAiProcessing ? "Processing..." : "Send"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </div>
+  );
+};
+
+export default Index;
