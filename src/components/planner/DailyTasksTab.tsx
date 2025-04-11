@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, X, Edit, CheckCircle, Circle, Clock, RotateCcw, Clock as ClockIcon, ListTodo, CalendarClock } from 'lucide-react';
@@ -84,7 +83,6 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
 
   const handleAddTask = () => {
     if (!newTask.trim()) {
-      // If no task name is provided, just close the add task form without adding
       setIsAdding(false);
       return;
     }
@@ -102,7 +100,7 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
     
     toast({
       title: "Daily task added",
-      description: `"${newTask}" has been added to your daily tasks`,
+      description: `"${newTask}" has been added to your daily tasks",
       duration: 3000,
     });
   };
@@ -125,7 +123,7 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
 
     toast({
       title: "Task updated",
-      description: `"${task.name}" has been updated`,
+      description: `"${task.name}" has been updated",
       duration: 3000,
     });
   };
