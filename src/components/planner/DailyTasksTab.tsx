@@ -112,6 +112,11 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
     const task = tasks.find(t => t.id === id);
     if (!task) return;
 
+    if (!task.name.trim()) {
+      setEditingTask(null);
+      return;
+    }
+
     setEditingTask(null);
 
     toast({
@@ -126,6 +131,15 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
 
   const cancelEditing = () => {
     setEditingTask(null);
+  };
+
+  const handleTaskNameBlur = (taskId: number, taskName: string) => {
+    if (!taskName.trim()) {
+      setEditingTask(null);
+      return;
+    }
+    
+    handleEditSubmit(taskId);
   };
 
   const getStreakClassName = (streak: number) => {
@@ -289,7 +303,9 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                   <Input 
                     value={task.name}
                     onChange={(e) => onEditTask(task.id, { name: e.target.value })}
+                    onBlur={() => handleTaskNameBlur(task.id, task.name)}
                     className="bg-gray-700/50 border-gray-600"
+                    autoFocus
                   />
                   
                   <div className="grid grid-cols-2 gap-3">
