@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, X, Edit, CheckCircle, Circle, Clock, RotateCcw, Clock as ClockIcon, ListTodo, CalendarClock } from 'lucide-react';
@@ -67,6 +68,17 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
+  // Reset form values when task editing changes
+  useEffect(() => {
+    if (editingTask === null) {
+      // Reset form values when exiting edit mode
+      setNewTask('');
+      setNewTime('');
+      setNewCategory('Personal');
+      setNewColor(COLORS[0]);
+    }
+  }, [editingTask]);
+
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = task.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          (task.category && task.category.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -98,8 +110,11 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
       category: newCategory
     });
 
+    // Reset form values
     setNewTask('');
     setNewTime('');
+    setNewCategory('Personal');
+    setNewColor(COLORS[0]);
     setIsAdding(false);
     
     toast({
@@ -122,6 +137,14 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
 
   const startEditing = (id: number) => {
     setEditingTask(id);
+    const task = tasks.find(t => t.id === id);
+    if (task) {
+      // Pre-fill form with task values
+      setNewTask(task.name);
+      setNewTime(task.timeOfDay || '');
+      setNewCategory(task.category || 'Personal');
+      setNewColor(task.color || COLORS[0]);
+    }
   };
 
   const cancelEditing = () => {
@@ -160,7 +183,17 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
           <h2 className="text-xl font-semibold">Named Daily Tasks</h2>
         </div>
         <Button 
-          onClick={() => setIsAdding(!isAdding)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsAdding(!isAdding);
+            if (!isAdding) {
+              // Reset form values when opening the form
+              setNewTask('');
+              setNewTime('');
+              setNewCategory('Personal');
+              setNewColor(COLORS[0]);
+            }
+          }}
           variant="outline"
           className="bg-purple-600/20 text-purple-300 border-purple-500"
         >
@@ -217,7 +250,10 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                 {COLORS.map(color => (
                   <button
                     key={color}
-                    onClick={() => setNewColor(color)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setNewColor(color);
+                    }}
                     className={`w-6 h-6 rounded-full ${newColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-gray-800' : ''}`}
                     style={{ backgroundColor: color }}
                     aria-label={`Select color ${color}`}
@@ -228,7 +264,10 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
             
             <div className="flex justify-end">
               <Button 
-                onClick={handleAddTask}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAddTask();
+                }}
                 className="bg-purple-600 hover:bg-purple-700"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -267,7 +306,10 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                 onClick={() => handleFilterChange(category || 'all')}
               >
                 {category}
-                {activeFilter === category && <X className="ml-1 h-3 w-3" onClick={() => handleFilterChange('all')} />}
+                {activeFilter === category && <X className="ml-1 h-3 w-3" onClick={(e) => {
+                  e.stopPropagation();
+                  handleFilterChange('all');
+                }} />}
               </Badge>
             ))}
           </div>
@@ -314,7 +356,10 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                     {COLORS.map(color => (
                       <button
                         key={color}
-                        onClick={() => onEditTask(task.id, { color })}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditTask(task.id, { color });
+                        }}
                         className={`w-5 h-5 rounded-full ${task.color === color ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-800' : ''}`}
                         style={{ backgroundColor: color }}
                       />
@@ -322,11 +367,20 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                   </div>
                   
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" onClick={cancelEditing}>
+                    <Button 
+                      variant="ghost" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        cancelEditing();
+                      }}
+                    >
                       Cancel
                     </Button>
                     <Button 
-                      onClick={() => handleEditSubmit(task.id)} 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditSubmit(task.id);
+                      }} 
                       className="bg-purple-600 hover:bg-purple-700"
                     >
                       Save Changes
@@ -401,7 +455,10 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                           variant="ghost" 
                           size="icon"
                           className="h-8 w-8 rounded-full hover:bg-gray-700 text-orange-400"
-                          onClick={() => onResetStreak(task.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onResetStreak(task.id);
+                          }}
                         >
                           <RotateCcw className="h-4 w-4" />
                         </Button>
@@ -433,7 +490,10 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
             <>
               <p className="mb-2">No daily tasks found in this category.</p>
               <Button 
-                onClick={() => setIsAdding(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsAdding(true);
+                }}
                 className="bg-purple-600/20 text-purple-300 border border-purple-500"
               >
                 <Plus className="h-4 w-4 mr-2" />
