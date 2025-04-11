@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 import { 
   ChevronLeft, ChevronRight, Edit, Plus, Bell, Home, Calendar, X, Check, 
-  AlarmClock, Clock, BellRing, CalendarCheck, Circle, Settings, Copy, DragHandleDots2
+  AlarmClock, Clock, BellRing, CalendarCheck, Circle, Settings, Copy, GripVertical
 } from 'lucide-react';
 import { format, addDays, subDays, parse, isToday, isTomorrow, parseISO, isValid, isSameDay } from 'date-fns';
 import { DailyTask } from '@/components/planner/DailyTasksTab';
@@ -51,14 +50,12 @@ const DailyTasksPage: React.FC = () => {
   const [draggedTask, setDraggedTask] = useState<DailyTask | null>(null);
   const [targetTimeSlot, setTargetTimeSlot] = useState<string | null>(null);
   
-  // Time increment options
   const timeIncrementOptions: TimeIncrementOption[] = [
     { label: '15 minutes', value: 15 },
     { label: '30 minutes', value: 30 },
     { label: '60 minutes', value: 60 }
   ];
   
-  // Generate time slots based on the selected increment
   const generateTimeSlots = useCallback(() => {
     const slots = [];
     const totalMinutesInDay = 24 * 60;
@@ -77,7 +74,6 @@ const DailyTasksPage: React.FC = () => {
   
   const timeSlots = generateTimeSlots();
   
-  // Filter time slots based on selected range
   const getFilteredTimeSlots = useCallback(() => {
     switch (displayRange) {
       case 'morning':
@@ -104,14 +100,12 @@ const DailyTasksPage: React.FC = () => {
 
   const displayTimeSlots = getFilteredTimeSlots();
 
-  // Scroll to current time on load
   useEffect(() => {
     if (scrollRef.current && isToday(currentDate)) {
       const now = new Date();
       const currentHour = now.getHours();
       const currentMinutes = now.getMinutes();
       
-      // Round to the nearest time slot based on the selected increment
       const roundedMinutes = Math.floor(currentMinutes / timeIncrement) * timeIncrement;
       
       const closestTimeSlot = `${currentHour % 12 === 0 ? 12 : currentHour % 12}:${roundedMinutes.toString().padStart(2, '0')} ${currentHour < 12 ? 'AM' : 'PM'}`;
@@ -126,7 +120,6 @@ const DailyTasksPage: React.FC = () => {
     }
   }, [displayRange, timeIncrement, currentDate]);
 
-  // Load tasks from localStorage and filter by current date
   useEffect(() => {
     const savedTasks = localStorage.getItem('dailyTasks');
     if (savedTasks) {
@@ -144,7 +137,6 @@ const DailyTasksPage: React.FC = () => {
     }
   }, []);
 
-  // Save tasks to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('dailyTasks', JSON.stringify(dailyTasks));
   }, [dailyTasks]);
@@ -163,7 +155,6 @@ const DailyTasksPage: React.FC = () => {
         const wasCompleted = task.completed;
         const today = new Date().toISOString().split('T')[0];
         
-        // Update the streak if completing the task
         let newStreak = task.streak;
         let lastCompleted = task.lastCompleted;
         
@@ -175,7 +166,6 @@ const DailyTasksPage: React.FC = () => {
             description: `You've completed "${task.name}" - ${newStreak} day streak! 🎉`,
           });
         } else {
-          // If uncompleting, reduce streak if it was completed today
           if (task.lastCompleted === today) {
             newStreak = Math.max(0, task.streak - 1);
             toast({
@@ -197,9 +187,7 @@ const DailyTasksPage: React.FC = () => {
     }));
   };
 
-  // Quick add task by clicking in a time slot
   const handleQuickAddTask = (timeSlot: string) => {
-    // Convert timeSlot to 24-hour format for storage
     const [time, period] = timeSlot.split(' ');
     const [hour, minute] = time.split(':');
     let hour24 = parseInt(hour);
@@ -230,7 +218,6 @@ const DailyTasksPage: React.FC = () => {
       description: "Click on the task to edit its name",
     });
     
-    // Set this task to be edited immediately
     setSelectedTask(newTask);
     setEditingTaskId(newTask.id);
   };
@@ -348,16 +335,13 @@ const DailyTasksPage: React.FC = () => {
     setReminderTime('');
   };
 
-  // Handle task drag
   const handleDragStart = (task: DailyTask) => {
     setIsDragging(true);
     setDraggedTask(task);
   };
 
-  // Handle drag end and drop
   const handleDragEnd = () => {
     if (draggedTask && targetTimeSlot) {
-      // Convert targetTimeSlot to 24-hour format
       const [time, period] = targetTimeSlot.split(' ');
       const [hour, minute] = time.split(':');
       let hour24 = parseInt(hour);
@@ -370,7 +354,6 @@ const DailyTasksPage: React.FC = () => {
       
       const timeString = `${hour24.toString().padStart(2, '0')}:${minute}`;
       
-      // Update the task's time
       setDailyTasks(prev => prev.map(task => {
         if (task.id === draggedTask.id) {
           return {
@@ -392,14 +375,12 @@ const DailyTasksPage: React.FC = () => {
     setTargetTimeSlot(null);
   };
 
-  // Handle time slot hover during drag
   const handleTimeSlotHover = (timeSlot: string) => {
     if (isDragging) {
       setTargetTimeSlot(timeSlot);
     }
   };
 
-  // Copy tasks to another date
   const handleCopyTasks = () => {
     if (!copyToDate) {
       toast({
@@ -410,17 +391,14 @@ const DailyTasksPage: React.FC = () => {
       return;
     }
 
-    // Get tasks for current date
     const tasksForToday = dailyTasks;
     
-    // Create copies of tasks with new IDs for the target date
     const copiedTasks = tasksForToday.map(task => ({
       ...task,
       id: Date.now() + Math.random() * 1000,
       completed: false
     }));
     
-    // Add the copied tasks to the dailyTasks array
     setDailyTasks(prev => [...prev, ...copiedTasks]);
     
     toast({
@@ -432,7 +410,6 @@ const DailyTasksPage: React.FC = () => {
     setShowCopyModal(false);
   };
 
-  // Apply time increment setting
   const handleTimeIncrementChange = (value: number) => {
     setTimeIncrement(value);
     setShowSettingsModal(false);
@@ -443,9 +420,7 @@ const DailyTasksPage: React.FC = () => {
     });
   };
 
-  // Get tasks for the selected time slot
   const getTasksForTimeSlot = (timeSlot: string) => {
-    // Convert timeSlot format (e.g., "7:00 PM") to 24-hour format (e.g., "19:00")
     const [time, period] = timeSlot.split(' ');
     const [hour, minute] = time.split(':');
     let hour24 = parseInt(hour);
@@ -461,7 +436,6 @@ const DailyTasksPage: React.FC = () => {
     return dailyTasks.filter(task => task.timeOfDay === timeString);
   };
 
-  // Format date labels
   const formattedDate = format(currentDate, 'MMMM d, yyyy');
   const dayName = format(currentDate, 'EEEE');
   
@@ -471,7 +445,6 @@ const DailyTasksPage: React.FC = () => {
       ? 'Tomorrow' 
       : dayName;
 
-  // CSS classes for task categories
   const getTaskCategoryBadgeClass = (category?: string) => {
     switch(category) {
       case 'Morning Routine': return 'bg-blue-500/20 text-blue-300 border-blue-500/50';
@@ -485,7 +458,6 @@ const DailyTasksPage: React.FC = () => {
     }
   };
 
-  // Categories for task selection
   const CATEGORIES = [
     'Morning Routine',
     'Work',
@@ -497,7 +469,6 @@ const DailyTasksPage: React.FC = () => {
     'Personal'
   ];
 
-  // Colors for task selection
   const COLORS = [
     '#9b87f5', // Primary Purple
     '#6E56CF', // Vivid Purple
@@ -512,7 +483,6 @@ const DailyTasksPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-100">
       <div className={`mx-auto p-2 ${isMobile ? 'max-w-md' : 'max-w-2xl'}`}>
-        {/* Header */}
         <div className="flex items-center justify-between mb-4 py-2">
           <button 
             onClick={() => navigate('/')} 
@@ -560,7 +530,6 @@ const DailyTasksPage: React.FC = () => {
           </div>
         </div>
         
-        {/* Date Navigation */}
         <div className="flex items-center justify-between mb-4 px-4 py-2 bg-gray-800/30 rounded-lg">
           <button 
             onClick={handlePreviousDay}
@@ -579,7 +548,6 @@ const DailyTasksPage: React.FC = () => {
           </button>
         </div>
         
-        {/* Time Range Filter */}
         <div className="flex items-center justify-between mb-4 space-x-2">
           {(['all', 'morning', 'afternoon', 'evening'] as const).map((range) => (
             <button
@@ -596,13 +564,11 @@ const DailyTasksPage: React.FC = () => {
           ))}
         </div>
         
-        {/* Time Slots Timeline */}
         <ScrollArea className="h-[calc(100vh-240px)] rounded-lg border border-gray-800 bg-gray-900/80" ref={scrollRef}>
           {displayTimeSlots.map((timeSlot, index) => {
             const tasksInSlot = getTasksForTimeSlot(timeSlot);
             const timeSlotId = `timeslot-${timeSlot}`;
             
-            // Check if this is near the current time
             const now = new Date();
             const [slotTime, slotPeriod] = timeSlot.split(' ');
             const [slotHour, slotMinute] = slotTime.split(':');
@@ -660,7 +626,7 @@ const DailyTasksPage: React.FC = () => {
                               className="cursor-grab active:cursor-grabbing"
                               onMouseDown={() => handleDragStart(task)}
                             >
-                              <DragHandleDots2 size={16} className="text-gray-400" />
+                              <GripVertical size={16} className="text-gray-400" />
                             </button>
                             
                             <div 
@@ -760,7 +726,6 @@ const DailyTasksPage: React.FC = () => {
           })}
         </ScrollArea>
         
-        {/* Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 flex justify-center p-4 bg-gray-900/90 border-t border-gray-800">
           <div className="flex gap-2">
             <Button 
@@ -806,7 +771,6 @@ const DailyTasksPage: React.FC = () => {
         </div>
       </div>
       
-      {/* Add/Edit Task Modal */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
           <DialogHeader>
@@ -888,7 +852,6 @@ const DailyTasksPage: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Reminder Modal */}
       <Dialog open={showReminderModal} onOpenChange={setShowReminderModal}>
         <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
           <DialogHeader>
@@ -931,7 +894,6 @@ const DailyTasksPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Calendar Modal */}
       <Dialog open={showCalendarModal} onOpenChange={setShowCalendarModal}>
         <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
           <DialogHeader>
@@ -974,7 +936,6 @@ const DailyTasksPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Settings Modal */}
       <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
         <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
           <DialogHeader>
@@ -1016,7 +977,6 @@ const DailyTasksPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Copy Tasks Modal */}
       <Dialog open={showCopyModal} onOpenChange={setShowCopyModal}>
         <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
           <DialogHeader>
