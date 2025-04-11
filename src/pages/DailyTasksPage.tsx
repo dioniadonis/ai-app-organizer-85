@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 import { 
   ChevronLeft, ChevronRight, Edit, Plus, Bell, Home, Calendar, X, Check, 
-  AlarmClock, Clock, BellRing, CalendarCheck, Circle, Settings, Copy, GripVertical
+  AlarmClock, Clock, BellRing, CalendarCheck, Circle, Settings, Copy, GripVertical, Move
 } from 'lucide-react';
 import { format, addDays, subDays, parse, isToday, isTomorrow, parseISO, isValid, isSameDay } from 'date-fns';
 import { DailyTask } from '@/components/planner/DailyTasksTab';
@@ -202,7 +202,7 @@ const DailyTasksPage: React.FC = () => {
     
     const newTask: DailyTask = {
       id: Date.now(),
-      name: "New Task",
+      name: "",
       completed: false,
       timeOfDay: timeString,
       streak: 0,
@@ -212,11 +212,6 @@ const DailyTasksPage: React.FC = () => {
     };
 
     setDailyTasks(prev => [...prev, newTask]);
-    
-    toast({
-      title: "Task added",
-      description: "Click on the task to edit its name",
-    });
     
     setSelectedTask(newTask);
     setEditingTaskId(newTask.id);
@@ -333,6 +328,13 @@ const DailyTasksPage: React.FC = () => {
     setShowReminderModal(false);
     setSelectedTask(null);
     setReminderTime('');
+  };
+
+  const handleMoveTask = (task: DailyTask) => {
+    setSelectedTask(task);
+    setReminderTime(task.timeOfDay || '');
+    setCopyToDate(undefined);
+    setShowReminderModal(true);
   };
 
   const handleDragStart = (task: DailyTask) => {
@@ -493,7 +495,7 @@ const DailyTasksPage: React.FC = () => {
           
           <button 
             onClick={() => setShowCalendarModal(true)}
-            className="flex items-center gap-2 text-2xl font-bold text-white hover:text-blue-300 transition-colors"
+            className="flex items-center gap-2 text-2xl font-bold text-white hover:text-blue-300 transition-colors text-center"
           >
             <CalendarCheck className="h-6 w-6 text-purple-400" />
             {dateLabel}
@@ -538,7 +540,12 @@ const DailyTasksPage: React.FC = () => {
             <ChevronLeft size={20} className="text-blue-400" />
           </button>
           
-          <h2 className="text-lg font-medium text-white">{formattedDate}</h2>
+          <button 
+            onClick={() => setShowCalendarModal(true)}
+            className="text-lg font-medium text-white hover:text-blue-300 transition-colors"
+          >
+            {formattedDate}
+          </button>
           
           <button 
             onClick={handleNextDay}
@@ -616,11 +623,13 @@ const DailyTasksPage: React.FC = () => {
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
                             whileHover={{ scale: 1.02 }}
-                            drag={true}
+                            drag
                             dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-                            dragElastic={0.2}
+                            dragElastic={0}
+                            dragMomentum={false}
                             onDragStart={() => handleDragStart(task)}
                             onDragEnd={handleDragEnd}
+                            style={{ cursor: isDragging && draggedTask?.id === task.id ? 'grabbing' : 'auto' }}
                           >
                             <button
                               className="cursor-grab active:cursor-grabbing"
@@ -683,7 +692,15 @@ const DailyTasksPage: React.FC = () => {
                                       className="justify-start text-xs px-2"
                                       onClick={() => handleSetReminder(task)}
                                     >
-                                      <BellRing className="mr-2 h-3 w-3" /> Set Reminder
+                                      <BellRing className="mr-2 h-3 w-3" /> Set Time
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      className="justify-start text-xs px-2"
+                                      onClick={() => handleMoveTask(task)}
+                                    >
+                                      <Move className="mr-2 h-3 w-3" /> Move Task
                                     </Button>
                                     <Button 
                                       variant="ghost" 
@@ -855,9 +872,9 @@ const DailyTasksPage: React.FC = () => {
       <Dialog open={showReminderModal} onOpenChange={setShowReminderModal}>
         <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Set Reminder</DialogTitle>
+            <DialogTitle>Set Time for Task</DialogTitle>
             <DialogDescription className="text-gray-400">
-              {selectedTask && `Set a reminder time for "${selectedTask.name}"`}
+              {selectedTask && `Set a time for "${selectedTask.name}"`}
             </DialogDescription>
           </DialogHeader>
           
@@ -868,12 +885,23 @@ const DailyTasksPage: React.FC = () => {
                 <TimeInput
                   value={reminderTime}
                   onChange={setReminderTime}
-                  label="Reminder Time"
+                  label="Task Time"
                 />
               </div>
             </div>
+            
+            <div className="mt-4">
+              <label className="text-sm text-gray-300 mb-2 block">Date (Optional)</label>
+              <DatePicker
+                date={copyToDate}
+                onDateChange={(date) => setCopyToDate(date)}
+                className="w-full"
+                placeholder="Select a date to move task to"
+              />
+            </div>
+            
             <p className="text-sm text-gray-400">
-              Setting this reminder will make the task appear at the specified time in your daily timeline.
+              Setting the time will make the task appear at the specified time in your daily timeline.
             </p>
           </div>
           
@@ -888,7 +916,7 @@ const DailyTasksPage: React.FC = () => {
               onClick={saveReminder}
               className="bg-purple-600 hover:bg-purple-700"
             >
-              Set Reminder
+              Save
             </Button>
           </DialogFooter>
         </DialogContent>
