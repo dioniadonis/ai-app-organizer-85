@@ -50,6 +50,7 @@ interface DashboardWidgetsProps {
   monthlyExpenses: number;
   unpaidTotal: number;
   onViewPlanner: () => void;
+  onViewDailyTasks?: () => void;
   onToggleTaskComplete: (taskId: string | number) => void;
   onEditTask: (task: any) => void;
   onEditGoal: (goal: any) => void;
@@ -68,6 +69,7 @@ const DashboardWidgets: React.FC<DashboardWidgetsProps> = ({
   monthlyExpenses,
   unpaidTotal,
   onViewPlanner,
+  onViewDailyTasks,
   onToggleTaskComplete,
   onEditTask,
   onEditGoal,
@@ -87,6 +89,7 @@ const DashboardWidgets: React.FC<DashboardWidgetsProps> = ({
             goals={goals} 
             dailyTasks={dailyTasks}
             onViewMore={onViewPlanner}
+            onViewDailyTasks={onViewDailyTasks}
             onToggleTaskComplete={onToggleTaskComplete}
             onEditTask={onEditTask}
             onEditGoal={onEditGoal}

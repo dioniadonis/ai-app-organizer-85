@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Grid, Calendar, MessageSquareDot, PlusCircle, Menu, X, LayoutDashboard } from 'lucide-react';
+import { Grid, Calendar, MessageSquareDot, PlusCircle, Menu, X, LayoutDashboard, ListTodo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
@@ -12,7 +12,8 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   view, 
   setView, 
   clearFilters, 
-  navigateToPlanner, 
+  navigateToPlanner,
+  navigateToDailyTasks,
   setShowAIDialog, 
   showAddForm, 
   setShowAddForm 
@@ -67,6 +68,15 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
       >
         <Calendar className="w-4 h-4 mr-2" />
         Planner
+      </Button>
+      
+      <Button 
+        variant="outline" 
+        onClick={navigateToDailyTasks} 
+        className="border-ai-cyan bg-ai-cyan/10 text-ai-cyan hover:bg-ai-cyan/20 w-full justify-start"
+      >
+        <ListTodo className="w-4 h-4 mr-2" />
+        Daily Tasks
       </Button>
       
       <Button 

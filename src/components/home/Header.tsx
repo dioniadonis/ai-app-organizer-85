@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Grid, Calendar, MessageSquareDot, PlusCircle, LayoutDashboard } from 'lucide-react';
+import { Grid, Calendar, MessageSquareDot, PlusCircle, LayoutDashboard, ListTodo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import HolographicTitle from '../HolographicTitle';
@@ -15,7 +15,8 @@ const Header: React.FC<HeaderProps> = ({
   view, 
   setView, 
   clearFilters, 
-  navigateToPlanner, 
+  navigateToPlanner,
+  navigateToDailyTasks,
   setShowAIDialog, 
   showAddForm, 
   setShowAddForm, 
@@ -39,6 +40,7 @@ const Header: React.FC<HeaderProps> = ({
           setView={setView}
           clearFilters={clearFilters}
           navigateToPlanner={navigateToPlanner}
+          navigateToDailyTasks={navigateToDailyTasks}
           setShowAIDialog={setShowAIDialog}
           showAddForm={showAddForm}
           setShowAddForm={setShowAddForm}
@@ -73,6 +75,14 @@ const Header: React.FC<HeaderProps> = ({
           >
             <Calendar className="w-4 h-4 mr-2" />
             Planner
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={navigateToDailyTasks} 
+            className="border-ai-cyan bg-ai-cyan/10 text-ai-cyan hover:bg-ai-cyan/20"
+          >
+            <ListTodo className="w-4 h-4 mr-2" />
+            Daily Tasks
           </Button>
           <Button 
             variant="outline" 

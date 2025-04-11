@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, CreditCard, TrendingUp, CalendarClock, ListTodo } from 'lucide-react';
@@ -27,11 +26,13 @@ const Dashboard: React.FC<DashboardProps> = ({
   handleCategoryToggle,
   customCategories,
   navigateToPlanner,
+  navigateToDailyTasks,
   setShowAddForm,
   expandedCategories = [],
   toggleCategoryExpansion,
   confirmCategoryDelete,
-  setShowAIDialog
+  setShowAIDialog,
+  dailyTasks = []
 }) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -312,7 +313,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         title: `${dailyTasksWithStreaks.length} daily task streak${dailyTasksWithStreaks.length > 1 ? 's' : ''}`,
         description: "Keep your momentum going!",
         icon: <ListTodo className="w-5 h-5 text-green-400" />,
-        action: navigateToPlanner,
+        action: navigateToDailyTasks || navigateToPlanner,
         color: 'bg-green-500/20 text-green-300'
       });
     }
@@ -374,6 +375,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         monthlyExpenses={totalMonthlyCost}
         unpaidTotal={unpaidTotal}
         onViewPlanner={navigateToPlanner}
+        onViewDailyTasks={navigateToDailyTasks}
         onToggleTaskComplete={handleToggleTaskComplete}
         onEditTask={handleEditTask}
         onEditGoal={handleEditGoal}

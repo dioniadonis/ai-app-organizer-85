@@ -1,6 +1,7 @@
-
+import React from 'react';
 import { AITool } from './AITool';
-import { Dispatch, SetStateAction } from 'react';
+import { Task, Goal, Insight, Renewal } from './dashboard';
+import { DailyTask } from '@/components/planner/DailyTasksTab';
 
 export interface FilterBarProps {
   selectedCategories: string[];
@@ -17,13 +18,28 @@ export interface MobileMenuProps {
   setView: (view: 'dashboard' | 'list') => void;
   clearFilters: () => void;
   navigateToPlanner: () => void;
+  navigateToDailyTasks: () => void;
   setShowAIDialog: (show: boolean) => void;
   showAddForm: boolean;
   setShowAddForm: (show: boolean) => void;
 }
 
-export interface HeaderProps extends MobileMenuProps, FilterBarProps {
+export interface HeaderProps {
   isMobile: boolean;
+  mobileMenuOpen: boolean;
+  setMobileMenuOpen: (open: boolean) => void;
+  view: 'dashboard' | 'list';
+  setView: (view: 'dashboard' | 'list') => void;
+  clearFilters: () => void;
+  navigateToPlanner: () => void;
+  navigateToDailyTasks: () => void;
+  setShowAIDialog: (show: boolean) => void;
+  showAddForm: boolean;
+  setShowAddForm: (show: boolean) => void;
+  selectedCategories: string[];
+  filterByRenewal: boolean;
+  handleCategoryToggle: (category: string) => void;
+  setFilterByRenewal: (filter: boolean) => void;
 }
 
 export interface AddFormProps {
@@ -59,8 +75,10 @@ export interface DashboardProps {
   customCategories: string[];
   navigateToPlanner: () => void;
   setShowAddForm: (show: boolean) => void;
-  expandedCategories?: string[];
-  toggleCategoryExpansion?: (category: string) => void;
-  confirmCategoryDelete?: (category: string) => void;
-  setShowAIDialog?: (show: boolean) => void;
+  expandedCategories: string[];
+  toggleCategoryExpansion: (category: string) => void;
+  confirmCategoryDelete: (category: string) => void;
+  setShowAIDialog: (show: boolean) => void;
+  dailyTasks?: DailyTask[];
+  navigateToDailyTasks?: () => void;
 }

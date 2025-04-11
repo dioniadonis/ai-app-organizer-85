@@ -411,6 +411,10 @@ const Index = () => {
     navigate('/planner');
   };
 
+  const navigateToDailyTasks = () => {
+    navigate('/daily-tasks');
+  };
+
   let filteredTools = aiTools.filter(tool => tool.name.toLowerCase().includes(searchTerm.toLowerCase()) || tool.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
   if (selectedCategories.includes('Favorites')) {
@@ -454,6 +458,7 @@ const Index = () => {
           setView={setView}
           clearFilters={clearFilters}
           navigateToPlanner={navigateToPlanner}
+          navigateToDailyTasks={navigateToDailyTasks}
           setShowAIDialog={setShowAIDialog}
           showAddForm={showAddForm}
           setShowAddForm={setShowAddForm}
