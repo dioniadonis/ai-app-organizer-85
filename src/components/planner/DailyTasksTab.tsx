@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, X, Edit, CheckCircle, Circle, Clock, RotateCcw, Clock as ClockIcon, ListTodo, CalendarClock } from 'lucide-react';
@@ -324,11 +325,8 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
       {filteredTasks.length > 0 ? (
         <div className="space-y-3">
           {filteredTasks.map(task => (
-            <motion.div
+            <div
               key={task.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
               className="bg-gray-800/40 rounded-lg p-3 border border-gray-700 hover:bg-gray-800/60 transition-colors"
             >
               {editingTask === task.id ? (
@@ -462,7 +460,7 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                   </div>
                 </div>
               )}
-            </motion.div>
+            </div>
           ))}
         </div>
       ) : (
