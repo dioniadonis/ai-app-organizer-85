@@ -393,16 +393,18 @@ const DailyTasksPage: React.FC = () => {
   const handleTaskClick = (task: DailyTask) => {
     console.log('Task clicked:', task.id);
     
-    setEditingTaskId(task.id);
-    setNewTaskName(task.name);
-    
-    setTimeout(() => {
-      const input = document.querySelector(`div[data-task-id="${task.id}"] input`);
-      console.log('Found input:', input);
-      if (input instanceof HTMLInputElement) {
-        input.focus();
-      }
-    }, 50);
+    if (editingTaskId !== task.id) {
+      setEditingTaskId(task.id);
+      setNewTaskName(task.name);
+      
+      setTimeout(() => {
+        const input = document.querySelector(`div[data-task-id="${task.id}"] input`);
+        console.log('Found input:', input);
+        if (input instanceof HTMLInputElement) {
+          input.focus();
+        }
+      }, 100);
+    }
   };
 
   const handleTaskNameBlur = (taskId: number) => {
@@ -415,7 +417,11 @@ const DailyTasksPage: React.FC = () => {
         return t;
       }));
     }
-    setEditingTaskId(null);
+    setTimeout(() => {
+      if (editingTaskId === taskId) {
+        setEditingTaskId(null);
+      }
+    }, 10);
   };
 
   const handleCategoryClick = (task: DailyTask) => {
