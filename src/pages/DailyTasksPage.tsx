@@ -1,7 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import PageLayout from '@/components/PageLayout';
 import DailyTasksTab, { DailyTask } from '@/components/planner/DailyTasksTab';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { toast } from '@/components/ui/use-toast';
@@ -100,12 +99,20 @@ const DailyTasksPage = () => {
   };
 
   return (
-    <PageLayout
-      title="Daily Tasks"
-      subtitle="Track your daily habits and recurring tasks"
-      actionLabel="Back to Planner"
-      onAction={() => navigate('/planner')}
-    >
+    <div className="container mx-auto p-4 max-w-4xl">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Daily Tasks</h1>
+          <p className="text-gray-400">Track your daily habits and recurring tasks</p>
+        </div>
+        <button 
+          onClick={() => navigate('/planner')}
+          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+        >
+          Back to Planner
+        </button>
+      </div>
+      
       <DailyTasksTab
         tasks={dailyTasks}
         onAddTask={handleAddTask}
@@ -114,7 +121,7 @@ const DailyTasksPage = () => {
         onDeleteTask={handleDeleteTask}
         onResetStreak={handleResetStreak}
       />
-    </PageLayout>
+    </div>
   );
 };
 

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, X, Edit, CheckCircle, Circle, Clock, RotateCcw, Clock as ClockIcon, ListTodo, CalendarClock } from 'lucide-react';
@@ -83,11 +84,8 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
 
   const handleAddTask = () => {
     if (!newTask.trim()) {
-      toast({
-        title: "Task name required",
-        description: "Please enter a name for your daily task",
-        variant: "destructive"
-      });
+      // If no task name is provided, just close the add task form without adding
+      setIsAdding(false);
       return;
     }
 
@@ -126,7 +124,10 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
   };
 
   const startEditing = (id: number) => {
-    setEditingTask(id);
+    const task = tasks.find(t => t.id === id);
+    if (task) {
+      setEditingTask(id);
+    }
   };
 
   const cancelEditing = () => {
@@ -281,7 +282,10 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                 onClick={() => handleFilterChange(category || 'all')}
               >
                 {category}
-                {activeFilter === category && <X className="ml-1 h-3 w-3" onClick={() => handleFilterChange('all')} />}
+                {activeFilter === category && <X className="ml-1 h-3 w-3" onClick={(e) => {
+                  e.stopPropagation();
+                  handleFilterChange('all');
+                }} />}
               </Badge>
             ))}
           </div>
