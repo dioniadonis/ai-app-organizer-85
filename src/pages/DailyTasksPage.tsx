@@ -1,11 +1,9 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, ChevronRight, Edit, Plus, Bell, Home, Calendar, X, Check, 
-  AlarmClock, Clock, BellRing, CalendarCheck, Circle, Settings, Copy, Move,
-  Trash2, CalendarDays
+  AlarmClock, Clock, BellRing, CalendarCheck, Circle, Settings, Copy, Move
 } from 'lucide-react';
 import { format, addDays, subDays, parseISO, isToday, isTomorrow, isSameDay } from 'date-fns';
 import { DailyTask } from '@/components/planner/DailyTasksTab';
@@ -21,7 +19,6 @@ import { useIsMobile, useTouchDevice } from '@/hooks/use-mobile';
 import TimeInput from '@/components/TimeInput';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 
 interface TimeIncrementOption {
   label: string;
@@ -42,8 +39,6 @@ const DailyTasksPage: React.FC = () => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showCopyModal, setShowCopyModal] = useState(false);
-  const [showClearTasksModal, setShowClearTasksModal] = useState(false);
-  const [showClearTaskWarning, setShowClearTaskWarning] = useState(true);
   const [selectedTask, setSelectedTask] = useState<DailyTask | null>(null);
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskTime, setNewTaskTime] = useState('');
@@ -54,12 +49,10 @@ const DailyTasksPage: React.FC = () => {
   const [displayRange, setDisplayRange] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
   const [timeIncrement, setTimeIncrement] = useState<number>(30);
   const [copyToDate, setCopyToDate] = useState<Date | undefined>(undefined);
-  const [moveToDate, setMoveToDate] = useState<Date | undefined>(undefined);
   const [isDragging, setIsDragging] = useState(false);
   const [draggedTask, setDraggedTask] = useState<DailyTask | null>(null);
   const [targetTimeSlot, setTargetTimeSlot] = useState<string | null>(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [showMoveTaskModal, setShowMoveTaskModal] = useState(false);
 
   const timeIncrementOptions: TimeIncrementOption[] = [
     { label: '15 minutes', value: 15 },
@@ -146,21 +139,11 @@ const DailyTasksPage: React.FC = () => {
         });
       }
     }
-    
-    // Load showClearTaskWarning setting
-    const warningPref = localStorage.getItem('showClearTaskWarning');
-    if (warningPref !== null) {
-      setShowClearTaskWarning(warningPref === 'true');
-    }
   }, []);
 
   useEffect(() => {
     localStorage.setItem('dailyTasks', JSON.stringify(dailyTasks));
   }, [dailyTasks]);
-  
-  useEffect(() => {
-    localStorage.setItem('showClearTaskWarning', showClearTaskWarning.toString());
-  }, [showClearTaskWarning]);
 
   const handlePreviousDay = () => {
     setCurrentDate(prev => subDays(prev, 1));
@@ -181,7 +164,7 @@ const DailyTasksPage: React.FC = () => {
       });
       
       if (editingTaskId !== taskId) {
-        startEditing(taskId);
+        handleTaskClick(task);
       }
       return;
     }
@@ -293,29 +276,7 @@ const DailyTasksPage: React.FC = () => {
     });
   };
 
-  const startEditing = (taskId: number, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    
-    setEditingTaskId(taskId);
-    const task = dailyTasks.find(t => t.id === taskId);
-    if (task) {
-      setNewTaskName(task.name);
-      setNewTaskTime(task.timeOfDay || '');
-      setNewCategory(task.category || 'Personal');
-      setNewColor(task.color || COLORS[0]);
-    }
-  };
-
   const handleEditTask = (task: DailyTask) => {
-    if (!task.name.trim()) {
-      toast({
-        title: "Task name required",
-        description: "Please enter a name for your task",
-        variant: "destructive"
-      });
-      return;
-    }
-    
     setEditingTaskId(null);
     setNewTaskName(task.name);
     setNewTaskTime(task.timeOfDay || '');
@@ -327,15 +288,6 @@ const DailyTasksPage: React.FC = () => {
 
   const handleUpdateTask = () => {
     if (!selectedTask) return;
-    
-    if (!newTaskName.trim()) {
-      toast({
-        title: "Task name required",
-        description: "Please enter a name for your task",
-        variant: "destructive"
-      });
-      return;
-    }
 
     setDailyTasks(prev => prev.map(task => {
       if (task.id === selectedTask.id) {
@@ -408,43 +360,9 @@ const DailyTasksPage: React.FC = () => {
 
   const handleMoveTask = (task: DailyTask) => {
     setSelectedTask(task);
-    setMoveToDate(undefined);
-    setShowMoveTaskModal(true);
-  };
-  
-  const handleMoveTaskToDate = () => {
-    if (!selectedTask || !moveToDate) {
-      toast({
-        title: "Select a date",
-        description: "Please select a date to move this task to",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Create a copy of the task with a new ID for the target date
-    const movedTask: DailyTask = {
-      ...selectedTask,
-      id: Date.now() + Math.random() * 1000,
-      completed: false
-    };
-    
-    // Add the new task
-    setDailyTasks(prev => [...prev, movedTask]);
-    
-    // Remove the original task if desired
-    if (selectedTask) {
-      setDailyTasks(prev => prev.filter(t => t.id !== selectedTask.id));
-    }
-    
-    toast({
-      title: "Task moved",
-      description: `"${selectedTask.name}" moved to ${format(moveToDate, 'MMMM d, yyyy')}`
-    });
-    
-    setShowMoveTaskModal(false);
-    setSelectedTask(null);
-    setMoveToDate(undefined);
+    setReminderTime(task.timeOfDay || '');
+    setCopyToDate(undefined);
+    setShowReminderModal(true);
   };
 
   const handleDragStart = (task: DailyTask) => {
@@ -496,6 +414,8 @@ const DailyTasksPage: React.FC = () => {
   };
 
   const handleTaskNameBlur = (taskId: number) => {
+    console.log('Blurring task:', taskId);
+    
     if (newTaskName.trim()) {
       setDailyTasks(prev => prev.map(t => {
         if (t.id === taskId) {
@@ -504,8 +424,10 @@ const DailyTasksPage: React.FC = () => {
         return t;
       }));
       
-      setEditingTaskId(null);
-      // We don't reset newTaskName here anymore
+      setTimeout(() => {
+        setEditingTaskId(null);
+        setNewTaskName('');
+      }, 50);
     } else {
       toast({
         title: "Task name required",
@@ -574,44 +496,9 @@ const DailyTasksPage: React.FC = () => {
     setShowCopyModal(false);
   };
 
-  const handleClearTasks = () => {
-    if (showClearTaskWarning) {
-      setShowClearTasksModal(true);
-    } else {
-      clearTasksForCurrentDay();
-    }
-  };
-  
-  const clearTasksForCurrentDay = () => {
-    const today = format(currentDate, 'yyyy-MM-dd');
-    const tasksToRemove = dailyTasks.filter(task => {
-      const taskDay = task.lastCompleted ? task.lastCompleted.split('T')[0] : today;
-      return taskDay === today;
-    });
-    
-    if (tasksToRemove.length === 0) {
-      toast({
-        title: "No tasks to clear",
-        description: "There are no tasks for the current day to clear"
-      });
-      return;
-    }
-    
-    setDailyTasks(prev => prev.filter(task => {
-      const taskDay = task.lastCompleted ? task.lastCompleted.split('T')[0] : today;
-      return taskDay !== today;
-    }));
-    
-    toast({
-      title: "Tasks cleared",
-      description: `${tasksToRemove.length} tasks have been cleared for ${format(currentDate, 'MMMM d, yyyy')}`
-    });
-    
-    setShowClearTasksModal(false);
-  };
-
   const handleTimeIncrementChange = (value: number) => {
     setTimeIncrement(value);
+    setShowSettingsModal(false);
     
     toast({
       title: "Settings updated",
@@ -691,18 +578,16 @@ const DailyTasksPage: React.FC = () => {
             <Home size={24} className="text-blue-400" />
           </button>
           
-          <div className="flex items-center absolute left-1/2 transform -translate-x-1/2">
-            <div className="flex flex-col items-center">
-              <button 
-                onClick={() => setShowCalendarModal(true)}
-                className="flex items-center gap-2 text-2xl font-bold text-blue-300 hover:text-blue-200 transition-colors"
-              >
-                <CalendarCheck className="h-6 w-6 text-blue-400" />
-                {dateLabel}
-              </button>
-              <div className="text-lg font-medium text-center text-green-300">
-                {formattedDate}
-              </div>
+          <div className="flex flex-col items-center absolute left-1/2 transform -translate-x-1/2">
+            <button 
+              onClick={() => setShowCalendarModal(true)}
+              className="flex items-center gap-2 text-2xl font-bold text-white hover:text-blue-300 transition-colors"
+            >
+              <CalendarCheck className="h-6 w-6 text-purple-400" />
+              {dateLabel}
+            </button>
+            <div className="text-lg font-medium text-center text-white/80">
+              {formattedDate}
             </div>
           </div>
           
@@ -719,13 +604,6 @@ const DailyTasksPage: React.FC = () => {
               className="rounded-md p-2 hover:bg-gray-800 transition-colors"
             >
               <Copy size={20} className="text-blue-400" />
-            </button>
-            
-            <button
-              onClick={() => handleClearTasks()}
-              className="rounded-md p-2 hover:bg-gray-800 transition-colors"
-            >
-              <Trash2 size={20} className="text-red-400" />
             </button>
             
             <button
@@ -878,7 +756,7 @@ const DailyTasksPage: React.FC = () => {
                                   className="flex-1 text-white cursor-pointer"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    startEditing(task.id, e);
+                                    handleTaskClick(task);
                                   }}
                                 >
                                   {task.name || "Add task"}
@@ -916,15 +794,6 @@ const DailyTasksPage: React.FC = () => {
                                       className="justify-start text-xs px-2"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        if (!task.name.trim()) {
-                                          toast({
-                                            title: "Task name required",
-                                            description: "Please enter a name for your task",
-                                            variant: "destructive"
-                                          });
-                                          startEditing(task.id, e);
-                                          return;
-                                        }
                                         handleEditTask(task);
                                       }}
                                     >
@@ -1201,16 +1070,6 @@ const DailyTasksPage: React.FC = () => {
                 ))}
               </div>
             </div>
-            
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-200">
-                Show Clear Tasks Warning
-              </label>
-              <Switch 
-                checked={showClearTaskWarning}
-                onCheckedChange={setShowClearTaskWarning}
-              />
-            </div>
           </div>
           
           <DialogFooter>
@@ -1302,60 +1161,6 @@ const DailyTasksPage: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      <Dialog open={showMoveTaskModal} onOpenChange={setShowMoveTaskModal}>
-        <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Move Task to Another Date</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Choose which date to move this task to
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4">
-            <div className="grid gap-4">
-              <div className="bg-gray-700/40 p-3 rounded-md">
-                <p className="font-medium">{selectedTask?.name}</p>
-                {selectedTask?.timeOfDay && (
-                  <p className="text-sm text-gray-400 flex items-center mt-1">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {selectedTask.timeOfDay}
-                  </p>
-                )}
-              </div>
-              
-              <div className="grid gap-2">
-                <label className="text-sm font-medium text-gray-200">
-                  Select Date to Move To
-                </label>
-                <DatePicker
-                  date={moveToDate}
-                  onDateChange={setMoveToDate}
-                  disabled={false}
-                  className="border-gray-600 bg-gray-700"
-                />
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowMoveTaskModal(false)}
-              className="border-gray-600 text-gray-300"
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleMoveTaskToDate}
-              className="bg-purple-600 hover:bg-purple-700"
-              disabled={!moveToDate}
-            >
-              Move Task
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
       <Dialog open={showCategoryModal} onOpenChange={setShowCategoryModal}>
         <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
           <DialogHeader>
@@ -1433,33 +1238,6 @@ const DailyTasksPage: React.FC = () => {
               className="bg-purple-600 hover:bg-purple-700"
             >
               Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={showClearTasksModal} onOpenChange={setShowClearTasksModal}>
-        <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Clear All Tasks</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Are you sure you want to clear all tasks for {format(currentDate, 'MMMM d, yyyy')}? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <DialogFooter className="gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowClearTasksModal(false)}
-              className="border-gray-600 text-gray-300"
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={clearTasksForCurrentDay}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Clear Tasks
             </Button>
           </DialogFooter>
         </DialogContent>

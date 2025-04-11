@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, X, Edit, CheckCircle, Circle, Clock, RotateCcw, Clock as ClockIcon, ListTodo, CalendarClock } from 'lucide-react';
@@ -403,14 +402,6 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                     <Button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (!task.name.trim()) {
-                          toast({
-                            title: "Task name required",
-                            description: "Please enter a name for your task before saving",
-                            variant: "destructive"
-                          });
-                          return;
-                        }
                         handleEditSubmit(task.id);
                       }} 
                       className="bg-purple-600 hover:bg-purple-700"
@@ -425,18 +416,6 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (!task.name.trim()) {
-                          toast({
-                            title: "Task name required",
-                            description: "Please enter a name for your task before marking it complete",
-                            variant: "destructive"
-                          });
-                          
-                          if (editingTask !== task.id) {
-                            startEditing(task.id, e);
-                          }
-                          return;
-                        }
                         onToggleComplete(task.id);
                       }}
                       className="flex-shrink-0"
@@ -488,16 +467,7 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                         className="h-8 w-8 rounded-full hover:bg-gray-700"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (!task.name.trim()) {
-                            toast({
-                              title: "Task name required",
-                              description: "Please enter a name for your task",
-                              variant: "destructive"
-                            });
-                            startEditing(task.id, e);
-                            return;
-                          }
-                          startEditing(task.id, e);
+                          startEditing(task.id);
                         }}
                       >
                         <Edit className="h-4 w-4" />
