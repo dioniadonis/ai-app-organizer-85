@@ -872,13 +872,13 @@ const DailyTasksPage: React.FC = () => {
               </div>
               
               <div className="grid gap-2">
-                <label htmlFor="time" className="text-sm font-medium text-gray-200">
+                <label className="text-sm font-medium text-gray-200">
                   Time of Day
                 </label>
                 <TimeInput
-                  id="time"
                   value={newTaskTime}
                   onChange={setNewTaskTime}
+                  label="Time"
                 />
               </div>
               
@@ -943,13 +943,13 @@ const DailyTasksPage: React.FC = () => {
           
           <div className="space-y-4 py-4">
             <div className="grid gap-2">
-              <label htmlFor="reminderTime" className="text-sm font-medium text-gray-200">
+              <label className="text-sm font-medium text-gray-200">
                 Time of Day
               </label>
               <TimeInput
-                id="reminderTime"
                 value={reminderTime}
                 onChange={setReminderTime}
+                label="Time"
               />
             </div>
           </div>
@@ -1027,8 +1027,8 @@ const DailyTasksPage: React.FC = () => {
           
           <div className="py-4">
             <DatePicker
-              selected={currentDate}
-              onSelect={(date) => {
+              date={currentDate}
+              onDateChange={(date) => {
                 if (date) {
                   setCurrentDate(date);
                   setShowCalendarModal(false);
@@ -1066,8 +1066,8 @@ const DailyTasksPage: React.FC = () => {
                 Select Target Date
               </label>
               <DatePicker
-                selected={copyToDate}
-                onSelect={setCopyToDate}
+                date={copyToDate}
+                onDateChange={setCopyToDate}
                 disabled={false}
                 className="border-gray-600 bg-gray-700"
               />
