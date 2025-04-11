@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AITool } from './AITool';
 import { Task, Goal, Insight, Renewal } from './dashboard';
@@ -81,4 +82,15 @@ export interface DashboardProps {
   setShowAIDialog: (show: boolean) => void;
   dailyTasks?: DailyTask[];
   navigateToDailyTasks?: () => void;
+}
+
+export interface PlannerWidgetProps {
+  tasks: Task[];
+  goals: Goal[];
+  dailyTasks?: DailyTask[];
+  onViewMore: () => void;
+  onViewDailyTasks?: () => void;
+  onToggleTaskComplete: (taskId: string | number) => void;
+  onEditTask: (task: any) => void;
+  onEditGoal: (goal: any) => void;
 }

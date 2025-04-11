@@ -44,7 +44,6 @@ interface DashboardPlannerProps {
 const DashboardPlanner: React.FC<DashboardPlannerProps> = ({ tasks, goals, dailyTasks = [], onViewPlanner }) => {
   const navigate = useNavigate();
 
-  // Get upcoming tasks - those due in the next 7 days
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
@@ -63,21 +62,18 @@ const DashboardPlanner: React.FC<DashboardPlannerProps> = ({ tasks, goals, daily
       if (!b.dueDate) return -1;
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
     })
-    .slice(0, 3); // Show only top 3
+    .slice(0, 3);
   
-  // Get in-progress goals
   const inProgressGoals = goals
     .filter(goal => goal.progress > 0 && goal.progress < 100)
     .sort((a, b) => b.progress - a.progress)
-    .slice(0, 3); // Show only top 3
+    .slice(0, 3);
   
-  // Get daily tasks with streaks
   const dailyTasksWithStreaks = dailyTasks
     .filter(task => task.streak > 0)
     .sort((a, b) => b.streak - a.streak)
-    .slice(0, 3); // Show only top 3
+    .slice(0, 3);
   
-  // Count stats
   const completedTasks = tasks.filter(task => task.completed).length;
   const totalTasks = tasks.length;
   const completedGoals = goals.filter(goal => goal.progress === 100).length;
@@ -217,7 +213,7 @@ const DashboardPlanner: React.FC<DashboardPlannerProps> = ({ tasks, goals, daily
                     </span>
                   )}
                   <span className="flex items-center gap-1 text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">
-                    <CalendarClock className="w-3 h-3" />
+                    <CalendarCheck className="w-3 h-3" />
                     {task.streak} day{task.streak !== 1 ? 's' : ''}
                   </span>
                 </div>

@@ -32,7 +32,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   toggleCategoryExpansion,
   confirmCategoryDelete,
   setShowAIDialog,
-  dailyTasks = []
+  dailyTasks
 }) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -48,7 +48,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [expenses, setExpenses] = useState<any[]>([]);
   const [renewals, setRenewals] = useState<any[]>([]);
-  const [dailyTasks, setDailyTasks] = useState<any[]>([]);
+  const [localDailyTasks, setLocalDailyTasks] = useState<any[]>([]);
   const [mobileControlsExpanded, setMobileControlsExpanded] = useState(false);
   const [activeInsight, setActiveInsight] = useState(0);
 
@@ -69,7 +69,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     const savedDailyTasks = localStorage.getItem('dailyTasks');
     if (savedDailyTasks) {
       try {
-        setDailyTasks(JSON.parse(savedDailyTasks));
+        setLocalDailyTasks(JSON.parse(savedDailyTasks));
       } catch (e) {
         console.error('Failed to parse daily tasks from localStorage', e);
       }
@@ -306,8 +306,8 @@ const Dashboard: React.FC<DashboardProps> = ({
       });
     }
 
-    // Add daily tasks insight if there are streaks
-    const dailyTasksWithStreaks = dailyTasks.filter(task => task.streak > 0);
+    const tasksToUse = dailyTasks || localDailyTasks;
+    const dailyTasksWithStreaks = tasksToUse.filter(task => task.streak > 0);
     if (dailyTasksWithStreaks.length > 0) {
       insights.push({
         title: `${dailyTasksWithStreaks.length} daily task streak${dailyTasksWithStreaks.length > 1 ? 's' : ''}`,
@@ -369,7 +369,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         activeWidgets={activeWidgets}
         tasks={tasks}
         goals={goals}
-        dailyTasks={dailyTasks}
+        dailyTasks={dailyTasks || localDailyTasks}
         expenses={expenses}
         totalExpenses={totalExpenses}
         monthlyExpenses={totalMonthlyCost}

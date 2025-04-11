@@ -296,6 +296,7 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                     <TimeInput 
                       value={task.timeOfDay || ''}
                       onChange={(time) => onEditTask(task.id, { timeOfDay: time })}
+                      label="Time"
                     />
                     
                     <select 
