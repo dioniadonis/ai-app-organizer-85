@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Sparkles, Grid3X3, Layout, Plus } from 'lucide-react';
+import { Sparkles, Grid3X3, Layout, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import SearchBox from '../SearchBox';
@@ -47,7 +46,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
         <div className="hidden md:flex items-center text-gray-400 text-sm mr-3">
-          <Clock className="w-4 h-4 mr-1" />
           <span>{formattedDate} • {formattedTime}</span>
         </div>
         
