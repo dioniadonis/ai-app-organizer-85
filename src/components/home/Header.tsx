@@ -27,7 +27,7 @@ const Header: React.FC<HeaderProps> = ({
   <header className="mb-8">
     <HolographicTitle title="Loop Space AI Organizer" />
     <p className="text-center text-gray-400 mb-6">
-      Organize, track, and manage your subscriptions in one place
+      Organize, track, and manage your expenses in one place
     </p>
     
     {isMobile ? (
@@ -91,7 +91,7 @@ const Header: React.FC<HeaderProps> = ({
             className="w-full sm:w-auto bg-ai-blue/20 text-ai-blue hover:bg-ai-blue/30 hover:text-ai-blue border-ai-blue/50"
           >
             <PlusCircle className="w-4 h-4 mr-2" />
-            {showAddForm ? 'Cancel' : 'Add New Expense'}
+            {showAddForm ? 'Cancel' : 'Add Expense'}
           </Button>
         </div>
       </div>

@@ -84,7 +84,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
         className="w-full bg-ai-blue/20 text-ai-blue hover:bg-ai-blue/30 hover:text-ai-blue border-ai-blue/50 justify-start"
       >
         <PlusCircle className="w-4 h-4 mr-2" />
-        {showAddForm ? 'Cancel' : 'Add New Expense'}
+        {showAddForm ? 'Cancel' : 'Add Expense'}
       </Button>
     </CollapsibleContent>
   </Collapsible>
