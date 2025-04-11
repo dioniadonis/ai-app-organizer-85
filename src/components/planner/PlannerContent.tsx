@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import Planner from '@/components/Planner';
+import DailyTasksTab, { DailyTask } from '@/components/planner/DailyTasksTab';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
@@ -35,11 +36,13 @@ interface PlannerContentProps {
     tasks: PlannerTask[];
     goals: PlannerGoal[];
     recurringTasks: any[];
+    dailyTasks: DailyTask[];
   };
   setPlannerData: React.Dispatch<React.SetStateAction<{
     tasks: PlannerTask[];
     goals: PlannerGoal[];
     recurringTasks: any[];
+    dailyTasks: DailyTask[];
   }>>;
 }
 
@@ -127,6 +130,80 @@ const PlannerContent: React.FC<PlannerContentProps> = ({
     }
   };
 
+  const handleDailyTaskOperations = {
+    onAddTask: (taskData: Omit<DailyTask, 'id' | 'streak' | 'completed'>) => {
+      setPlannerData({
+        ...plannerData,
+        dailyTasks: [...plannerData.dailyTasks, {
+          id: Date.now(),
+          ...taskData,
+          completed: false,
+          streak: 0
+        }]
+      });
+    },
+    onToggleComplete: (id: number) => {
+      const taskIndex = plannerData.dailyTasks.findIndex(t => t.id === id);
+      if (taskIndex === -1) return;
+
+      const updatedTasks = [...plannerData.dailyTasks];
+      const task = updatedTasks[taskIndex];
+      const wasCompleted = task.completed;
+      
+      // Toggle completed status
+      task.completed = !wasCompleted;
+      
+      // Update streak if it was just completed
+      if (!wasCompleted) {
+        const today = new Date().toISOString().split('T')[0];
+        task.lastCompleted = today;
+        task.streak = (task.streak || 0) + 1;
+      }
+      
+      setPlannerData({
+        ...plannerData,
+        dailyTasks: updatedTasks
+      });
+    },
+    onEditTask: (id: number, taskData: Partial<DailyTask>) => {
+      const taskIndex = plannerData.dailyTasks.findIndex(t => t.id === id);
+      if (taskIndex === -1) return;
+
+      const updatedTasks = [...plannerData.dailyTasks];
+      updatedTasks[taskIndex] = {
+        ...updatedTasks[taskIndex],
+        ...taskData
+      };
+      
+      setPlannerData({
+        ...plannerData,
+        dailyTasks: updatedTasks
+      });
+    },
+    onDeleteTask: (id: number) => {
+      setPlannerData({
+        ...plannerData,
+        dailyTasks: plannerData.dailyTasks.filter(t => t.id !== id)
+      });
+    },
+    onResetStreak: (id: number) => {
+      const taskIndex = plannerData.dailyTasks.findIndex(t => t.id === id);
+      if (taskIndex === -1) return;
+
+      const updatedTasks = [...plannerData.dailyTasks];
+      updatedTasks[taskIndex] = {
+        ...updatedTasks[taskIndex],
+        streak: 0,
+        lastCompleted: undefined
+      };
+      
+      setPlannerData({
+        ...plannerData,
+        dailyTasks: updatedTasks
+      });
+    }
+  };
+
   return (
     <motion.div 
       className="bg-gray-800/20 rounded-xl p-6 shadow-lg border border-gray-700"
@@ -149,6 +226,12 @@ const PlannerContent: React.FC<PlannerContentProps> = ({
             >
               Goals
             </TabsTrigger>
+            <TabsTrigger 
+              value="dailyTasks" 
+              className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md"
+            >
+              Daily Tasks
+            </TabsTrigger>
           </TabsList>
         </Tabs>
         
@@ -163,7 +246,7 @@ const PlannerContent: React.FC<PlannerContentProps> = ({
                 priority: "medium"
               };
               handleTaskOperations.onAddTask(dummyTask);
-            } else {
+            } else if (activeTab === 'goals') {
               const dummyGoal = {
                 title: "New Goal",
                 description: "",
@@ -174,6 +257,7 @@ const PlannerContent: React.FC<PlannerContentProps> = ({
               handleGoalOperations.onAddGoal(dummyGoal);
             }
           }}
+          style={{ display: activeTab === 'dailyTasks' ? 'none' : 'flex' }}
         >
           <Plus className="w-4 h-4 mr-2" />
           Add New {activeTab === 'tasks' ? 'Task' : 'Goal'}
@@ -193,6 +277,12 @@ const PlannerContent: React.FC<PlannerContentProps> = ({
             activeTab={activeTab}
             {...handleTaskOperations}
             {...handleGoalOperations}
+          />
+        }
+        {activeTab === 'dailyTasks' && 
+          <DailyTasksTab 
+            tasks={plannerData.dailyTasks || []}
+            {...handleDailyTaskOperations}
           />
         }
       </div>

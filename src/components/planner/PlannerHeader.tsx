@@ -2,7 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, ChevronLeft, LayoutDashboard, CalendarClock, CreditCard, Settings, UserCircle } from 'lucide-react';
+import { Bell, ChevronLeft, LayoutDashboard, CalendarClock, CreditCard, UserCircle, ListTodo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
@@ -120,6 +120,13 @@ const PlannerHeader: React.FC<PlannerHeaderProps> = ({
             >
               <CreditCard className="w-4 h-4" />
               Expenses
+            </TabsTrigger>
+            <TabsTrigger 
+              value="dailyTasks" 
+              className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-white rounded-lg gap-2"
+            >
+              <ListTodo className="w-4 h-4" />
+              Daily Tasks
             </TabsTrigger>
           </TabsList>
         </Tabs>

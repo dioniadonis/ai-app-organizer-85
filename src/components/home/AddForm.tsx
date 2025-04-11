@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { PlusCircle, CheckCircle, XCircle } from 'lucide-react';
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePicker } from '@/components/ui/date-picker';
 import { AddFormProps } from '@/types/ComponentProps';
+
 const AddForm: React.FC<AddFormProps> = ({
   newTool,
   handleInputChange,
@@ -101,8 +103,9 @@ const AddForm: React.FC<AddFormProps> = ({
       </div>
 
       <div className="md:col-span-2 flex justify-end">
-        <Button onClick={handleAddTool} className="bg-ai-blue hover:bg-ai-blue/90 text-white">Add Expense </Button>
+        <Button onClick={handleAddTool} className="bg-ai-blue hover:bg-ai-blue/90 text-white">Add Expense</Button>
       </div>
     </div>
   </motion.div>;
+
 export default AddForm;
