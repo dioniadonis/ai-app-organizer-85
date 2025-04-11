@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, X, Edit, CheckCircle, Circle, Clock, RotateCcw, Clock as ClockIcon, ListTodo, CalendarClock } from 'lucide-react';
@@ -147,13 +148,23 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
   const startEditing = (id: number, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     
-    setEditingTask(id);
     const task = tasks.find(t => t.id === id);
-    if (task) {
-      setNewTask(task.name);
-      setNewTime(task.timeOfDay || '');
-      setNewCategory(task.category || 'Personal');
-      setNewColor(task.color || COLORS[0]);
+    if (!task || !task.name.trim()) {
+      toast({
+        title: "Task name required",
+        description: "Please enter a name for your daily task before editing",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setEditingTask(id);
+    const task2 = tasks.find(t => t.id === id);
+    if (task2) {
+      setNewTask(task2.name);
+      setNewTime(task2.timeOfDay || '');
+      setNewCategory(task2.category || 'Personal');
+      setNewColor(task2.color || COLORS[0]);
     }
   };
 
@@ -467,6 +478,14 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                         className="h-8 w-8 rounded-full hover:bg-gray-700"
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (!task.name.trim()) {
+                            toast({
+                              title: "Task name required",
+                              description: "Please enter a name for your daily task before editing",
+                              variant: "destructive"
+                            });
+                            return;
+                          }
                           startEditing(task.id);
                         }}
                       >
