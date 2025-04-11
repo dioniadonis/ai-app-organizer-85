@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, X, Edit, CheckCircle, Circle, Clock, RotateCcw, Clock as ClockIcon, ListTodo, CalendarClock } from 'lucide-react';
@@ -83,11 +84,7 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
 
   const handleAddTask = () => {
     if (!newTask.trim()) {
-      toast({
-        title: "Task name required",
-        description: "Please enter a name for your daily task",
-        variant: "destructive"
-      });
+      setIsAdding(false);
       return;
     }
 
@@ -104,7 +101,8 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
     
     toast({
       title: "Daily task added",
-      description: `"${newTask}" has been added to your daily tasks`
+      description: `"${newTask}" has been added to your daily tasks`,
+      duration: 3000,
     });
   };
 
@@ -114,6 +112,11 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
 
     if (!task.name.trim()) {
       setEditingTask(null);
+      toast({
+        title: "Task name required",
+        description: "Please enter a name for the task before saving",
+        duration: 3000,
+      });
       return;
     }
 
@@ -121,12 +124,40 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
 
     toast({
       title: "Task updated",
-      description: `"${task.name}" has been updated`
+      description: `"${task.name}" has been updated`,
+      duration: 3000,
     });
   };
 
+  const handleToggleCompleteWithValidation = (id: number) => {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+
+    if (!task.name.trim()) {
+      toast({
+        title: "Task name required",
+        description: "Please enter a name for the task before marking it complete",
+        duration: 3000,
+      });
+      return;
+    }
+
+    onToggleComplete(id);
+  };
+
   const startEditing = (id: number) => {
-    setEditingTask(id);
+    const task = tasks.find(t => t.id === id);
+    if (task) {
+      if (!task.name.trim()) {
+        toast({
+          title: "Task name required",
+          description: "Please enter a name for the task before editing",
+          duration: 3000,
+        });
+        return;
+      }
+      setEditingTask(id);
+    }
   };
 
   const cancelEditing = () => {
@@ -281,7 +312,10 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                 onClick={() => handleFilterChange(category || 'all')}
               >
                 {category}
-                {activeFilter === category && <X className="ml-1 h-3 w-3" onClick={() => handleFilterChange('all')} />}
+                {activeFilter === category && <X className="ml-1 h-3 w-3" onClick={(e) => {
+                  e.stopPropagation();
+                  handleFilterChange('all');
+                }} />}
               </Badge>
             ))}
           </div>
@@ -291,11 +325,8 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
       {filteredTasks.length > 0 ? (
         <div className="space-y-3">
           {filteredTasks.map(task => (
-            <motion.div
+            <div
               key={task.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
               className="bg-gray-800/40 rounded-lg p-3 border border-gray-700 hover:bg-gray-800/60 transition-colors"
             >
               {editingTask === task.id ? (
@@ -353,7 +384,7 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <button
-                      onClick={() => onToggleComplete(task.id)}
+                      onClick={() => handleToggleCompleteWithValidation(task.id)}
                       className="flex-shrink-0"
                     >
                       {task.completed ? (
@@ -429,7 +460,7 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                   </div>
                 </div>
               )}
-            </motion.div>
+            </div>
           ))}
         </div>
       ) : (
