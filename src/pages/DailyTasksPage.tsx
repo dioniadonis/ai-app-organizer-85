@@ -510,7 +510,8 @@ const DailyTasksPage: React.FC = () => {
     'Evening Routine',
     'Wellness',
     'Productivity',
-    'Personal'
+    'Personal',
+    'Custom'
   ];
 
   const COLORS = [
@@ -537,7 +538,7 @@ const DailyTasksPage: React.FC = () => {
           
           <button 
             onClick={() => setShowCalendarModal(true)}
-            className="flex items-center gap-2 text-2xl font-bold text-white hover:text-blue-300 transition-colors mx-auto"
+            className="flex items-center gap-2 text-2xl font-bold text-white hover:text-blue-300 transition-colors text-center mx-auto"
           >
             <CalendarCheck className="h-6 w-6 text-purple-400" />
             {dateLabel}
@@ -699,9 +700,17 @@ const DailyTasksPage: React.FC = () => {
                                   style={{ backgroundColor: task.color || '#9b87f5' }}
                                 ></div>
                                 <span 
-                                  className={`flex-1 ${task.completed ? 'line-through text-gray-500' : ''}`}
-                                  style={task.color ? { color: task.color } : undefined}
-                                  onClick={() => handleTaskClick(task)}
+                                  className="flex-1 text-white"
+                                  onClick={() => {
+                                    handleTaskClick(task);
+                                    // Focus the input field that will appear after state update
+                                    setTimeout(() => {
+                                      const input = document.querySelector(`div[data-task-id="${task.id}"] input`);
+                                      if (input instanceof HTMLInputElement) {
+                                        input.focus();
+                                      }
+                                    }, 10);
+                                  }}
                                 >
                                   {task.name}
                                 </span>
@@ -842,321 +851,4 @@ const DailyTasksPage: React.FC = () => {
             <DialogTitle>{selectedTask ? 'Edit Task' : 'Add New Task'}</DialogTitle>
             <DialogDescription className="text-gray-400">
               {selectedTask 
-                ? 'Update your daily task details' 
-                : 'Add a new task to your daily routine'}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm text-gray-300">Task Name</label>
-              <Input
-                value={newTaskName}
-                onChange={(e) => setNewTaskName(e.target.value)}
-                placeholder="Enter task name"
-                className="bg-gray-700/50 border-gray-600"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm text-gray-300">Time of Day</label>
-              <TimeInput
-                value={newTaskTime}
-                onChange={setNewTaskTime}
-                label="Time"
-              />
-              <p className="text-xs text-gray-400">When you want to perform this task</p>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm text-gray-300">Category</label>
-              <select
-                value={newTaskCategory}
-                onChange={(e) => setNewTaskCategory(e.target.value)}
-                className="w-full bg-gray-700/50 border border-gray-600 rounded-md p-2 text-white"
-              >
-                {CATEGORIES.map(category => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm text-gray-300">Color</label>
-              <div className="flex flex-wrap gap-3">
-                {COLORS.map(color => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setNewTaskColor(color)}
-                    className={`w-8 h-8 rounded-full transition-all ${
-                      newTaskColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-gray-800 scale-110' : ''
-                    }`}
-                    style={{ backgroundColor: color }}
-                    aria-label={`Select color ${color}`}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => setShowAddModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={selectedTask ? handleUpdateTask : handleAddTask}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              {selectedTask ? 'Update Task' : 'Add Task'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={showReminderModal} onOpenChange={setShowReminderModal}>
-        <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Set Time for Task</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              {selectedTask && `Set a time for "${selectedTask.name}"`}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="flex items-center gap-3">
-              <AlarmClock className="h-8 w-8 text-purple-400" />
-              <div className="flex-1">
-                <TimeInput
-                  value={reminderTime}
-                  onChange={setReminderTime}
-                  label="Task Time"
-                />
-              </div>
-            </div>
-            
-            <div className="mt-4">
-              <label className="text-sm text-gray-300 mb-2 block">Date (Optional)</label>
-              <DatePicker
-                date={copyToDate}
-                onDateChange={(date) => setCopyToDate(date)}
-                className="w-full"
-                placeholder="Select a date to move task to"
-              />
-            </div>
-            
-            <p className="text-sm text-gray-400">
-              Setting the time will make the task appear at the specified time in your daily timeline.
-            </p>
-          </div>
-          
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => setShowReminderModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={saveReminder}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showCalendarModal} onOpenChange={setShowCalendarModal}>
-        <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Select Date</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Choose a date to view or edit tasks
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4">
-            <DatePicker
-              date={currentDate}
-              onDateChange={(date) => {
-                if (date) {
-                  setCurrentDate(date);
-                  setShowCalendarModal(false);
-                }
-              }}
-              className="w-full"
-            />
-          </div>
-          
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => setShowCalendarModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                setCurrentDate(new Date());
-                setShowCalendarModal(false);
-              }}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Today
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
-        <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Timeline Settings</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Customize your daily timeline view
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm text-gray-300">Time Increments</label>
-              <div className="flex flex-col gap-2">
-                {timeIncrementOptions.map(option => (
-                  <Button
-                    key={option.value}
-                    variant={timeIncrement === option.value ? "default" : "outline"}
-                    className={timeIncrement === option.value 
-                      ? "bg-purple-600 text-white border-purple-500" 
-                      : "bg-gray-700/30 border-gray-600 text-gray-300"
-                    }
-                    onClick={() => handleTimeIncrementChange(option.value)}
-                  >
-                    {option.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => setShowSettingsModal(false)}
-            >
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showCopyModal} onOpenChange={setShowCopyModal}>
-        <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Copy Tasks</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Copy today's tasks to another date
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <p className="text-sm text-gray-300">
-              Select a target date to copy your tasks to:
-            </p>
-            
-            <DatePicker
-              date={copyToDate}
-              onDateChange={(date) => setCopyToDate(date)}
-              className="w-full"
-            />
-            
-            <p className="text-xs text-gray-400">
-              This will create copies of all tasks from {format(currentDate, 'MMMM d, yyyy')} and add them to the selected date.
-            </p>
-          </div>
-          
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => setShowCopyModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCopyTasks}
-              className="bg-blue-600 hover:bg-blue-700"
-              disabled={!copyToDate}
-            >
-              <Copy className="mr-2 h-4 w-4" />
-              Copy Tasks
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showCategoryModal} onOpenChange={setShowCategoryModal}>
-        <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Customize Category</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              {selectedTask && `Customize category for "${selectedTask.name}"`}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm text-gray-300">Category</label>
-              <select
-                value={newTaskCategory}
-                onChange={(e) => setNewTaskCategory(e.target.value)}
-                className="w-full bg-gray-700/50 border border-gray-600 rounded-md p-2 text-white"
-              >
-                {CATEGORIES.map(category => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm text-gray-300">Color</label>
-              <div className="flex flex-wrap gap-3">
-                {COLORS.map(color => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setNewTaskColor(color)}
-                    className={`w-8 h-8 rounded-full transition-all ${
-                      newTaskColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-gray-800 scale-110' : ''
-                    }`}
-                    style={{ backgroundColor: color }}
-                    aria-label={`Select color ${color}`}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => setShowCategoryModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={saveCategory}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              Save Category
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
-
-export default DailyTasksPage;
+                ? 'Update your daily task details'
