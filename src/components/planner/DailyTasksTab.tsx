@@ -100,7 +100,7 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
     
     toast({
       title: "Daily task added",
-      description: `"${newTask}" has been added to your daily tasks",
+      description: `"${newTask}" has been added to your daily tasks`,
       duration: 3000,
     });
   };
@@ -123,7 +123,7 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
 
     toast({
       title: "Task updated",
-      description: `"${task.name}" has been updated",
+      description: `"${task.name}" has been updated`,
       duration: 3000,
     });
   };
