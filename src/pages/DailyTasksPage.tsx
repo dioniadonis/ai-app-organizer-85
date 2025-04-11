@@ -393,22 +393,21 @@ const DailyTasksPage: React.FC = () => {
   const handleTaskClick = (task: DailyTask) => {
     console.log('Task clicked:', task.id);
     
-    if (editingTaskId !== task.id) {
-      setEditingTaskId(task.id);
-      setNewTaskName(task.name);
-      
-      setTimeout(() => {
-        const input = document.querySelector(`div[data-task-id="${task.id}"] input`);
-        console.log('Found input:', input);
-        if (input instanceof HTMLInputElement) {
-          input.focus();
-        }
-      }, 100);
-    }
+    setEditingTaskId(task.id);
+    setNewTaskName(task.name);
+    
+    setTimeout(() => {
+      const input = document.querySelector(`div[data-task-id="${task.id}"] input`);
+      console.log('Found input:', input);
+      if (input instanceof HTMLInputElement) {
+        input.focus();
+      }
+    }, 100);
   };
 
   const handleTaskNameBlur = (taskId: number) => {
     console.log('Blurring task:', taskId);
+    
     if (newTaskName.trim()) {
       setDailyTasks(prev => prev.map(t => {
         if (t.id === taskId) {
@@ -416,12 +415,13 @@ const DailyTasksPage: React.FC = () => {
         }
         return t;
       }));
+    } else {
+      setDailyTasks(prev => prev.filter(t => t.id !== taskId));
     }
+    
     setTimeout(() => {
-      if (editingTaskId === taskId) {
-        setEditingTaskId(null);
-      }
-    }, 10);
+      setEditingTaskId(null);
+    }, 50);
   };
 
   const handleCategoryClick = (task: DailyTask) => {
@@ -723,7 +723,7 @@ const DailyTasksPage: React.FC = () => {
                                   className="flex-1 text-white cursor-pointer"
                                   onClick={() => handleTaskClick(task)}
                                 >
-                                  {task.name}
+                                  {task.name || "Add task"}
                                 </span>
                                 
                                 {task.category && (
