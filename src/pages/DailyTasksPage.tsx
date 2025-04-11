@@ -1,18 +1,29 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Edit, Plus, Bell, Home, Calendar, X, Check, AlarmClock, Clock, BellRing, CalendarCheck } from 'lucide-react';
-import { format, addDays, subDays, parse, isToday, isTomorrow, parseISO, isValid } from 'date-fns';
+import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
+import { 
+  ChevronLeft, ChevronRight, Edit, Plus, Bell, Home, Calendar, X, Check, 
+  AlarmClock, Clock, BellRing, CalendarCheck, Circle, Settings, Copy, DragHandleDots2
+} from 'lucide-react';
+import { format, addDays, subDays, parse, isToday, isTomorrow, parseISO, isValid, isSameDay } from 'date-fns';
 import { DailyTask } from '@/components/planner/DailyTasksTab';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { 
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription 
+} from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { useIsMobile } from '@/hooks/use-mobile';
 import TimeInput from '@/components/TimeInput';
+import { DatePicker } from '@/components/ui/date-picker';
+
+interface TimeIncrementOption {
+  label: string;
+  value: number;
+}
 
 const DailyTasksPage: React.FC = () => {
   const navigate = useNavigate();
@@ -23,6 +34,9 @@ const DailyTasksPage: React.FC = () => {
   const [dailyTasks, setDailyTasks] = useState<DailyTask[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [showCopyModal, setShowCopyModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<DailyTask | null>(null);
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskTime, setNewTaskTime] = useState('');
@@ -31,65 +45,76 @@ const DailyTasksPage: React.FC = () => {
   const [reminderTime, setReminderTime] = useState('');
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
   const [displayRange, setDisplayRange] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
+  const [timeIncrement, setTimeIncrement] = useState<number>(30); // in minutes (15, 30, 60)
+  const [copyToDate, setCopyToDate] = useState<Date | undefined>(undefined);
+  const [isDragging, setIsDragging] = useState(false);
+  const [draggedTask, setDraggedTask] = useState<DailyTask | null>(null);
+  const [targetTimeSlot, setTargetTimeSlot] = useState<string | null>(null);
   
-  // Time slots for the timeline view
-  const timeSlots = Array.from({ length: 24 }, (_, i) => {
-    const hour = i % 12 === 0 ? 12 : i % 12;
-    const period = i < 12 ? 'AM' : 'PM';
-    return `${hour}:00 ${period}`;
-  });
+  // Time increment options
+  const timeIncrementOptions: TimeIncrementOption[] = [
+    { label: '15 minutes', value: 15 },
+    { label: '30 minutes', value: 30 },
+    { label: '60 minutes', value: 60 }
+  ];
   
-  // Also add half-hour slots
-  const allTimeSlots = timeSlots.flatMap(slot => {
-    const [hour, period] = slot.split(' ');
-    const [hourNum] = hour.split(':');
-    return [
-      `${hour} ${period}`,
-      `${hourNum}:30 ${period}`
-    ];
-  });
+  // Generate time slots based on the selected increment
+  const generateTimeSlots = useCallback(() => {
+    const slots = [];
+    const totalMinutesInDay = 24 * 60;
+    
+    for (let minutes = 0; minutes < totalMinutesInDay; minutes += timeIncrement) {
+      const hour = Math.floor(minutes / 60);
+      const minute = minutes % 60;
+      const period = hour < 12 ? 'AM' : 'PM';
+      const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+      
+      slots.push(`${displayHour}:${minute.toString().padStart(2, '0')} ${period}`);
+    }
+    
+    return slots;
+  }, [timeIncrement]);
+  
+  const timeSlots = generateTimeSlots();
   
   // Filter time slots based on selected range
-  const getFilteredTimeSlots = () => {
+  const getFilteredTimeSlots = useCallback(() => {
     switch (displayRange) {
       case 'morning':
-        return allTimeSlots.filter(slot => {
+        return timeSlots.filter(slot => {
           const [time, period] = slot.split(' ');
           return period === 'AM';
         });
       case 'afternoon':
-        return allTimeSlots.filter(slot => {
+        return timeSlots.filter(slot => {
           const [time, period] = slot.split(' ');
           const [hour] = time.split(':');
           return period === 'PM' && parseInt(hour) < 6;
         });
       case 'evening':
-        return allTimeSlots.filter(slot => {
+        return timeSlots.filter(slot => {
           const [time, period] = slot.split(' ');
           const [hour] = time.split(':');
           return period === 'PM' && parseInt(hour) >= 5;
         });
       default:
-        return allTimeSlots;
+        return timeSlots;
     }
-  };
+  }, [timeSlots, displayRange]);
 
   const displayTimeSlots = getFilteredTimeSlots();
 
   // Scroll to current time on load
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && isToday(currentDate)) {
       const now = new Date();
       const currentHour = now.getHours();
       const currentMinutes = now.getMinutes();
       
-      let closestTimeSlot = '';
+      // Round to the nearest time slot based on the selected increment
+      const roundedMinutes = Math.floor(currentMinutes / timeIncrement) * timeIncrement;
       
-      if (currentMinutes < 30) {
-        closestTimeSlot = `${currentHour % 12 === 0 ? 12 : currentHour % 12}:00 ${currentHour < 12 ? 'AM' : 'PM'}`;
-      } else {
-        closestTimeSlot = `${currentHour % 12 === 0 ? 12 : currentHour % 12}:30 ${currentHour < 12 ? 'AM' : 'PM'}`;
-      }
+      const closestTimeSlot = `${currentHour % 12 === 0 ? 12 : currentHour % 12}:${roundedMinutes.toString().padStart(2, '0')} ${currentHour < 12 ? 'AM' : 'PM'}`;
       
       const timeSlotElement = document.getElementById(`timeslot-${closestTimeSlot}`);
       
@@ -99,13 +124,15 @@ const DailyTasksPage: React.FC = () => {
         }, 500);
       }
     }
-  }, [displayRange]);
+  }, [displayRange, timeIncrement, currentDate]);
 
+  // Load tasks from localStorage and filter by current date
   useEffect(() => {
     const savedTasks = localStorage.getItem('dailyTasks');
     if (savedTasks) {
       try {
-        setDailyTasks(JSON.parse(savedTasks));
+        const allTasks = JSON.parse(savedTasks);
+        setDailyTasks(allTasks);
       } catch (e) {
         console.error('Failed to parse daily tasks', e);
         toast({
@@ -117,6 +144,7 @@ const DailyTasksPage: React.FC = () => {
     }
   }, []);
 
+  // Save tasks to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('dailyTasks', JSON.stringify(dailyTasks));
   }, [dailyTasks]);
@@ -167,6 +195,44 @@ const DailyTasksPage: React.FC = () => {
       }
       return task;
     }));
+  };
+
+  // Quick add task by clicking in a time slot
+  const handleQuickAddTask = (timeSlot: string) => {
+    // Convert timeSlot to 24-hour format for storage
+    const [time, period] = timeSlot.split(' ');
+    const [hour, minute] = time.split(':');
+    let hour24 = parseInt(hour);
+    
+    if (period === 'PM' && hour24 !== 12) {
+      hour24 += 12;
+    } else if (period === 'AM' && hour24 === 12) {
+      hour24 = 0;
+    }
+    
+    const timeString = `${hour24.toString().padStart(2, '0')}:${minute}`;
+    
+    const newTask: DailyTask = {
+      id: Date.now(),
+      name: "New Task",
+      completed: false,
+      timeOfDay: timeString,
+      streak: 0,
+      lastCompleted: undefined,
+      color: newTaskColor,
+      category: 'Personal'
+    };
+
+    setDailyTasks(prev => [...prev, newTask]);
+    
+    toast({
+      title: "Task added",
+      description: "Click on the task to edit its name",
+    });
+    
+    // Set this task to be edited immediately
+    setSelectedTask(newTask);
+    setEditingTaskId(newTask.id);
   };
 
   const handleAddTask = () => {
@@ -262,8 +328,6 @@ const DailyTasksPage: React.FC = () => {
       return;
     }
 
-    // In a real app, we would set up an actual notification
-    // For this demo, we'll just save the reminder time
     setDailyTasks(prev => prev.map(task => {
       if (task.id === selectedTask.id) {
         return {
@@ -284,6 +348,101 @@ const DailyTasksPage: React.FC = () => {
     setReminderTime('');
   };
 
+  // Handle task drag
+  const handleDragStart = (task: DailyTask) => {
+    setIsDragging(true);
+    setDraggedTask(task);
+  };
+
+  // Handle drag end and drop
+  const handleDragEnd = () => {
+    if (draggedTask && targetTimeSlot) {
+      // Convert targetTimeSlot to 24-hour format
+      const [time, period] = targetTimeSlot.split(' ');
+      const [hour, minute] = time.split(':');
+      let hour24 = parseInt(hour);
+      
+      if (period === 'PM' && hour24 !== 12) {
+        hour24 += 12;
+      } else if (period === 'AM' && hour24 === 12) {
+        hour24 = 0;
+      }
+      
+      const timeString = `${hour24.toString().padStart(2, '0')}:${minute}`;
+      
+      // Update the task's time
+      setDailyTasks(prev => prev.map(task => {
+        if (task.id === draggedTask.id) {
+          return {
+            ...task,
+            timeOfDay: timeString
+          };
+        }
+        return task;
+      }));
+      
+      toast({
+        title: "Task moved",
+        description: `"${draggedTask.name}" moved to ${targetTimeSlot}`
+      });
+    }
+    
+    setIsDragging(false);
+    setDraggedTask(null);
+    setTargetTimeSlot(null);
+  };
+
+  // Handle time slot hover during drag
+  const handleTimeSlotHover = (timeSlot: string) => {
+    if (isDragging) {
+      setTargetTimeSlot(timeSlot);
+    }
+  };
+
+  // Copy tasks to another date
+  const handleCopyTasks = () => {
+    if (!copyToDate) {
+      toast({
+        title: "Select a date",
+        description: "Please select a date to copy tasks to",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Get tasks for current date
+    const tasksForToday = dailyTasks;
+    
+    // Create copies of tasks with new IDs for the target date
+    const copiedTasks = tasksForToday.map(task => ({
+      ...task,
+      id: Date.now() + Math.random() * 1000,
+      completed: false
+    }));
+    
+    // Add the copied tasks to the dailyTasks array
+    setDailyTasks(prev => [...prev, ...copiedTasks]);
+    
+    toast({
+      title: "Tasks copied",
+      description: `${copiedTasks.length} tasks copied to ${format(copyToDate, 'MMMM d, yyyy')}`
+    });
+    
+    setCopyToDate(undefined);
+    setShowCopyModal(false);
+  };
+
+  // Apply time increment setting
+  const handleTimeIncrementChange = (value: number) => {
+    setTimeIncrement(value);
+    setShowSettingsModal(false);
+    
+    toast({
+      title: "Settings updated",
+      description: `Time increment set to ${value} minutes`
+    });
+  };
+
   // Get tasks for the selected time slot
   const getTasksForTimeSlot = (timeSlot: string) => {
     // Convert timeSlot format (e.g., "7:00 PM") to 24-hour format (e.g., "19:00")
@@ -297,7 +456,7 @@ const DailyTasksPage: React.FC = () => {
       hour24 = 0;
     }
     
-    const timeString = `${hour24.toString().padStart(2, '0')}:${minute || '00'}`;
+    const timeString = `${hour24.toString().padStart(2, '0')}:${minute}`;
     
     return dailyTasks.filter(task => task.timeOfDay === timeString);
   };
@@ -362,24 +521,43 @@ const DailyTasksPage: React.FC = () => {
             <Home size={24} className="text-blue-400" />
           </button>
           
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+          <button 
+            onClick={() => setShowCalendarModal(true)}
+            className="flex items-center gap-2 text-2xl font-bold text-white hover:text-blue-300 transition-colors"
+          >
             <CalendarCheck className="h-6 w-6 text-purple-400" />
             {dateLabel}
-          </h1>
-          
-          <button
-            onClick={() => {
-              setEditingTaskId(null);
-              setNewTaskName('');
-              setNewTaskTime('');
-              setNewTaskCategory('Personal');
-              setNewTaskColor('#9b87f5');
-              setShowAddModal(true);
-            }}
-            className="rounded-md p-2 hover:bg-gray-800 transition-colors"
-          >
-            <Plus size={24} className="text-blue-400" />
           </button>
+          
+          <div className="flex gap-1">
+            <button
+              onClick={() => setShowSettingsModal(true)}
+              className="rounded-md p-2 hover:bg-gray-800 transition-colors"
+            >
+              <Settings size={20} className="text-blue-400" />
+            </button>
+            
+            <button
+              onClick={() => setShowCopyModal(true)}
+              className="rounded-md p-2 hover:bg-gray-800 transition-colors"
+            >
+              <Copy size={20} className="text-blue-400" />
+            </button>
+            
+            <button
+              onClick={() => {
+                setEditingTaskId(null);
+                setNewTaskName('');
+                setNewTaskTime('');
+                setNewTaskCategory('Personal');
+                setNewTaskColor('#9b87f5');
+                setShowAddModal(true);
+              }}
+              className="rounded-md p-2 hover:bg-gray-800 transition-colors"
+            >
+              <Plus size={20} className="text-blue-400" />
+            </button>
+          </div>
         </div>
         
         {/* Date Navigation */}
@@ -436,8 +614,10 @@ const DailyTasksPage: React.FC = () => {
               slotHour24 = 0;
             }
             
-            const isCurrentTimeSlot = now.getHours() === slotHour24 && 
-              (slotMinute === '00' ? now.getMinutes() < 30 : now.getMinutes() >= 30);
+            const isCurrentTimeSlot = isToday(currentDate) && 
+              now.getHours() === slotHour24 && 
+              now.getMinutes() >= parseInt(slotMinute) && 
+              now.getMinutes() < parseInt(slotMinute) + timeIncrement;
             
             return (
               <div 
@@ -445,7 +625,11 @@ const DailyTasksPage: React.FC = () => {
                 id={timeSlotId}
                 className={`border-b border-gray-800 last:border-b-0 ${
                   isCurrentTimeSlot ? 'bg-purple-900/20' : ''
+                } ${
+                  targetTimeSlot === timeSlot && isDragging ? 'bg-blue-900/30 border-blue-500/50' : ''
                 }`}
+                onMouseEnter={() => handleTimeSlotHover(timeSlot)}
+                onMouseUp={handleDragEnd}
               >
                 <div className="flex items-center p-3">
                   <div className={`w-20 text-sm font-medium ${
@@ -460,21 +644,49 @@ const DailyTasksPage: React.FC = () => {
                         {tasksInSlot.map(task => (
                           <motion.div 
                             key={task.id}
-                            className="flex items-center gap-2 bg-gray-800/40 p-2 rounded-md border border-gray-700 hover:bg-gray-800/60 transition-all"
+                            className={`flex items-center gap-2 bg-gray-800/40 p-2 rounded-md border border-gray-700 hover:bg-gray-800/60 transition-all ${
+                              draggedTask?.id === task.id ? 'opacity-50 ring-2 ring-blue-500' : ''
+                            }`}
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
                             whileHover={{ scale: 1.02 }}
+                            drag={true}
+                            dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+                            dragElastic={0.2}
+                            onDragStart={() => handleDragStart(task)}
+                            onDragEnd={handleDragEnd}
                           >
+                            <button
+                              className="cursor-grab active:cursor-grabbing"
+                              onMouseDown={() => handleDragStart(task)}
+                            >
+                              <DragHandleDots2 size={16} className="text-gray-400" />
+                            </button>
+                            
                             <div 
                               className="w-3 h-3 rounded-full"
                               style={{ backgroundColor: task.color || '#9b87f5' }}
                             ></div>
-                            <span 
-                              className={`flex-1 ${task.completed ? 'line-through text-gray-500' : ''}`}
-                              style={task.color ? { color: task.color } : undefined}
-                            >
-                              {task.name}
-                            </span>
+                            
+                            {editingTaskId === task.id ? (
+                              <Input
+                                value={task.name}
+                                onChange={(e) => setDailyTasks(prev => prev.map(t => 
+                                  t.id === task.id ? { ...t, name: e.target.value } : t
+                                ))}
+                                className="bg-gray-700/50 border-gray-600 h-7 text-sm"
+                                onBlur={() => setEditingTaskId(null)}
+                                autoFocus
+                              />
+                            ) : (
+                              <span 
+                                className={`flex-1 ${task.completed ? 'line-through text-gray-500' : ''}`}
+                                style={task.color ? { color: task.color } : undefined}
+                                onClick={() => setEditingTaskId(task.id)}
+                              >
+                                {task.name}
+                              </span>
+                            )}
                             
                             {task.category && (
                               <span className={`text-xs px-1.5 py-0.5 rounded-full ${getTaskCategoryBadgeClass(task.category)}`}>
@@ -536,27 +748,7 @@ const DailyTasksPage: React.FC = () => {
                     ) : (
                       <div 
                         className="h-8 flex items-center justify-center rounded-md border border-dashed border-gray-700 text-gray-500 text-sm hover:bg-gray-800/20 hover:border-gray-600 transition-all cursor-pointer"
-                        onClick={() => {
-                          // Convert timeSlot to timeOfDay format
-                          const [time, period] = timeSlot.split(' ');
-                          const [hour, minute] = time.split(':');
-                          let hour24 = parseInt(hour);
-                          
-                          if (period === 'PM' && hour24 !== 12) {
-                            hour24 += 12;
-                          } else if (period === 'AM' && hour24 === 12) {
-                            hour24 = 0;
-                          }
-                          
-                          const timeString = `${hour24.toString().padStart(2, '0')}:${minute || '00'}`;
-                          
-                          setEditingTaskId(null);
-                          setNewTaskName('');
-                          setNewTaskTime(timeString);
-                          setNewTaskCategory('Personal');
-                          setNewTaskColor('#9b87f5');
-                          setShowAddModal(true);
-                        }}
+                        onClick={() => handleQuickAddTask(timeSlot)}
                       >
                         <Plus size={16} className="mr-1" /> Add task
                       </div>
@@ -734,6 +926,136 @@ const DailyTasksPage: React.FC = () => {
               className="bg-purple-600 hover:bg-purple-700"
             >
               Set Reminder
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Calendar Modal */}
+      <Dialog open={showCalendarModal} onOpenChange={setShowCalendarModal}>
+        <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select Date</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Choose a date to view or edit tasks
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <DatePicker
+              date={currentDate}
+              onDateChange={(date) => {
+                if (date) {
+                  setCurrentDate(date);
+                  setShowCalendarModal(false);
+                }
+              }}
+              className="w-full"
+            />
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setShowCalendarModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setCurrentDate(new Date());
+                setShowCalendarModal(false);
+              }}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Today
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Settings Modal */}
+      <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
+        <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Timeline Settings</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Customize your daily timeline view
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm text-gray-300">Time Increments</label>
+              <div className="flex flex-col gap-2">
+                {timeIncrementOptions.map(option => (
+                  <Button
+                    key={option.value}
+                    variant={timeIncrement === option.value ? "default" : "outline"}
+                    className={timeIncrement === option.value 
+                      ? "bg-purple-600 text-white border-purple-500" 
+                      : "bg-gray-700/30 border-gray-600 text-gray-300"
+                    }
+                    onClick={() => handleTimeIncrementChange(option.value)}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setShowSettingsModal(false)}
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Copy Tasks Modal */}
+      <Dialog open={showCopyModal} onOpenChange={setShowCopyModal}>
+        <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Copy Tasks</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Copy today's tasks to another date
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-gray-300">
+              Select a target date to copy your tasks to:
+            </p>
+            
+            <DatePicker
+              date={copyToDate}
+              onDateChange={(date) => setCopyToDate(date)}
+              className="w-full"
+            />
+            
+            <p className="text-xs text-gray-400">
+              This will create copies of all tasks from {format(currentDate, 'MMMM d, yyyy')} and add them to the selected date.
+            </p>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setShowCopyModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCopyTasks}
+              className="bg-blue-600 hover:bg-blue-700"
+              disabled={!copyToDate}
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              Copy Tasks
             </Button>
           </DialogFooter>
         </DialogContent>
