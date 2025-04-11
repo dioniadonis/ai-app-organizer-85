@@ -73,6 +73,7 @@ const TimeInput: React.FC<TimeInputProps> = ({ value, onChange, label = "Time" }
   };
   
   const handleHoursChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
     const val = e.target.value.replace(/\D/g, '');
     const num = val === '' ? '' : Math.min(Math.max(parseInt(val) || 0, 1), 12).toString();
     setHours(num);
@@ -80,6 +81,7 @@ const TimeInput: React.FC<TimeInputProps> = ({ value, onChange, label = "Time" }
   };
   
   const handleMinutesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
     const val = e.target.value.replace(/\D/g, '');
     const num = val === '' ? '' : Math.min(Math.max(parseInt(val) || 0, 0), 59).toString().padStart(2, '0');
     setMinutes(num);
@@ -92,7 +94,7 @@ const TimeInput: React.FC<TimeInputProps> = ({ value, onChange, label = "Time" }
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
       <Label>{label}</Label>
       <div className="flex items-center gap-2">
         <Clock className="h-4 w-4 text-gray-400" />
@@ -120,7 +122,7 @@ const TimeInput: React.FC<TimeInputProps> = ({ value, onChange, label = "Time" }
             <SelectTrigger className="w-16 bg-gray-700 border-gray-600" onClick={(e) => e.stopPropagation()}>
               <SelectValue placeholder="AM" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent onClick={(e) => e.stopPropagation()}>
               <SelectItem value="AM">AM</SelectItem>
               <SelectItem value="PM">PM</SelectItem>
             </SelectContent>

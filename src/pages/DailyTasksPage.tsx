@@ -154,6 +154,21 @@ const DailyTasksPage: React.FC = () => {
   };
 
   const handleTaskToggle = (taskId: number) => {
+    const task = dailyTasks.find(t => t.id === taskId);
+    
+    if (task && !task.name.trim()) {
+      toast({
+        title: "Task name required",
+        description: "Please enter a name for your task before marking it complete",
+        variant: "destructive"
+      });
+      
+      if (editingTaskId !== taskId) {
+        handleTaskClick(task);
+      }
+      return;
+    }
+    
     setDailyTasks(prev => prev.map(task => {
       if (task.id === taskId) {
         const wasCompleted = task.completed;
@@ -220,6 +235,13 @@ const DailyTasksPage: React.FC = () => {
     setSelectedTask(newTask);
     setEditingTaskId(newTask.id);
     setNewTaskName('');
+    
+    setTimeout(() => {
+      const input = document.querySelector(`div[data-task-id="${newTask.id}"] input`);
+      if (input instanceof HTMLInputElement) {
+        input.focus();
+      }
+    }, 100);
   };
 
   const handleAddTask = () => {
@@ -391,21 +413,6 @@ const DailyTasksPage: React.FC = () => {
     }
   };
 
-  const handleTaskClick = (task: DailyTask) => {
-    console.log('Task clicked:', task.id);
-    
-    setEditingTaskId(task.id);
-    setNewTaskName(task.name);
-    
-    setTimeout(() => {
-      const input = document.querySelector(`div[data-task-id="${task.id}"] input`);
-      console.log('Found input:', input);
-      if (input instanceof HTMLInputElement) {
-        input.focus();
-      }
-    }, 100);
-  };
-
   const handleTaskNameBlur = (taskId: number) => {
     console.log('Blurring task:', taskId);
     
@@ -416,14 +423,18 @@ const DailyTasksPage: React.FC = () => {
         }
         return t;
       }));
+      
+      setTimeout(() => {
+        setEditingTaskId(null);
+        setNewTaskName('');
+      }, 50);
     } else {
-      setDailyTasks(prev => prev.filter(t => t.id !== taskId));
+      toast({
+        title: "Task name required",
+        description: "Please enter a name for your task",
+        variant: "destructive"
+      });
     }
-    
-    setTimeout(() => {
-      setEditingTaskId(null);
-      setNewTaskName('');
-    }, 50);
   };
 
   const handleCategoryClick = (task: DailyTask) => {
@@ -720,6 +731,20 @@ const DailyTasksPage: React.FC = () => {
                                 onBlur={() => handleTaskNameBlur(task.id)}
                                 className="bg-gray-700/50 border-gray-600 h-7 text-sm"
                                 autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    if (newTaskName.trim()) {
+                                      handleTaskNameBlur(task.id);
+                                    } else {
+                                      toast({
+                                        title: "Task name required",
+                                        description: "Please enter a name for your task",
+                                        variant: "destructive"
+                                      });
+                                      e.preventDefault();
+                                    }
+                                  }
+                                }}
                               />
                             ) : (
                               <>
@@ -729,7 +754,10 @@ const DailyTasksPage: React.FC = () => {
                                 ></div>
                                 <span 
                                   className="flex-1 text-white cursor-pointer"
-                                  onClick={() => handleTaskClick(task)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleTaskClick(task);
+                                  }}
                                 >
                                   {task.name || "Add task"}
                                 </span>
@@ -737,7 +765,10 @@ const DailyTasksPage: React.FC = () => {
                                 {task.category && (
                                   <span 
                                     className={`text-xs px-1.5 py-0.5 rounded-full ${getTaskCategoryBadgeClass(task.category)} cursor-pointer`}
-                                    onClick={() => handleCategoryClick(task)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleCategoryClick(task);
+                                    }}
                                   >
                                     {task.category}
                                   </span>
@@ -748,7 +779,10 @@ const DailyTasksPage: React.FC = () => {
                             <div className="flex items-center">
                               <Popover>
                                 <PopoverTrigger asChild>
-                                  <button className="p-1 rounded-full hover:bg-gray-700/50">
+                                  <button 
+                                    className="p-1 rounded-full hover:bg-gray-700/50"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
                                     <Edit size={14} className="text-gray-400" />
                                   </button>
                                 </PopoverTrigger>
@@ -758,7 +792,10 @@ const DailyTasksPage: React.FC = () => {
                                       variant="ghost" 
                                       size="sm" 
                                       className="justify-start text-xs px-2"
-                                      onClick={() => handleEditTask(task)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEditTask(task);
+                                      }}
                                     >
                                       <Edit className="mr-2 h-3 w-3" /> Edit Task
                                     </Button>
@@ -766,7 +803,10 @@ const DailyTasksPage: React.FC = () => {
                                       variant="ghost" 
                                       size="sm" 
                                       className="justify-start text-xs px-2"
-                                      onClick={() => handleSetReminder(task)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSetReminder(task);
+                                      }}
                                     >
                                       <BellRing className="mr-2 h-3 w-3" /> Set Time
                                     </Button>
@@ -774,7 +814,10 @@ const DailyTasksPage: React.FC = () => {
                                       variant="ghost" 
                                       size="sm" 
                                       className="justify-start text-xs px-2"
-                                      onClick={() => handleMoveTask(task)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleMoveTask(task);
+                                      }}
                                     >
                                       <Move className="mr-2 h-3 w-3" /> Move Task
                                     </Button>
@@ -782,7 +825,10 @@ const DailyTasksPage: React.FC = () => {
                                       variant="ghost" 
                                       size="sm" 
                                       className="justify-start text-xs px-2 text-red-400 hover:text-red-300 hover:bg-red-500/20"
-                                      onClick={() => handleDeleteTask(task.id)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteTask(task.id);
+                                      }}
                                     >
                                       <X className="mr-2 h-3 w-3" /> Delete
                                     </Button>
@@ -791,7 +837,10 @@ const DailyTasksPage: React.FC = () => {
                               </Popover>
                               
                               <button 
-                                onClick={() => handleTaskToggle(task.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleTaskToggle(task.id);
+                                }}
                                 className="p-1 rounded-full hover:bg-gray-700/50 ml-1"
                               >
                                 {task.completed ? (

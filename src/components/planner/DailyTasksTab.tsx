@@ -126,6 +126,15 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
     
     const task = tasks.find(t => t.id === id);
     if (!task) return;
+    
+    if (!task.name.trim()) {
+      toast({
+        title: "Task name required",
+        description: "Please enter a name for your daily task",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setEditingTask(null);
 
@@ -150,6 +159,17 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
 
   const cancelEditing = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    
+    const task = tasks.find(t => t.id === editingTask);
+    if (task && !task.name.trim()) {
+      toast({
+        title: "Task name required",
+        description: "Please enter a name for your daily task",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setEditingTask(null);
   };
 
