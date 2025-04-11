@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import PageLayout from '@/components/PageLayout';
 import DailyTasksTab, { DailyTask } from '@/components/planner/DailyTasksTab';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { toast } from '@/components/ui/use-toast';
@@ -13,11 +15,13 @@ const DailyTasksPage = () => {
   const handleTaskNameBlur = (taskId: number) => {
     console.log('Blurring task:', taskId);
     
+    // If no name is entered, simply cancel the editing state without saving changes
     if (!newTaskName.trim()) {
       setEditingTaskId(null);
       return;
     }
     
+    // Update the task name if a non-empty name is provided
     setDailyTasks(prev => prev.map(t => {
       if (t.id === taskId) {
         return { ...t, name: newTaskName };
@@ -25,6 +29,7 @@ const DailyTasksPage = () => {
       return t;
     }));
     
+    // Always clear the editing state
     setEditingTaskId(null);
   };
 
@@ -76,8 +81,7 @@ const DailyTasksPage = () => {
     
     toast({
       title: "Task deleted",
-      description: "The daily task has been removed",
-      duration: 3000,
+      description: "The daily task has been removed"
     });
   };
   
@@ -91,26 +95,17 @@ const DailyTasksPage = () => {
     
     toast({
       title: "Streak reset",
-      description: "The task streak has been reset to 0",
-      duration: 3000,
+      description: "The task streak has been reset to 0"
     });
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Daily Tasks</h1>
-          <p className="text-gray-400">Track your daily habits and recurring tasks</p>
-        </div>
-        <button 
-          onClick={() => navigate('/planner')}
-          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
-        >
-          Back to Planner
-        </button>
-      </div>
-      
+    <PageLayout
+      title="Daily Tasks"
+      subtitle="Track your daily habits and recurring tasks"
+      actionLabel="Back to Planner"
+      onAction={() => navigate('/planner')}
+    >
       <DailyTasksTab
         tasks={dailyTasks}
         onAddTask={handleAddTask}
@@ -119,7 +114,7 @@ const DailyTasksPage = () => {
         onDeleteTask={handleDeleteTask}
         onResetStreak={handleResetStreak}
       />
-    </div>
+    </PageLayout>
   );
 };
 
