@@ -701,16 +701,8 @@ const DailyTasksPage: React.FC = () => {
                                   style={{ backgroundColor: task.color || '#9b87f5' }}
                                 ></div>
                                 <span 
-                                  className="flex-1 text-white"
-                                  onClick={() => {
-                                    handleTaskClick(task);
-                                    setTimeout(() => {
-                                      const input = document.querySelector(`div[data-task-id="${task.id}"] input`);
-                                      if (input instanceof HTMLInputElement) {
-                                        input.focus();
-                                      }
-                                    }, 10);
-                                  }}
+                                  className="flex-1 text-white cursor-pointer"
+                                  onClick={() => handleTaskClick(task)}
                                 >
                                   {task.name}
                                 </span>
