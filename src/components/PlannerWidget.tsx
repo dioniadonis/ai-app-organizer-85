@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -77,7 +76,6 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'tasks' | 'goals' | 'daily'>('tasks');
   
-  // Show max 3 items
   const tasksToShow = tasks.slice(0, 3);
   const goalsToShow = goals.slice(0, 3);
   const dailyTasksToShow = dailyTasks
@@ -85,7 +83,6 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
     .sort((a, b) => b.streak - a.streak)
     .slice(0, 3);
   
-  // Format date to display
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'No date';
     try {
@@ -95,7 +92,6 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
     }
   };
 
-  // Priority colors
   const priorityColors = {
     low: 'bg-blue-500/20 text-blue-300',
     medium: 'bg-yellow-500/20 text-yellow-300',
@@ -129,18 +125,14 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
       setTaskToRemove(taskId);
       setShowTaskRemoveConfirm(true);
     } else {
-      // Direct removal without confirmation
       confirmTaskRemoval();
     }
   };
 
   const confirmTaskRemoval = () => {
     if (taskToRemove && onEditTask) {
-      // Find the task to remove
       const taskToDelete = tasks.find(t => t.id === taskToRemove);
       if (taskToDelete && onEditTask) {
-        // Instead of trying to add a 'deleted' property which isn't in the Task interface,
-        // let's just call the appropriate delete handler that should exist in the parent
         if (typeof onEditTask === 'function') {
           onEditTask({ ...taskToDelete });
           toast({
@@ -165,7 +157,6 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
     });
   };
 
-  // Load settings from localStorage on mount
   React.useEffect(() => {
     const savedSettings = localStorage.getItem('plannerSettings');
     if (savedSettings) {
@@ -261,7 +252,6 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
       </CardHeader>
       
       <CardContent className="space-y-4">
-        {/* Tasks Section */}
         {activeTab === 'tasks' && (
           <div>
             <h3 className="text-sm font-medium text-gray-300 mb-2">Tasks ({tasks.length})</h3>
@@ -328,7 +318,6 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
           </div>
         )}
         
-        {/* Goals Section */}
         {activeTab === 'goals' && (
           <div>
             <h3 className="text-sm font-medium text-gray-300 mb-2">Goals ({goals.length})</h3>
@@ -384,7 +373,6 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
           </div>
         )}
 
-        {/* Daily Tasks Section */}
         {activeTab === 'daily' && (
           <div>
             <h3 className="text-sm font-medium text-gray-300 mb-2 flex items-center gap-1">
@@ -415,7 +403,7 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
                         </span>
                       )}
                       <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${getStreakClassName(task.streak)}`}>
-                        <CalendarClock className="h-3 w-3" />
+                        <Clock className="h-3 w-3" />
                         {task.streak} day{task.streak !== 1 ? 's' : ''}
                       </span>
                     </div>
@@ -449,7 +437,6 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
         </Button>
       </CardFooter>
 
-      {/* Remove Task Confirmation Dialog */}
       <Dialog open={showTaskRemoveConfirm} onOpenChange={setShowTaskRemoveConfirm}>
         <DialogContent className="bg-gray-800 border-gray-700 text-white sm:max-w-md">
           <DialogHeader>

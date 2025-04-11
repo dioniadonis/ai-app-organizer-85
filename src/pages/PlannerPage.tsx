@@ -10,11 +10,13 @@ import PlannerHeader from '@/components/planner/PlannerHeader';
 import PlannerContent from '@/components/planner/PlannerContent';
 import AIAssistantDialog from '@/components/planner/AIAssistantDialog';
 import NotificationSettingsDialog from '@/components/planner/NotificationSettingsDialog';
+import { DailyTask } from '@/components/planner/DailyTasksTab';
 
 interface PlannerDataType {
   tasks: any[];
   goals: any[];
   recurringTasks: any[];
+  dailyTasks: DailyTask[];
 }
 
 const PlannerPage: React.FC = () => {
@@ -27,7 +29,8 @@ const PlannerPage: React.FC = () => {
   const [plannerData, setPlannerData] = useState<PlannerDataType>({
     tasks: [],
     goals: [],
-    recurringTasks: []
+    recurringTasks: [],
+    dailyTasks: []
   });
 
   const [notifications, setNotifications] = useState([

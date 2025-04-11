@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, X, Edit, CheckCircle, Circle, Clock, RotateCcw, CalendarClock, ListTodo } from 'lucide-react';
+import { Plus, X, Edit, CheckCircle, Circle, Clock, RotateCcw, Clock as ClockIcon, ListTodo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -68,7 +67,6 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  // Filter tasks based on active filter and search term
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = task.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          (task.category && task.category.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -78,11 +76,9 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
     if (activeFilter === 'incomplete') return !task.completed && matchesSearch;
     if (activeFilter === 'streak') return task.streak > 0 && matchesSearch;
     
-    // Filter by category
     return task.category === activeFilter && matchesSearch;
   });
 
-  // Get unique categories from tasks
   const categories = [...new Set(tasks.map(task => task.category).filter(Boolean))];
 
   const handleAddTask = () => {
@@ -194,7 +190,11 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Time of Day (Optional)</label>
-                <TimeInput onChange={(time) => setNewTime(time)} />
+                <TimeInput 
+                  value={newTime} 
+                  onChange={(time) => setNewTime(time)} 
+                  label="Time" 
+                />
               </div>
               
               <div>
@@ -294,7 +294,7 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                   
                   <div className="grid grid-cols-2 gap-3">
                     <TimeInput 
-                      initialValue={task.timeOfDay}
+                      value={task.timeOfDay || ''}
                       onChange={(time) => onEditTask(task.id, { timeOfDay: time })}
                     />
                     
@@ -364,7 +364,7 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                       
                       {task.timeOfDay && (
                         <div className="flex items-center mt-1 text-xs text-gray-400">
-                          <Clock className="h-3 w-3 mr-1" />
+                          <ClockIcon className="h-3 w-3 mr-1" />
                           <span>{task.timeOfDay}</span>
                         </div>
                       )}

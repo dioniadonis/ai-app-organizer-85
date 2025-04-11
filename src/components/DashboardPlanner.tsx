@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, CheckCircle, Clock, Flag, ListTodo } from 'lucide-react';
+import { Calendar, CheckCircle, Clock, Flag, ListTodo, CalendarCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
