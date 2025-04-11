@@ -391,8 +391,31 @@ const DailyTasksPage: React.FC = () => {
   };
 
   const handleTaskClick = (task: DailyTask) => {
+    console.log('Task clicked:', task.id);
+    
     setEditingTaskId(task.id);
     setNewTaskName(task.name);
+    
+    setTimeout(() => {
+      const input = document.querySelector(`div[data-task-id="${task.id}"] input`);
+      console.log('Found input:', input);
+      if (input instanceof HTMLInputElement) {
+        input.focus();
+      }
+    }, 50);
+  };
+
+  const handleTaskNameBlur = (taskId: number) => {
+    console.log('Blurring task:', taskId);
+    if (newTaskName.trim()) {
+      setDailyTasks(prev => prev.map(t => {
+        if (t.id === taskId) {
+          return { ...t, name: newTaskName };
+        }
+        return t;
+      }));
+    }
+    setEditingTaskId(null);
   };
 
   const handleCategoryClick = (task: DailyTask) => {
@@ -680,17 +703,7 @@ const DailyTasksPage: React.FC = () => {
                               <Input
                                 value={newTaskName}
                                 onChange={(e) => setNewTaskName(e.target.value)}
-                                onBlur={() => {
-                                  if (editingTaskId) {
-                                    setDailyTasks(prev => prev.map(t => {
-                                      if (t.id === editingTaskId) {
-                                        return { ...t, name: newTaskName };
-                                      }
-                                      return t;
-                                    }));
-                                    setEditingTaskId(null);
-                                  }
-                                }}
+                                onBlur={() => handleTaskNameBlur(task.id)}
                                 className="bg-gray-700/50 border-gray-600 h-7 text-sm"
                                 autoFocus
                               />
