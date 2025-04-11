@@ -337,7 +337,10 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <button
-                      onClick={() => onToggleComplete(task.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleComplete(task.id);
+                      }}
                       className="flex-shrink-0"
                     >
                       {task.completed ? (
@@ -385,7 +388,10 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                         variant="ghost" 
                         size="icon"
                         className="h-8 w-8 rounded-full hover:bg-gray-700"
-                        onClick={() => startEditing(task.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startEditing(task.id);
+                        }}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -405,7 +411,10 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                         variant="ghost" 
                         size="icon"
                         className="h-8 w-8 rounded-full hover:bg-red-900/50 text-red-500"
-                        onClick={() => onDeleteTask(task.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteTask(task.id);
+                        }}
                       >
                         <X className="h-4 w-4" />
                       </Button>

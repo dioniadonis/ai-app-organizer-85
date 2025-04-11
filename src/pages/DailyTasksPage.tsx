@@ -219,6 +219,7 @@ const DailyTasksPage: React.FC = () => {
     
     setSelectedTask(newTask);
     setEditingTaskId(newTask.id);
+    setNewTaskName('');
   };
 
   const handleAddTask = () => {
@@ -421,6 +422,7 @@ const DailyTasksPage: React.FC = () => {
     
     setTimeout(() => {
       setEditingTaskId(null);
+      setNewTaskName('');
     }, 50);
   };
 
