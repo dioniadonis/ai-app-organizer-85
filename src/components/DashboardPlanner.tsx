@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, CheckCircle, Clock, Flag } from 'lucide-react';
+import { Calendar, CheckCircle, Clock, Flag, ListTodo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
@@ -24,13 +24,25 @@ interface Goal {
   type: 'daily' | 'short' | 'long';
 }
 
+interface DailyTask {
+  id: number;
+  name: string;
+  completed: boolean;
+  timeOfDay?: string;
+  streak: number;
+  lastCompleted?: string;
+  color?: string;
+  category?: string;
+}
+
 interface DashboardPlannerProps {
   tasks: Task[];
   goals: Goal[];
+  dailyTasks?: DailyTask[];
   onViewPlanner: () => void;
 }
 
-const DashboardPlanner: React.FC<DashboardPlannerProps> = ({ tasks, goals, onViewPlanner }) => {
+const DashboardPlanner: React.FC<DashboardPlannerProps> = ({ tasks, goals, dailyTasks = [], onViewPlanner }) => {
   const navigate = useNavigate();
 
   // Get upcoming tasks - those due in the next 7 days
@@ -60,10 +72,18 @@ const DashboardPlanner: React.FC<DashboardPlannerProps> = ({ tasks, goals, onVie
     .sort((a, b) => b.progress - a.progress)
     .slice(0, 3); // Show only top 3
   
+  // Get daily tasks with streaks
+  const dailyTasksWithStreaks = dailyTasks
+    .filter(task => task.streak > 0)
+    .sort((a, b) => b.streak - a.streak)
+    .slice(0, 3); // Show only top 3
+  
   // Count stats
   const completedTasks = tasks.filter(task => task.completed).length;
   const totalTasks = tasks.length;
   const completedGoals = goals.filter(goal => goal.progress === 100).length;
+  const totalDailyTasks = dailyTasks.length;
+  const completedDailyTasks = dailyTasks.filter(task => task.completed).length;
   
   return (
     <motion.div 
@@ -104,8 +124,8 @@ const DashboardPlanner: React.FC<DashboardPlannerProps> = ({ tasks, goals, onVie
         </div>
         
         <div className="flex flex-col justify-center items-center p-3 rounded-lg bg-white/5 border border-white/10">
-          <div className="text-3xl font-bold">{inProgressGoals.length}</div>
-          <div className="text-gray-400 text-sm">Goals In Progress</div>
+          <div className="text-3xl font-bold">{dailyTasksWithStreaks.length}</div>
+          <div className="text-gray-400 text-sm">Daily Streaks</div>
         </div>
       </div>
       
@@ -145,7 +165,7 @@ const DashboardPlanner: React.FC<DashboardPlannerProps> = ({ tasks, goals, onVie
       )}
       
       {inProgressGoals.length > 0 && (
-        <div>
+        <div className="mb-4">
           <h4 className="text-sm font-medium mb-2 text-gray-300">Goal Progress</h4>
           <div className="space-y-3">
             {inProgressGoals.map(goal => (
@@ -172,7 +192,43 @@ const DashboardPlanner: React.FC<DashboardPlannerProps> = ({ tasks, goals, onVie
         </div>
       )}
       
-      {upcomingTasks.length === 0 && inProgressGoals.length === 0 && (
+      {dailyTasksWithStreaks.length > 0 && (
+        <div>
+          <h4 className="text-sm font-medium mb-2 text-gray-300 flex items-center gap-1">
+            <ListTodo className="w-4 h-4 text-purple-400" />
+            Daily Streaks
+          </h4>
+          <div className="space-y-2">
+            {dailyTasksWithStreaks.map(task => (
+              <div key={task.id} className="flex justify-between items-center p-2 rounded bg-white/5 hover:bg-white/10 transition-colors">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: task.color || '#9b87f5' }}></div>
+                  <span>{task.name}</span>
+                  {task.category && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300">
+                      {task.category}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {task.timeOfDay && (
+                    <span className="text-xs flex items-center">
+                      <Clock className="w-3 h-3 mr-1 text-gray-400" />
+                      {task.timeOfDay}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1 text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">
+                    <CalendarClock className="w-3 h-3" />
+                    {task.streak} day{task.streak !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {upcomingTasks.length === 0 && inProgressGoals.length === 0 && dailyTasksWithStreaks.length === 0 && (
         <div className="text-center text-gray-400 py-3">
           <p>No upcoming tasks or goals. Start planning your activities!</p>
         </div>

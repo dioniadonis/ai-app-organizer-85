@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CalendarCheck, CheckCircle, Circle, Clock, ArrowRight, Pencil, Settings, X } from 'lucide-react';
+import { CalendarCheck, CheckCircle, Circle, Clock, ArrowRight, Pencil, Settings, X, ListTodo } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -38,9 +38,21 @@ interface Goal {
   totalSteps: number;
 }
 
+interface DailyTask {
+  id: number;
+  name: string;
+  completed: boolean;
+  timeOfDay?: string;
+  streak: number;
+  lastCompleted?: string;
+  color?: string;
+  category?: string;
+}
+
 interface PlannerWidgetProps {
   tasks?: Task[];
   goals?: Goal[];
+  dailyTasks?: DailyTask[];
   onViewMore: () => void;
   onToggleTaskComplete?: (taskId: string | number) => void;
   onEditTask?: (task: Task) => void;
@@ -50,6 +62,7 @@ interface PlannerWidgetProps {
 const PlannerWidget: React.FC<PlannerWidgetProps> = ({ 
   tasks = [], 
   goals = [],
+  dailyTasks = [],
   onViewMore,
   onToggleTaskComplete,
   onEditTask,
@@ -62,10 +75,15 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
   const [taskToRemove, setTaskToRemove] = useState<string | number | null>(null);
   const [showRemoveConfirmation, setShowRemoveConfirmation] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'tasks' | 'goals' | 'daily'>('tasks');
   
   // Show max 3 items
   const tasksToShow = tasks.slice(0, 3);
   const goalsToShow = goals.slice(0, 3);
+  const dailyTasksToShow = dailyTasks
+    .filter(task => task.streak > 0)
+    .sort((a, b) => b.streak - a.streak)
+    .slice(0, 3);
   
   // Format date to display
   const formatDate = (dateString?: string) => {
@@ -161,6 +179,13 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
     }
   }, []);
 
+  const getStreakClassName = (streak: number) => {
+    if (streak >= 10) return "bg-purple-500/20 text-purple-300";
+    if (streak >= 5) return "bg-blue-500/20 text-blue-300";
+    if (streak >= 1) return "bg-green-500/20 text-green-300";
+    return "bg-gray-500/20 text-gray-300";
+  };
+
   return (
     <Card className="bg-gray-800/60 border-gray-700 text-white shadow-md">
       <CardHeader>
@@ -207,127 +232,203 @@ const PlannerWidget: React.FC<PlannerWidgetProps> = ({
           </Popover>
         </div>
         <CardDescription className="text-gray-400">Your upcoming tasks and goals</CardDescription>
+        <div className="flex space-x-2 mt-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setActiveTab('tasks')}
+            className={`px-3 py-1 ${activeTab === 'tasks' ? 'bg-gray-700' : 'hover:bg-gray-700/50'}`}
+          >
+            Tasks
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setActiveTab('goals')}
+            className={`px-3 py-1 ${activeTab === 'goals' ? 'bg-gray-700' : 'hover:bg-gray-700/50'}`}
+          >
+            Goals
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setActiveTab('daily')}
+            className={`px-3 py-1 ${activeTab === 'daily' ? 'bg-gray-700' : 'hover:bg-gray-700/50'} flex items-center gap-1`}
+          >
+            <ListTodo className="w-3 h-3" /> Daily
+          </Button>
+        </div>
       </CardHeader>
       
       <CardContent className="space-y-4">
         {/* Tasks Section */}
-        <div>
-          <h3 className="text-sm font-medium text-gray-300 mb-2">Tasks ({tasks.length})</h3>
-          {tasksToShow.length > 0 ? (
-            <div className="space-y-2">
-              {tasksToShow.map(task => (
-                <div 
-                  key={task.id} 
-                  className="flex items-center justify-between p-2 rounded-lg bg-gray-700/30 relative group"
-                  onMouseEnter={() => setHoveredItemId(task.id)}
-                  onMouseLeave={() => setHoveredItemId(null)}
-                >
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className={`cursor-pointer transition-all ${task.completed ? 'bg-green-500 text-white rounded-full' : ''} hover:scale-110`}
-                      onClick={() => handleTaskCircleClick(task)}
-                    >
-                      {task.completed ? 
-                        <CheckCircle className="h-4 w-4 text-white" /> : 
-                        <Circle className="h-4 w-4 text-gray-400" />
-                      }
+        {activeTab === 'tasks' && (
+          <div>
+            <h3 className="text-sm font-medium text-gray-300 mb-2">Tasks ({tasks.length})</h3>
+            {tasksToShow.length > 0 ? (
+              <div className="space-y-2">
+                {tasksToShow.map(task => (
+                  <div 
+                    key={task.id} 
+                    className="flex items-center justify-between p-2 rounded-lg bg-gray-700/30 relative group"
+                    onMouseEnter={() => setHoveredItemId(task.id)}
+                    onMouseLeave={() => setHoveredItemId(null)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className={`cursor-pointer transition-all ${task.completed ? 'bg-green-500 text-white rounded-full' : ''} hover:scale-110`}
+                        onClick={() => handleTaskCircleClick(task)}
+                      >
+                        {task.completed ? 
+                          <CheckCircle className="h-4 w-4 text-white" /> : 
+                          <Circle className="h-4 w-4 text-gray-400" />
+                        }
+                      </div>
+                      <span className={task.completed ? "line-through text-gray-400" : ""}>{task.title}</span>
                     </div>
-                    <span className={task.completed ? "line-through text-gray-400" : ""}>{task.title}</span>
+                    <div className="flex items-center gap-2">
+                      {task.priority && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${priorityColors[task.priority]}`}>
+                          {task.priority}
+                        </span>
+                      )}
+                      {task.dueDate && (
+                        <span className="flex items-center gap-1 text-xs text-gray-400">
+                          <Clock className="h-3 w-3" />
+                          {formatDate(task.dueDate)}
+                        </span>
+                      )}
+                      <div className="flex items-center">
+                        {(hoveredItemId === task.id) && (
+                          <>
+                            <button 
+                              className="p-1 rounded-full hover:bg-gray-600/50"
+                              onClick={(e) => handleTaskEditClick(e, task)}
+                            >
+                              <Pencil className="h-3 w-3 text-gray-300" />
+                            </button>
+                            <button 
+                              className="p-1 rounded-full hover:bg-red-600/50 ml-1"
+                              onClick={(e) => handleRemoveTask(e, task.id)}
+                            >
+                              <X className="h-3 w-3 text-gray-300" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {task.priority && (
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${priorityColors[task.priority]}`}>
-                        {task.priority}
-                      </span>
-                    )}
-                    {task.dueDate && (
-                      <span className="flex items-center gap-1 text-xs text-gray-400">
-                        <Clock className="h-3 w-3" />
-                        {formatDate(task.dueDate)}
-                      </span>
-                    )}
-                    <div className="flex items-center">
-                      {(hoveredItemId === task.id) && (
-                        <>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-3 text-gray-400 text-sm bg-gray-700/20 rounded-lg">
+                No tasks yet
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Goals Section */}
+        {activeTab === 'goals' && (
+          <div>
+            <h3 className="text-sm font-medium text-gray-300 mb-2">Goals ({goals.length})</h3>
+            {goalsToShow.length > 0 ? (
+              <div className="space-y-2">
+                {goalsToShow.map(goal => (
+                  <div 
+                    key={goal.id} 
+                    className="p-2 rounded-lg bg-gray-700/30 relative"
+                    onMouseEnter={() => setHoveredItemId(goal.id)}
+                    onMouseLeave={() => setHoveredItemId(null)}
+                  >
+                    <div className="flex justify-between mb-1">
+                      <span>{goal.title}</span>
+                      {hoveredItemId === goal.id && (
+                        <div className="flex items-center">
                           <button 
                             className="p-1 rounded-full hover:bg-gray-600/50"
-                            onClick={(e) => handleTaskEditClick(e, task)}
+                            onClick={(e) => handleGoalEditClick(e, goal)}
                           >
                             <Pencil className="h-3 w-3 text-gray-300" />
                           </button>
                           <button 
                             className="p-1 rounded-full hover:bg-red-600/50 ml-1"
-                            onClick={(e) => handleRemoveTask(e, task.id)}
                           >
                             <X className="h-3 w-3 text-gray-300" />
                           </button>
-                        </>
+                        </div>
+                      )}
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div 
+                        className="bg-purple-500 h-2 rounded-full" 
+                        style={{ width: `${goal.progress}%` }}
+                      ></div>
+                    </div>
+                    <div className="mt-1 text-xs text-gray-400 text-right">
+                      {goal.completedSteps}/{goal.totalSteps} steps · {goal.progress}% complete
+                      {goal.targetDate && (
+                        <span className="ml-2">
+                          Target: {formatDate(goal.targetDate)}
+                        </span>
                       )}
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-3 text-gray-400 text-sm bg-gray-700/20 rounded-lg">
-              No tasks yet
-            </div>
-          )}
-        </div>
-        
-        {/* Goals Section */}
-        <div>
-          <h3 className="text-sm font-medium text-gray-300 mb-2">Goals ({goals.length})</h3>
-          {goalsToShow.length > 0 ? (
-            <div className="space-y-2">
-              {goalsToShow.map(goal => (
-                <div 
-                  key={goal.id} 
-                  className="p-2 rounded-lg bg-gray-700/30 relative"
-                  onMouseEnter={() => setHoveredItemId(goal.id)}
-                  onMouseLeave={() => setHoveredItemId(null)}
-                >
-                  <div className="flex justify-between mb-1">
-                    <span>{goal.title}</span>
-                    {hoveredItemId === goal.id && (
-                      <div className="flex items-center">
-                        <button 
-                          className="p-1 rounded-full hover:bg-gray-600/50"
-                          onClick={(e) => handleGoalEditClick(e, goal)}
-                        >
-                          <Pencil className="h-3 w-3 text-gray-300" />
-                        </button>
-                        <button 
-                          className="p-1 rounded-full hover:bg-red-600/50 ml-1"
-                        >
-                          <X className="h-3 w-3 text-gray-300" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2">
-                    <div 
-                      className="bg-purple-500 h-2 rounded-full" 
-                      style={{ width: `${goal.progress}%` }}
-                    ></div>
-                  </div>
-                  <div className="mt-1 text-xs text-gray-400 text-right">
-                    {goal.completedSteps}/{goal.totalSteps} steps · {goal.progress}% complete
-                    {goal.targetDate && (
-                      <span className="ml-2">
-                        Target: {formatDate(goal.targetDate)}
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-3 text-gray-400 text-sm bg-gray-700/20 rounded-lg">
+                No goals yet
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Daily Tasks Section */}
+        {activeTab === 'daily' && (
+          <div>
+            <h3 className="text-sm font-medium text-gray-300 mb-2 flex items-center gap-1">
+              <ListTodo className="w-4 h-4 text-purple-400" />
+              Daily Tasks ({dailyTasks.length})
+            </h3>
+            {dailyTasksToShow.length > 0 ? (
+              <div className="space-y-2">
+                {dailyTasksToShow.map(task => (
+                  <div 
+                    key={task.id} 
+                    className="flex items-center justify-between p-2 rounded-lg bg-gray-700/30 relative"
+                    onMouseEnter={() => setHoveredItemId(task.id)}
+                    onMouseLeave={() => setHoveredItemId(null)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: task.color || '#9b87f5' }}
+                      ></div>
+                      <span className={task.completed ? "line-through text-gray-400" : ""}>{task.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {task.timeOfDay && (
+                        <span className="flex items-center gap-1 text-xs text-gray-400">
+                          <Clock className="h-3 w-3" />
+                          {task.timeOfDay}
+                        </span>
+                      )}
+                      <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${getStreakClassName(task.streak)}`}>
+                        <CalendarClock className="h-3 w-3" />
+                        {task.streak} day{task.streak !== 1 ? 's' : ''}
                       </span>
-                    )}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-3 text-gray-400 text-sm bg-gray-700/20 rounded-lg">
-              No goals yet
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-3 text-gray-400 text-sm bg-gray-700/20 rounded-lg">
+                No daily tasks with streaks yet
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
       
       <CardFooter className="flex justify-between">

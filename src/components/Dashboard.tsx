@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, CreditCard, TrendingUp, CalendarClock } from 'lucide-react';
+import { AlertTriangle, CreditCard, TrendingUp, CalendarClock, ListTodo } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
@@ -47,6 +47,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [expenses, setExpenses] = useState<any[]>([]);
   const [renewals, setRenewals] = useState<any[]>([]);
+  const [dailyTasks, setDailyTasks] = useState<any[]>([]);
   const [mobileControlsExpanded, setMobileControlsExpanded] = useState(false);
   const [activeInsight, setActiveInsight] = useState(0);
 
@@ -61,6 +62,15 @@ const Dashboard: React.FC<DashboardProps> = ({
         setRenewals(recurringExpenses);
       } catch (e) {
         console.error('Failed to parse expenses from localStorage', e);
+      }
+    }
+    
+    const savedDailyTasks = localStorage.getItem('dailyTasks');
+    if (savedDailyTasks) {
+      try {
+        setDailyTasks(JSON.parse(savedDailyTasks));
+      } catch (e) {
+        console.error('Failed to parse daily tasks from localStorage', e);
       }
     }
     
@@ -294,6 +304,18 @@ const Dashboard: React.FC<DashboardProps> = ({
         color: 'bg-purple-500/20 text-purple-300'
       });
     }
+
+    // Add daily tasks insight if there are streaks
+    const dailyTasksWithStreaks = dailyTasks.filter(task => task.streak > 0);
+    if (dailyTasksWithStreaks.length > 0) {
+      insights.push({
+        title: `${dailyTasksWithStreaks.length} daily task streak${dailyTasksWithStreaks.length > 1 ? 's' : ''}`,
+        description: "Keep your momentum going!",
+        icon: <ListTodo className="w-5 h-5 text-green-400" />,
+        action: navigateToPlanner,
+        color: 'bg-green-500/20 text-green-300'
+      });
+    }
     
     return insights;
   };
@@ -346,6 +368,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         activeWidgets={activeWidgets}
         tasks={tasks}
         goals={goals}
+        dailyTasks={dailyTasks}
         expenses={expenses}
         totalExpenses={totalExpenses}
         monthlyExpenses={totalMonthlyCost}

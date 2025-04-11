@@ -23,6 +23,17 @@ interface Goal {
   type: 'daily' | 'short' | 'long';
 }
 
+interface DailyTask {
+  id: number;
+  name: string;
+  completed: boolean;
+  timeOfDay?: string;
+  streak: number;
+  lastCompleted?: string;
+  color?: string;
+  category?: string;
+}
+
 interface DashboardWidgetsProps {
   widgetLayout: 'grid' | 'list';
   activeWidgets: {
@@ -33,6 +44,7 @@ interface DashboardWidgetsProps {
   };
   tasks: Task[];
   goals: Goal[];
+  dailyTasks?: DailyTask[];
   expenses: any[];
   totalExpenses: number;
   monthlyExpenses: number;
@@ -50,6 +62,7 @@ const DashboardWidgets: React.FC<DashboardWidgetsProps> = ({
   activeWidgets,
   tasks,
   goals,
+  dailyTasks = [],
   expenses,
   totalExpenses,
   monthlyExpenses,
@@ -72,6 +85,7 @@ const DashboardWidgets: React.FC<DashboardWidgetsProps> = ({
           <PlannerWidget 
             tasks={tasks} 
             goals={goals} 
+            dailyTasks={dailyTasks}
             onViewMore={onViewPlanner}
             onToggleTaskComplete={onToggleTaskComplete}
             onEditTask={onEditTask}

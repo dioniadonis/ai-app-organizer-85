@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { TimeInput } from '@/components/TimeInput';
+import TimeInput from '@/components/TimeInput';
 import { toast } from '@/components/ui/use-toast';
 
 export interface DailyTask {
