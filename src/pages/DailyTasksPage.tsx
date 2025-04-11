@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DailyTasksTab, { DailyTask } from '@/components/planner/DailyTasksTab';
@@ -14,13 +13,11 @@ const DailyTasksPage = () => {
   const handleTaskNameBlur = (taskId: number) => {
     console.log('Blurring task:', taskId);
     
-    // If no name is entered, simply cancel the editing state without saving changes
     if (!newTaskName.trim()) {
       setEditingTaskId(null);
       return;
     }
     
-    // Update the task name if a non-empty name is provided
     setDailyTasks(prev => prev.map(t => {
       if (t.id === taskId) {
         return { ...t, name: newTaskName };
@@ -28,7 +25,6 @@ const DailyTasksPage = () => {
       return t;
     }));
     
-    // Always clear the editing state
     setEditingTaskId(null);
   };
 
@@ -80,7 +76,8 @@ const DailyTasksPage = () => {
     
     toast({
       title: "Task deleted",
-      description: "The daily task has been removed"
+      description: "The daily task has been removed",
+      duration: 3000,
     });
   };
   
@@ -94,7 +91,8 @@ const DailyTasksPage = () => {
     
     toast({
       title: "Streak reset",
-      description: "The task streak has been reset to 0"
+      description: "The task streak has been reset to 0",
+      duration: 3000,
     });
   };
 

@@ -102,7 +102,8 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
     
     toast({
       title: "Daily task added",
-      description: `"${newTask}" has been added to your daily tasks`
+      description: `"${newTask}" has been added to your daily tasks`,
+      duration: 3000,
     });
   };
 
@@ -112,6 +113,11 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
 
     if (!task.name.trim()) {
       setEditingTask(null);
+      toast({
+        title: "Task name required",
+        description: "Please enter a name for the task before saving",
+        duration: 3000,
+      });
       return;
     }
 
@@ -119,13 +125,38 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
 
     toast({
       title: "Task updated",
-      description: `"${task.name}" has been updated`
+      description: `"${task.name}" has been updated`,
+      duration: 3000,
     });
+  };
+
+  const handleToggleCompleteWithValidation = (id: number) => {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+
+    if (!task.name.trim()) {
+      toast({
+        title: "Task name required",
+        description: "Please enter a name for the task before marking it complete",
+        duration: 3000,
+      });
+      return;
+    }
+
+    onToggleComplete(id);
   };
 
   const startEditing = (id: number) => {
     const task = tasks.find(t => t.id === id);
     if (task) {
+      if (!task.name.trim()) {
+        toast({
+          title: "Task name required",
+          description: "Please enter a name for the task before editing",
+          duration: 3000,
+        });
+        return;
+      }
       setEditingTask(id);
     }
   };
@@ -357,7 +388,7 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <button
-                      onClick={() => onToggleComplete(task.id)}
+                      onClick={() => handleToggleCompleteWithValidation(task.id)}
                       className="flex-shrink-0"
                     >
                       {task.completed ? (
