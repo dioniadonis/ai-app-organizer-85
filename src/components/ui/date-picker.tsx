@@ -42,6 +42,7 @@ export function DatePicker({
     }
   };
 
+  // Use the provided date, or fall back to localDate, then today
   const dateToDisplay = date ?? localDate ?? today;
 
   return (
@@ -61,6 +62,7 @@ export function DatePicker({
               disabled && "opacity-50 cursor-not-allowed"
             )}
             disabled={disabled}
+            onClick={(e) => e.stopPropagation()}
           >
             <span className="truncate">
               {format(dateToDisplay, "MMMM d, yyyy")}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, X, Edit, CheckCircle, Circle, Clock, RotateCcw, Clock as ClockIcon, ListTodo, CalendarClock } from 'lucide-react';
@@ -68,10 +67,8 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  // Reset form values when task editing changes
   useEffect(() => {
     if (editingTask === null) {
-      // Reset form values when exiting edit mode
       setNewTask('');
       setNewTime('');
       setNewCategory('Personal');
@@ -93,7 +90,9 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
 
   const categories = [...new Set(tasks.map(task => task.category).filter(Boolean))];
 
-  const handleAddTask = () => {
+  const handleAddTask = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    
     if (!newTask.trim()) {
       toast({
         title: "Task name required",
@@ -110,7 +109,6 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
       category: newCategory
     });
 
-    // Reset form values
     setNewTask('');
     setNewTime('');
     setNewCategory('Personal');
@@ -123,7 +121,9 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
     });
   };
 
-  const handleEditSubmit = (id: number) => {
+  const handleEditSubmit = (id: number, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    
     const task = tasks.find(t => t.id === id);
     if (!task) return;
 
@@ -135,11 +135,12 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
     });
   };
 
-  const startEditing = (id: number) => {
+  const startEditing = (id: number, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    
     setEditingTask(id);
     const task = tasks.find(t => t.id === id);
     if (task) {
-      // Pre-fill form with task values
       setNewTask(task.name);
       setNewTime(task.timeOfDay || '');
       setNewCategory(task.category || 'Personal');
@@ -147,7 +148,8 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
     }
   };
 
-  const cancelEditing = () => {
+  const cancelEditing = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     setEditingTask(null);
   };
 
@@ -187,7 +189,6 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
             e.stopPropagation();
             setIsAdding(!isAdding);
             if (!isAdding) {
-              // Reset form values when opening the form
               setNewTask('');
               setNewTime('');
               setNewCategory('Personal');
@@ -332,6 +333,7 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                     value={task.name}
                     onChange={(e) => onEditTask(task.id, { name: e.target.value })}
                     className="bg-gray-700/50 border-gray-600"
+                    onClick={(e) => e.stopPropagation()}
                   />
                   
                   <div className="grid grid-cols-2 gap-3">
@@ -345,6 +347,7 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                       value={task.category}
                       onChange={(e) => onEditTask(task.id, { category: e.target.value })}
                       className="px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md text-white"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       {CATEGORIES.map(cat => (
                         <option key={cat} value={cat}>{cat}</option>

@@ -104,6 +104,7 @@ const TimeInput: React.FC<TimeInputProps> = ({ value, onChange, label = "Time" }
             value={hours}
             onChange={handleHoursChange}
             className="w-14 bg-gray-700 border-gray-600 text-center"
+            onClick={(e) => e.stopPropagation()}
           />
           <span className="text-gray-400">:</span>
           <Input
@@ -113,9 +114,10 @@ const TimeInput: React.FC<TimeInputProps> = ({ value, onChange, label = "Time" }
             value={minutes}
             onChange={handleMinutesChange}
             className="w-14 bg-gray-700 border-gray-600 text-center"
+            onClick={(e) => e.stopPropagation()}
           />
           <Select value={period} onValueChange={handlePeriodChange}>
-            <SelectTrigger className="w-16 bg-gray-700 border-gray-600">
+            <SelectTrigger className="w-16 bg-gray-700 border-gray-600" onClick={(e) => e.stopPropagation()}>
               <SelectValue placeholder="AM" />
             </SelectTrigger>
             <SelectContent>

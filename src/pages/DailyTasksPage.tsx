@@ -567,13 +567,18 @@ const DailyTasksPage: React.FC = () => {
             <Home size={24} className="text-blue-400" />
           </button>
           
-          <button 
-            onClick={() => setShowCalendarModal(true)}
-            className="flex items-center gap-2 text-2xl font-bold text-white hover:text-blue-300 transition-colors text-center mx-auto"
-          >
-            <CalendarCheck className="h-6 w-6 text-purple-400" />
-            {dateLabel}
-          </button>
+          <div className="flex flex-col items-center absolute left-1/2 transform -translate-x-1/2">
+            <button 
+              onClick={() => setShowCalendarModal(true)}
+              className="flex items-center gap-2 text-2xl font-bold text-white hover:text-blue-300 transition-colors"
+            >
+              <CalendarCheck className="h-6 w-6 text-purple-400" />
+              {dateLabel}
+            </button>
+            <div className="text-lg font-medium text-center text-white/80">
+              {formattedDate}
+            </div>
+          </div>
           
           <div className="flex gap-1">
             <button
@@ -591,7 +596,8 @@ const DailyTasksPage: React.FC = () => {
             </button>
             
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 setSelectedTask(null);
                 setEditingTaskId(null);
                 setNewTaskName('');
@@ -619,7 +625,7 @@ const DailyTasksPage: React.FC = () => {
             onClick={() => setShowCalendarModal(true)}
             className="text-lg font-medium text-white hover:text-blue-300 transition-colors"
           >
-            {formattedDate}
+            <span className="sr-only">{formattedDate}</span>
           </button>
           
           <button 
