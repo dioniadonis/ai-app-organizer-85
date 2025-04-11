@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, ChevronRight, Edit, Plus, Bell, Home, Calendar, X, Check, 
-  AlarmClock, Clock, BellRing, CalendarCheck, Circle, Settings, Copy, GripVertical, Move
+  AlarmClock, Clock, BellRing, CalendarCheck, Circle, Settings, Copy, Move
 } from 'lucide-react';
-import { format, addDays, subDays, parse, isToday, isTomorrow, parseISO, isValid, isSameDay } from 'date-fns';
+import { format, addDays, subDays, parseISO, isToday, isTomorrow, isSameDay } from 'date-fns';
 import { DailyTask } from '@/components/planner/DailyTasksTab';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
@@ -52,13 +52,14 @@ const DailyTasksPage: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [draggedTask, setDraggedTask] = useState<DailyTask | null>(null);
   const [targetTimeSlot, setTargetTimeSlot] = useState<string | null>(null);
-  
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+
   const timeIncrementOptions: TimeIncrementOption[] = [
     { label: '15 minutes', value: 15 },
     { label: '30 minutes', value: 30 },
     { label: '60 minutes', value: 60 }
   ];
-  
+
   const generateTimeSlots = useCallback(() => {
     const slots = [];
     const totalMinutesInDay = 24 * 60;
@@ -74,9 +75,9 @@ const DailyTasksPage: React.FC = () => {
     
     return slots;
   }, [timeIncrement]);
-  
+
   const timeSlots = generateTimeSlots();
-  
+
   const getFilteredTimeSlots = useCallback(() => {
     switch (displayRange) {
       case 'morning':
@@ -253,19 +254,20 @@ const DailyTasksPage: React.FC = () => {
   };
 
   const handleEditTask = (task: DailyTask) => {
-    setEditingTaskId(task.id);
+    setEditingTaskId(null);
     setNewTaskName(task.name);
     setNewTaskTime(task.timeOfDay || '');
     setNewTaskCategory(task.category || 'Personal');
     setNewTaskColor(task.color || '#9b87f5');
+    setSelectedTask(task);
     setShowAddModal(true);
   };
 
   const handleUpdateTask = () => {
-    if (!editingTaskId) return;
+    if (!selectedTask) return;
 
     setDailyTasks(prev => prev.map(task => {
-      if (task.id === editingTaskId) {
+      if (task.id === selectedTask.id) {
         return {
           ...task,
           name: newTaskName,
@@ -277,7 +279,7 @@ const DailyTasksPage: React.FC = () => {
       return task;
     }));
 
-    setEditingTaskId(null);
+    setSelectedTask(null);
     setNewTaskName('');
     setNewTaskTime('');
     setShowAddModal(false);
@@ -393,6 +395,36 @@ const DailyTasksPage: React.FC = () => {
     setNewTaskName(task.name);
   };
 
+  const handleCategoryClick = (task: DailyTask) => {
+    setSelectedTask(task);
+    setNewTaskCategory(task.category || 'Personal');
+    setNewTaskColor(task.color || '#9b87f5');
+    setShowCategoryModal(true);
+  };
+
+  const saveCategory = () => {
+    if (!selectedTask) return;
+
+    setDailyTasks(prev => prev.map(task => {
+      if (task.id === selectedTask.id) {
+        return {
+          ...task,
+          category: newTaskCategory,
+          color: newTaskColor
+        };
+      }
+      return task;
+    }));
+
+    toast({
+      title: "Category updated",
+      description: `Task category has been updated to ${newTaskCategory}`
+    });
+    
+    setShowCategoryModal(false);
+    setSelectedTask(null);
+  };
+
   const handleCopyTasks = () => {
     if (!copyToDate) {
       toast({
@@ -505,7 +537,7 @@ const DailyTasksPage: React.FC = () => {
           
           <button 
             onClick={() => setShowCalendarModal(true)}
-            className="flex items-center gap-2 text-2xl font-bold text-white hover:text-blue-300 transition-colors text-center mx-auto"
+            className="flex items-center gap-2 text-2xl font-bold text-white hover:text-blue-300 transition-colors mx-auto"
           >
             <CalendarCheck className="h-6 w-6 text-purple-400" />
             {dateLabel}
@@ -528,6 +560,7 @@ const DailyTasksPage: React.FC = () => {
             
             <button
               onClick={() => {
+                setSelectedTask(null);
                 setEditingTaskId(null);
                 setNewTaskName('');
                 setNewTaskTime('');
@@ -633,50 +666,55 @@ const DailyTasksPage: React.FC = () => {
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
                             whileHover={{ scale: 1.02 }}
-                            drag={isMobile || isTouchDevice}
+                            drag={(isMobile || isTouchDevice) ? true : false}
                             dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
                             dragElastic={0}
                             dragMomentum={false}
-                            onDragStart={() => handleDragStart(task)}
-                            onDragEnd={handleDragEnd}
+                            onDragStart={() => (isMobile || isTouchDevice) ? handleDragStart(task) : null}
+                            onDragEnd={(isMobile || isTouchDevice) ? handleDragEnd : null}
                             style={{ cursor: (isMobile || isTouchDevice) && isDragging && draggedTask?.id === task.id ? 'grabbing' : 'auto' }}
-                          >
-                            {(isMobile || isTouchDevice) && (
-                              <button
-                                className="cursor-grab active:cursor-grabbing"
-                                onMouseDown={() => handleDragStart(task)}
-                              >
-                                <GripVertical size={16} className="text-gray-400" />
-                              </button>
-                            )}
-                            
-                            <div 
-                              className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: task.color || '#9b87f5' }}
-                            ></div>
-                            
+                          >                            
                             {editingTaskId === task.id ? (
                               <Input
                                 value={newTaskName}
                                 onChange={(e) => setNewTaskName(e.target.value)}
-                                onBlur={handleUpdateTask}
+                                onBlur={() => {
+                                  if (editingTaskId) {
+                                    setDailyTasks(prev => prev.map(t => {
+                                      if (t.id === editingTaskId) {
+                                        return { ...t, name: newTaskName };
+                                      }
+                                      return t;
+                                    }));
+                                    setEditingTaskId(null);
+                                  }
+                                }}
                                 className="bg-gray-700/50 border-gray-600 h-7 text-sm"
                                 autoFocus
                               />
                             ) : (
-                              <span 
-                                className={`flex-1 ${task.completed ? 'line-through text-gray-500' : ''}`}
-                                style={task.color ? { color: task.color } : undefined}
-                                onClick={() => handleTaskClick(task)}
-                              >
-                                {task.name}
-                              </span>
-                            )}
-                            
-                            {task.category && (
-                              <span className={`text-xs px-1.5 py-0.5 rounded-full ${getTaskCategoryBadgeClass(task.category)}`}>
-                                {task.category}
-                              </span>
+                              <>
+                                <div 
+                                  className="w-3 h-3 rounded-full"
+                                  style={{ backgroundColor: task.color || '#9b87f5' }}
+                                ></div>
+                                <span 
+                                  className={`flex-1 ${task.completed ? 'line-through text-gray-500' : ''}`}
+                                  style={task.color ? { color: task.color } : undefined}
+                                  onClick={() => handleTaskClick(task)}
+                                >
+                                  {task.name}
+                                </span>
+                                
+                                {task.category && (
+                                  <span 
+                                    className={`text-xs px-1.5 py-0.5 rounded-full ${getTaskCategoryBadgeClass(task.category)} cursor-pointer`}
+                                    onClick={() => handleCategoryClick(task)}
+                                  >
+                                    {task.category}
+                                  </span>
+                                )}
+                              </>
                             )}
                             
                             <div className="flex items-center">
@@ -801,9 +839,9 @@ const DailyTasksPage: React.FC = () => {
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingTaskId ? 'Edit Task' : 'Add New Task'}</DialogTitle>
+            <DialogTitle>{selectedTask ? 'Edit Task' : 'Add New Task'}</DialogTitle>
             <DialogDescription className="text-gray-400">
-              {editingTaskId 
+              {selectedTask 
                 ? 'Update your daily task details' 
                 : 'Add a new task to your daily routine'}
             </DialogDescription>
@@ -870,10 +908,10 @@ const DailyTasksPage: React.FC = () => {
               Cancel
             </Button>
             <Button
-              onClick={editingTaskId ? handleUpdateTask : handleAddTask}
+              onClick={selectedTask ? handleUpdateTask : handleAddTask}
               className="bg-purple-600 hover:bg-purple-700"
             >
-              {editingTaskId ? 'Update Task' : 'Add Task'}
+              {selectedTask ? 'Update Task' : 'Add Task'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1054,6 +1092,65 @@ const DailyTasksPage: React.FC = () => {
             >
               <Copy className="mr-2 h-4 w-4" />
               Copy Tasks
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCategoryModal} onOpenChange={setShowCategoryModal}>
+        <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Customize Category</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              {selectedTask && `Customize category for "${selectedTask.name}"`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm text-gray-300">Category</label>
+              <select
+                value={newTaskCategory}
+                onChange={(e) => setNewTaskCategory(e.target.value)}
+                className="w-full bg-gray-700/50 border border-gray-600 rounded-md p-2 text-white"
+              >
+                {CATEGORIES.map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm text-gray-300">Color</label>
+              <div className="flex flex-wrap gap-3">
+                {COLORS.map(color => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setNewTaskColor(color)}
+                    className={`w-8 h-8 rounded-full transition-all ${
+                      newTaskColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-gray-800 scale-110' : ''
+                    }`}
+                    style={{ backgroundColor: color }}
+                    aria-label={`Select color ${color}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setShowCategoryModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={saveCategory}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              Save Category
             </Button>
           </DialogFooter>
         </DialogContent>
