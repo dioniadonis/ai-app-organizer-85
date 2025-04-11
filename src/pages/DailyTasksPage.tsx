@@ -34,11 +34,14 @@ const DailyTasksPage: React.FC = () => {
   };
 
   const handleTaskNameBlur = (taskId: number) => {
-    console.log('Blurring task:', taskId);
-    
     if (!newTaskName.trim()) {
-      // If no name is entered, remove the task completely
-      setDailyTasks(prev => prev.filter(t => t.id !== taskId));
+      // If no name is entered, revert to "Add task"
+      setDailyTasks(prev => prev.map(t => {
+        if (t.id === taskId) {
+          return { ...t, name: "Add task" };
+        }
+        return t;
+      }));
     } else {
       // Update the task name if a non-empty name is provided
       setDailyTasks(prev => prev.map(t => {
