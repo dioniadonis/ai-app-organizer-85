@@ -15,9 +15,10 @@ import {
 } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile, useTouchDevice } from '@/hooks/use-mobile';
 import TimeInput from '@/components/TimeInput';
 import { DatePicker } from '@/components/ui/date-picker';
+import { Textarea } from '@/components/ui/textarea';
 
 interface TimeIncrementOption {
   label: string;
@@ -28,7 +29,9 @@ const DailyTasksPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
+  const isTouchDevice = useTouchDevice();
   const scrollRef = useRef<HTMLDivElement>(null);
+  
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dailyTasks, setDailyTasks] = useState<DailyTask[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -259,7 +262,7 @@ const DailyTasksPage: React.FC = () => {
   };
 
   const handleUpdateTask = () => {
-    if (!newTaskName.trim() || !editingTaskId) return;
+    if (!editingTaskId) return;
 
     setDailyTasks(prev => prev.map(task => {
       if (task.id === editingTaskId) {
@@ -338,12 +341,14 @@ const DailyTasksPage: React.FC = () => {
   };
 
   const handleDragStart = (task: DailyTask) => {
-    setIsDragging(true);
-    setDraggedTask(task);
+    if (isMobile || isTouchDevice) {
+      setIsDragging(true);
+      setDraggedTask(task);
+    }
   };
 
   const handleDragEnd = () => {
-    if (draggedTask && targetTimeSlot) {
+    if ((isMobile || isTouchDevice) && draggedTask && targetTimeSlot) {
       const [time, period] = targetTimeSlot.split(' ');
       const [hour, minute] = time.split(':');
       let hour24 = parseInt(hour);
@@ -381,6 +386,11 @@ const DailyTasksPage: React.FC = () => {
     if (isDragging) {
       setTargetTimeSlot(timeSlot);
     }
+  };
+
+  const handleTaskClick = (task: DailyTask) => {
+    setEditingTaskId(task.id);
+    setNewTaskName(task.name);
   };
 
   const handleCopyTasks = () => {
@@ -495,7 +505,7 @@ const DailyTasksPage: React.FC = () => {
           
           <button 
             onClick={() => setShowCalendarModal(true)}
-            className="flex items-center gap-2 text-2xl font-bold text-white hover:text-blue-300 transition-colors text-center"
+            className="flex items-center gap-2 text-2xl font-bold text-white hover:text-blue-300 transition-colors text-center mx-auto"
           >
             <CalendarCheck className="h-6 w-6 text-purple-400" />
             {dateLabel}
@@ -623,20 +633,22 @@ const DailyTasksPage: React.FC = () => {
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
                             whileHover={{ scale: 1.02 }}
-                            drag
+                            drag={isMobile || isTouchDevice}
                             dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
                             dragElastic={0}
                             dragMomentum={false}
                             onDragStart={() => handleDragStart(task)}
                             onDragEnd={handleDragEnd}
-                            style={{ cursor: isDragging && draggedTask?.id === task.id ? 'grabbing' : 'auto' }}
+                            style={{ cursor: (isMobile || isTouchDevice) && isDragging && draggedTask?.id === task.id ? 'grabbing' : 'auto' }}
                           >
-                            <button
-                              className="cursor-grab active:cursor-grabbing"
-                              onMouseDown={() => handleDragStart(task)}
-                            >
-                              <GripVertical size={16} className="text-gray-400" />
-                            </button>
+                            {(isMobile || isTouchDevice) && (
+                              <button
+                                className="cursor-grab active:cursor-grabbing"
+                                onMouseDown={() => handleDragStart(task)}
+                              >
+                                <GripVertical size={16} className="text-gray-400" />
+                              </button>
+                            )}
                             
                             <div 
                               className="w-3 h-3 rounded-full"
@@ -645,19 +657,17 @@ const DailyTasksPage: React.FC = () => {
                             
                             {editingTaskId === task.id ? (
                               <Input
-                                value={task.name}
-                                onChange={(e) => setDailyTasks(prev => prev.map(t => 
-                                  t.id === task.id ? { ...t, name: e.target.value } : t
-                                ))}
+                                value={newTaskName}
+                                onChange={(e) => setNewTaskName(e.target.value)}
+                                onBlur={handleUpdateTask}
                                 className="bg-gray-700/50 border-gray-600 h-7 text-sm"
-                                onBlur={() => setEditingTaskId(null)}
                                 autoFocus
                               />
                             ) : (
                               <span 
                                 className={`flex-1 ${task.completed ? 'line-through text-gray-500' : ''}`}
                                 style={task.color ? { color: task.color } : undefined}
-                                onClick={() => setEditingTaskId(task.id)}
+                                onClick={() => handleTaskClick(task)}
                               >
                                 {task.name}
                               </span>

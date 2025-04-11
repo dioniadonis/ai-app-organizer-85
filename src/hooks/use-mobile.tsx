@@ -1,3 +1,4 @@
+
 import * as React from "react"
 
 const MOBILE_BREAKPOINT = 768
@@ -16,4 +17,20 @@ export function useIsMobile() {
   }, [])
 
   return !!isMobile
+}
+
+// Add a new hook to check if the device has touch capability
+export function useTouchDevice() {
+  const [isTouch, setIsTouch] = React.useState(false)
+  
+  React.useEffect(() => {
+    // Check if the device has touch capability
+    const isTouchDevice = 'ontouchstart' in window || 
+      navigator.maxTouchPoints > 0 ||
+      (navigator as any).msMaxTouchPoints > 0
+    
+    setIsTouch(isTouchDevice)
+  }, [])
+  
+  return isTouch
 }
