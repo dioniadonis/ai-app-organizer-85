@@ -661,6 +661,7 @@ const DailyTasksPage: React.FC = () => {
                         {tasksInSlot.map(task => (
                           <motion.div 
                             key={task.id}
+                            data-task-id={task.id}
                             className={`flex items-center gap-2 bg-gray-800/40 p-2 rounded-md border border-gray-700 hover:bg-gray-800/60 transition-all ${
                               draggedTask?.id === task.id ? 'opacity-50 ring-2 ring-blue-500' : ''
                             }`}
@@ -845,10 +846,9 @@ const DailyTasksPage: React.FC = () => {
         </div>
       </div>
       
+      {/* Add Task Dialog */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{selectedTask ? 'Edit Task' : 'Add New Task'}</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              {selectedTask 
-                ? 'Update your daily task details'
+            <DialogDescription className="text-
