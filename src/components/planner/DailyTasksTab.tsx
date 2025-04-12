@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, X, Edit, CheckCircle, Circle, Clock, RotateCcw, Clock as ClockIcon, ListTodo, CalendarClock } from 'lucide-react';
@@ -494,7 +493,6 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                               description: "Please enter a name for your task",
                               variant: "destructive"
                             });
-                            startEditing(task.id, e);
                             return;
                           }
                           startEditing(task.id, e);
