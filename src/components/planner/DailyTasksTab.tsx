@@ -148,23 +148,13 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
   const startEditing = (id: number, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     
-    const task = tasks.find(t => t.id === id);
-    if (!task || !task.name.trim()) {
-      toast({
-        title: "Task name required",
-        description: "Please enter a name for your daily task before editing",
-        variant: "destructive"
-      });
-      return;
-    }
-    
     setEditingTask(id);
-    const task2 = tasks.find(t => t.id === id);
-    if (task2) {
-      setNewTask(task2.name);
-      setNewTime(task2.timeOfDay || '');
-      setNewCategory(task2.category || 'Personal');
-      setNewColor(task2.color || COLORS[0]);
+    const task = tasks.find(t => t.id === id);
+    if (task) {
+      setNewTask(task.name);
+      setNewTime(task.timeOfDay || '');
+      setNewCategory(task.category || 'Personal');
+      setNewColor(task.color || COLORS[0]);
     }
   };
 
@@ -413,6 +403,14 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                     <Button 
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (!task.name.trim()) {
+                          toast({
+                            title: "Task name required",
+                            description: "Please enter a name for your task before saving",
+                            variant: "destructive"
+                          });
+                          return;
+                        }
                         handleEditSubmit(task.id);
                       }} 
                       className="bg-purple-600 hover:bg-purple-700"
@@ -427,6 +425,18 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (!task.name.trim()) {
+                          toast({
+                            title: "Task name required",
+                            description: "Please enter a name for your task before marking it complete",
+                            variant: "destructive"
+                          });
+                          
+                          if (editingTask !== task.id) {
+                            startEditing(task.id, e);
+                          }
+                          return;
+                        }
                         onToggleComplete(task.id);
                       }}
                       className="flex-shrink-0"
@@ -481,12 +491,13 @@ const DailyTasksTab: React.FC<DailyTasksTabProps> = ({
                           if (!task.name.trim()) {
                             toast({
                               title: "Task name required",
-                              description: "Please enter a name for your daily task before editing",
+                              description: "Please enter a name for your task",
                               variant: "destructive"
                             });
+                            startEditing(task.id, e);
                             return;
                           }
-                          startEditing(task.id);
+                          startEditing(task.id, e);
                         }}
                       >
                         <Edit className="h-4 w-4" />
