@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -120,7 +119,6 @@ const DailyTasksPage: React.FC = () => {
     }
   }, [displayRange, timeIncrement, currentDate]);
 
-  // Load all tasks on initial render
   useEffect(() => {
     const savedTasks = localStorage.getItem('dailyTasks');
     if (savedTasks) {
@@ -137,14 +135,12 @@ const DailyTasksPage: React.FC = () => {
       }
     }
 
-    // Load showClearTaskWarning setting
     const warningPref = localStorage.getItem('showClearTaskWarning');
     if (warningPref !== null) {
       setShowClearTaskWarning(warningPref === 'true');
     }
   }, []);
 
-  // Save tasks whenever they change
   useEffect(() => {
     localStorage.setItem('dailyTasks', JSON.stringify(dailyTasks));
   }, [dailyTasks]);
@@ -155,13 +151,11 @@ const DailyTasksPage: React.FC = () => {
 
   const handlePreviousDay = () => {
     setCurrentDate(prev => subDays(prev, 1));
-    // Reset editing state when changing dates
     setEditingTaskId(null);
   };
 
   const handleNextDay = () => {
     setCurrentDate(prev => addDays(prev, 1));
-    // Reset editing state when changing dates
     setEditingTaskId(null);
   };
 
@@ -392,17 +386,14 @@ const DailyTasksPage: React.FC = () => {
       return;
     }
 
-    // Create a copy of the task with a new ID for the target date
     const movedTask: DailyTask = {
       ...selectedTask,
       id: Date.now() + Math.random() * 1000,
       completed: false
     };
 
-    // Add the new task
     setDailyTasks(prev => [...prev, movedTask]);
 
-    // Remove the original task if desired
     if (selectedTask) {
       setDailyTasks(prev => prev.filter(t => t.id !== selectedTask.id));
     }
@@ -459,18 +450,14 @@ const DailyTasksPage: React.FC = () => {
   };
 
   const handleTaskNameBlur = (taskId: number) => {
-    // If the name field is empty when the user blurs, cancel the editing
-    // and remove the task if it was newly added
     const task = dailyTasks.find(t => t.id === taskId);
     
     if (task && !newTaskName.trim()) {
-      // Task has no name, delete it instead of saving an empty task
       setDailyTasks(prev => prev.filter(t => t.id !== taskId));
       setEditingTaskId(null);
       return;
     }
     
-    // If there's valid content, save it
     if (newTaskName.trim()) {
       setDailyTasks(prev => prev.map(t => {
         if (t.id === taskId) {
@@ -521,17 +508,32 @@ const DailyTasksPage: React.FC = () => {
       });
       return;
     }
-    const tasksForToday = dailyTasks;
+    
+    const currentDateStr = format(currentDate, 'yyyy-MM-dd');
+    const targetDateStr = format(copyToDate, 'yyyy-MM-dd');
+    
+    const tasksForToday = dailyTasks.filter(task => {
+      if (task.lastCompleted) {
+        const taskDate = task.lastCompleted.split('T')[0];
+        return taskDate === currentDateStr;
+      }
+      return isSameDay(new Date(task.id), currentDate);
+    });
+    
     const copiedTasks = tasksForToday.map(task => ({
       ...task,
       id: Date.now() + Math.random() * 1000,
-      completed: false
+      completed: false,
+      lastCompleted: targetDateStr
     }));
+    
     setDailyTasks(prev => [...prev, ...copiedTasks]);
+    
     toast({
       title: "Tasks copied",
       description: `${copiedTasks.length} tasks copied to ${format(copyToDate, 'MMMM d, yyyy')}`
     });
+    
     setCopyToDate(undefined);
     setShowCopyModal(false);
   };
@@ -637,7 +639,6 @@ const DailyTasksPage: React.FC = () => {
             <Home size={24} className="text-blue-400" />
           </button>
           
-          {/* Center the Today/date labels using position relative/absolute */}
           <div className="flex items-center absolute left-1/2 transform -translate-x-1/2 text-white">
             <div className="flex flex-col items-center">
               <button onClick={() => setShowCalendarModal(true)} className="flex items-center gap-2 text-2xl font-bold transition-colors">
@@ -678,19 +679,22 @@ const DailyTasksPage: React.FC = () => {
           </div>
         </div>
         
-        {/* Date navigation - centered with absolute positioning */}
-        <div className="flex items-center justify-between mb-4 px-4 py-2 bg-gray-800/30 rounded-lg relative">
-          <button onClick={handlePreviousDay} className="hover:bg-gray-800 p-2 rounded-full transition-colors absolute left-4">
+        <div className="flex items-center justify-between mb-4 px-4 py-2 bg-gray-800/30 rounded-lg relative h-12">
+          <button 
+            onClick={handlePreviousDay} 
+            className="hover:bg-gray-800 p-2 rounded-full transition-colors absolute left-2 z-10"
+          >
             <ChevronLeft size={20} className="text-blue-400" />
           </button>
           
-          <div className="absolute left-1/2 transform -translate-x-1/2">
-            <button onClick={() => setShowCalendarModal(true)} className="text-lg font-medium text-white hover:text-blue-300 transition-colors">
-              <span className="sr-only">{formattedDate}</span>
-            </button>
+          <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full text-center">
+            <span className="text-lg font-medium text-white">{dateLabel} - {formattedDate}</span>
           </div>
           
-          <button onClick={handleNextDay} className="hover:bg-gray-800 p-2 rounded-full transition-colors absolute right-4">
+          <button 
+            onClick={handleNextDay} 
+            className="hover:bg-gray-800 p-2 rounded-full transition-colors absolute right-2 z-10"
+          >
             <ChevronRight size={20} className="text-blue-400" />
           </button>
         </div>
@@ -812,7 +816,7 @@ const DailyTasksPage: React.FC = () => {
                                   <button 
                                     className="p-1 rounded-full hover:bg-gray-700/50" 
                                     onClick={e => e.stopPropagation()}
-                                    disabled={!task.name.trim()} // Disable if no task name
+                                    disabled={!task.name.trim()}
                                   >
                                     <Edit size={14} className={task.name.trim() ? "text-gray-400" : "text-gray-600"} />
                                   </button>
@@ -908,39 +912,257 @@ const DailyTasksPage: React.FC = () => {
           })}
         </ScrollArea>
         
-        {/* Removed the bottom navigation bar as requested */}
-      </div>
-      
-      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{selectedTask ? 'Edit Task' : 'Add New Task'}</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              {selectedTask ? 'Update your daily task details' : 'Add a new daily task to your routine'}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="grid gap-4">
-              <div className="grid gap-2">
-                <label htmlFor="name" className="text-sm font-medium text-gray-200">
-                  Task Name
-                </label>
-                <Input id="name" placeholder="Enter task name" value={newTaskName} onChange={e => setNewTaskName(e.target.value)} className="bg-gray-700 border-gray-600" />
+        <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+          <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{selectedTask ? 'Edit Task' : 'Add New Task'}</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                {selectedTask ? 'Update your daily task details' : 'Add a new daily task to your routine'}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <label htmlFor="name" className="text-sm font-medium text-gray-200">
+                    Task Name
+                  </label>
+                  <Input id="name" placeholder="Enter task name" value={newTaskName} onChange={e => setNewTaskName(e.target.value)} className="bg-gray-700 border-gray-600" />
+                </div>
+                
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium text-gray-200">
+                    Time of Day
+                  </label>
+                  <TimeInput value={newTaskTime} onChange={setNewTaskTime} label="Time" />
+                </div>
+                
+                <div className="grid gap-2">
+                  <label htmlFor="category" className="text-sm font-medium text-gray-200">
+                    Category
+                  </label>
+                  <Input id="category" placeholder="Enter custom category" value={newTaskCategory} onChange={e => setNewTaskCategory(e.target.value)} className="bg-gray-700 border-gray-600" />
+                </div>
+                
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium text-gray-200">
+                    Color
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {COLORS.map(color => (
+                      <button
+                        key={color}
+                        className={`w-6 h-6 rounded-full ${newTaskColor === color ? 'ring-2 ring-white' : ''}`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => setNewTaskColor(color)}
+                        aria-label={`Select color ${color}`}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
-              
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowAddModal(false)} className="border-gray-600 text-gray-300">
+                Cancel
+              </Button>
+              <Button onClick={selectedTask ? handleUpdateTask : handleAddTask} className="bg-purple-600 hover:bg-purple-700">
+                {selectedTask ? 'Update Task' : 'Add Task'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        <Dialog open={showReminderModal} onOpenChange={setShowReminderModal}>
+          <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Set Task Time</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Choose when you want to do this task
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
               <div className="grid gap-2">
                 <label className="text-sm font-medium text-gray-200">
                   Time of Day
                 </label>
-                <TimeInput value={newTaskTime} onChange={setNewTaskTime} label="Time" />
+                <TimeInput value={reminderTime} onChange={setReminderTime} label="Time" />
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowReminderModal(false)} className="border-gray-600 text-gray-300">
+                Cancel
+              </Button>
+              <Button onClick={saveReminder} className="bg-purple-600 hover:bg-purple-700">
+                Save
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
+          <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Settings</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Customize your daily tasks view
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="grid gap-2">
+                <label className="text-sm font-medium text-gray-200">
+                  Time Increment
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {timeIncrementOptions.map(option => (
+                    <Button 
+                      key={option.value} 
+                      variant={timeIncrement === option.value ? "default" : "outline"} 
+                      className={timeIncrement === option.value ? "bg-purple-600 hover:bg-purple-700" : "border-gray-600 text-gray-300"} 
+                      onClick={() => handleTimeIncrementChange(option.value)}
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </div>
               </div>
               
-              <div className="grid gap-2">
-                <label htmlFor="category" className="text-sm font-medium text-gray-200">
-                  Category
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-gray-200">
+                  Show Clear Tasks Warning
                 </label>
-                <Input id="category" placeholder="Enter custom category" value={newTaskCategory} onChange={e => setNewTaskCategory(e.target.value)} className="bg-gray-700 border-gray-600" />
+                <Switch checked={showClearTaskWarning} onCheckedChange={setShowClearTaskWarning} />
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowSettingsModal(false)} className="border-gray-600 text-gray-300">
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        <Dialog open={showCalendarModal} onOpenChange={setShowCalendarModal}>
+          <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Select Date</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Choose a date to view tasks
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-4">
+              <DatePicker 
+                date={currentDate} 
+                onDateChange={date => {
+                  if (date) {
+                    setCurrentDate(date);
+                    setShowCalendarModal(false);
+                  }
+                }} 
+                disabled={false} 
+                className="border-gray-600 bg-gray-700" 
+              />
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCalendarModal(false)} className="border-gray-600 text-gray-300">
+                Cancel
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        <Dialog open={showCopyModal} onOpenChange={setShowCopyModal}>
+          <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Copy Tasks</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Copy current tasks to another date
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-4">
+              <div className="grid gap-2">
+                <label className="text-sm font-medium text-gray-200">
+                  Select Target Date
+                </label>
+                <DatePicker date={copyToDate} onDateChange={setCopyToDate} disabled={false} className="border-gray-600 bg-gray-700" />
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCopyModal(false)} className="border-gray-600 text-gray-300">
+                Cancel
+              </Button>
+              <Button onClick={handleCopyTasks} className="bg-purple-600 hover:bg-purple-700" disabled={!copyToDate}>
+                Copy Tasks
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        <Dialog open={showMoveTaskModal} onOpenChange={setShowMoveTaskModal}>
+          <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Move Task to Another Date</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Choose which date to move this task to
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-4">
+              <div className="grid gap-4">
+                <div className="bg-gray-700/40 p-3 rounded-md">
+                  <p className="font-medium">{selectedTask?.name}</p>
+                  {selectedTask?.timeOfDay && (
+                    <p className="text-sm text-gray-400 flex items-center mt-1">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {selectedTask.timeOfDay}
+                    </p>
+                  )}
+                </div>
+                
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium text-gray-200">
+                    Select Date to Move To
+                  </label>
+                  <DatePicker date={moveToDate} onDateChange={setMoveToDate} disabled={false} className="border-gray-600 bg-gray-700" />
+                </div>
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowMoveTaskModal(false)} className="border-gray-600 text-gray-300">
+                Cancel
+              </Button>
+              <Button onClick={handleMoveTaskToDate} className="bg-purple-600 hover:bg-purple-700" disabled={!moveToDate}>
+                Move Task
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        <Dialog open={showCategoryModal} onOpenChange={setShowCategoryModal}>
+          <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Category</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Customize the category and color for this task
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="grid gap-2">
+                <label htmlFor="categoryName" className="text-sm font-medium text-gray-200">
+                  Category Name
+                </label>
+                <Input id="categoryName" placeholder="Enter category name" value={newTaskCategory} onChange={e => setNewTaskCategory(e.target.value)} className="bg-gray-700 border-gray-600" />
               </div>
               
               <div className="grid gap-2">
@@ -951,7 +1173,7 @@ const DailyTasksPage: React.FC = () => {
                   {COLORS.map(color => (
                     <button
                       key={color}
-                      className={`w-6 h-6 rounded-full ${newTaskColor === color ? 'ring-2 ring-white' : ''}`}
+                      className={`w-8 h-8 rounded-full ${newTaskColor === color ? 'ring-2 ring-white' : ''}`}
                       style={{ backgroundColor: color }}
                       onClick={() => setNewTaskColor(color)}
                       aria-label={`Select color ${color}`}
@@ -959,279 +1181,59 @@ const DailyTasksPage: React.FC = () => {
                   ))}
                 </div>
               </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddModal(false)} className="border-gray-600 text-gray-300">
-              Cancel
-            </Button>
-            <Button onClick={selectedTask ? handleUpdateTask : handleAddTask} className="bg-purple-600 hover:bg-purple-700">
-              {selectedTask ? 'Update Task' : 'Add Task'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={showReminderModal} onOpenChange={setShowReminderModal}>
-        <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Set Task Time</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Choose when you want to do this task
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="grid gap-2">
-              <label className="text-sm font-medium text-gray-200">
-                Time of Day
-              </label>
-              <TimeInput value={reminderTime} onChange={setReminderTime} label="Time" />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowReminderModal(false)} className="border-gray-600 text-gray-300">
-              Cancel
-            </Button>
-            <Button onClick={saveReminder} className="bg-purple-600 hover:bg-purple-700">
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
-        <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Settings</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Customize your daily tasks view
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="grid gap-2">
-              <label className="text-sm font-medium text-gray-200">
-                Time Increment
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {timeIncrementOptions.map(option => (
-                  <Button 
-                    key={option.value} 
-                    variant={timeIncrement === option.value ? "default" : "outline"} 
-                    className={timeIncrement === option.value ? "bg-purple-600 hover:bg-purple-700" : "border-gray-600 text-gray-300"} 
-                    onClick={() => handleTimeIncrementChange(option.value)}
-                  >
-                    {option.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-200">
-                Show Clear Tasks Warning
-              </label>
-              <Switch checked={showClearTaskWarning} onCheckedChange={setShowClearTaskWarning} />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSettingsModal(false)} className="border-gray-600 text-gray-300">
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={showCalendarModal} onOpenChange={setShowCalendarModal}>
-        <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Select Date</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Choose a date to view tasks
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4">
-            <DatePicker 
-              date={currentDate} 
-              onDateChange={date => {
-                if (date) {
-                  setCurrentDate(date);
-                  setShowCalendarModal(false);
-                }
-              }} 
-              disabled={false} 
-              className="border-gray-600 bg-gray-700" 
-            />
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCalendarModal(false)} className="border-gray-600 text-gray-300">
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={showCopyModal} onOpenChange={setShowCopyModal}>
-        <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Copy Tasks</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Copy current tasks to another date
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4">
-            <div className="grid gap-2">
-              <label className="text-sm font-medium text-gray-200">
-                Select Target Date
-              </label>
-              <DatePicker date={copyToDate} onDateChange={setCopyToDate} disabled={false} className="border-gray-600 bg-gray-700" />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCopyModal(false)} className="border-gray-600 text-gray-300">
-              Cancel
-            </Button>
-            <Button onClick={handleCopyTasks} className="bg-purple-600 hover:bg-purple-700" disabled={!copyToDate}>
-              Copy Tasks
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={showMoveTaskModal} onOpenChange={setShowMoveTaskModal}>
-        <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Move Task to Another Date</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Choose which date to move this task to
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4">
-            <div className="grid gap-4">
-              <div className="bg-gray-700/40 p-3 rounded-md">
-                <p className="font-medium">{selectedTask?.name}</p>
-                {selectedTask?.timeOfDay && (
-                  <p className="text-sm text-gray-400 flex items-center mt-1">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {selectedTask.timeOfDay}
-                  </p>
-                )}
-              </div>
               
-              <div className="grid gap-2">
-                <label className="text-sm font-medium text-gray-200">
-                  Select Date to Move To
-                </label>
-                <DatePicker date={moveToDate} onDateChange={setMoveToDate} disabled={false} className="border-gray-600 bg-gray-700" />
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowMoveTaskModal(false)} className="border-gray-600 text-gray-300">
-              Cancel
-            </Button>
-            <Button onClick={handleMoveTaskToDate} className="bg-purple-600 hover:bg-purple-700" disabled={!moveToDate}>
-              Move Task
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={showCategoryModal} onOpenChange={setShowCategoryModal}>
-        <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit Category</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Customize the category and color for this task
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="grid gap-2">
-              <label htmlFor="categoryName" className="text-sm font-medium text-gray-200">
-                Category Name
-              </label>
-              <Input id="categoryName" placeholder="Enter category name" value={newTaskCategory} onChange={e => setNewTaskCategory(e.target.value)} className="bg-gray-700 border-gray-600" />
-            </div>
-            
-            <div className="grid gap-2">
-              <label className="text-sm font-medium text-gray-200">
-                Color
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {COLORS.map(color => (
-                  <button
-                    key={color}
-                    className={`w-8 h-8 rounded-full ${newTaskColor === color ? 'ring-2 ring-white' : ''}`}
-                    style={{ backgroundColor: color }}
-                    onClick={() => setNewTaskColor(color)}
-                    aria-label={`Select color ${color}`}
-                  />
-                ))}
+              <div className="bg-gray-900/50 rounded-md p-3 mt-4">
+                <h4 className="text-sm font-medium mb-2">Preview</h4>
+                <div className="flex items-center gap-2 bg-gray-800/40 p-2 rounded-md border border-gray-700">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: newTaskColor }}></div>
+                  <span className="flex-1 text-white">
+                    Sample Task
+                  </span>
+                  <span 
+                    className={`text-xs px-1.5 py-0.5 rounded-full bg-opacity-20 border border-opacity-50 cursor-pointer`}
+                    style={{ 
+                      backgroundColor: `${newTaskColor}20`, 
+                      borderColor: `${newTaskColor}50`, 
+                      color: newTaskColor 
+                    }}
+                  >
+                    {newTaskCategory}
+                  </span>
+                </div>
               </div>
             </div>
             
-            <div className="bg-gray-900/50 rounded-md p-3 mt-4">
-              <h4 className="text-sm font-medium mb-2">Preview</h4>
-              <div className="flex items-center gap-2 bg-gray-800/40 p-2 rounded-md border border-gray-700">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: newTaskColor }}></div>
-                <span className="flex-1 text-white">
-                  Sample Task
-                </span>
-                <span 
-                  className={`text-xs px-1.5 py-0.5 rounded-full bg-opacity-20 border border-opacity-50 cursor-pointer`}
-                  style={{ 
-                    backgroundColor: `${newTaskColor}20`, 
-                    borderColor: `${newTaskColor}50`, 
-                    color: newTaskColor 
-                  }}
-                >
-                  {newTaskCategory}
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCategoryModal(false)} className="border-gray-600 text-gray-300">
-              Cancel
-            </Button>
-            <Button onClick={saveCategory} className="bg-purple-600 hover:bg-purple-700">
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={showClearTasksModal} onOpenChange={setShowClearTasksModal}>
-        <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Clear All Tasks</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Are you sure you want to clear all tasks for {format(currentDate, 'MMMM d, yyyy')}? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setShowClearTasksModal(false)} className="border-gray-600 text-gray-300">
-              Cancel
-            </Button>
-            <Button onClick={clearTasksForCurrentDay} className="bg-red-600 hover:bg-red-700">
-              Clear Tasks
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCategoryModal(false)} className="border-gray-600 text-gray-300">
+                Cancel
+              </Button>
+              <Button onClick={saveCategory} className="bg-purple-600 hover:bg-purple-700">
+                Save
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        <Dialog open={showClearTasksModal} onOpenChange={setShowClearTasksModal}>
+          <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Clear All Tasks</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Are you sure you want to clear all tasks for {format(currentDate, 'MMMM d, yyyy')}? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setShowClearTasksModal(false)} className="border-gray-600 text-gray-300">
+                Cancel
+              </Button>
+              <Button onClick={clearTasksForCurrentDay} className="bg-red-600 hover:bg-red-700">
+                Clear Tasks
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 };
