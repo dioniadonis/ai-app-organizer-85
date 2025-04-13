@@ -15,10 +15,12 @@ import TimeInput from '@/components/TimeInput';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+
 interface TimeIncrementOption {
   label: string;
   value: number;
 }
+
 const DailyTasksPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -60,6 +62,7 @@ const DailyTasksPage: React.FC = () => {
     label: '60 minutes',
     value: 60
   }];
+
   const generateTimeSlots = useCallback(() => {
     const slots = [];
     const totalMinutesInDay = 24 * 60;
@@ -72,6 +75,7 @@ const DailyTasksPage: React.FC = () => {
     }
     return slots;
   }, [timeIncrement]);
+
   const timeSlots = generateTimeSlots();
   const getFilteredTimeSlots = useCallback(() => {
     switch (displayRange) {
@@ -96,7 +100,9 @@ const DailyTasksPage: React.FC = () => {
         return timeSlots;
     }
   }, [timeSlots, displayRange]);
+
   const displayTimeSlots = getFilteredTimeSlots();
+
   useEffect(() => {
     if (scrollRef.current && isToday(currentDate)) {
       const now = new Date();
@@ -115,6 +121,7 @@ const DailyTasksPage: React.FC = () => {
       }
     }
   }, [displayRange, timeIncrement, currentDate]);
+
   useEffect(() => {
     const savedTasks = localStorage.getItem('dailyTasks');
     if (savedTasks) {
@@ -135,20 +142,25 @@ const DailyTasksPage: React.FC = () => {
       setShowClearTaskWarning(warningPref === 'true');
     }
   }, []);
+
   useEffect(() => {
     localStorage.setItem('dailyTasks', JSON.stringify(dailyTasks));
   }, [dailyTasks]);
+
   useEffect(() => {
     localStorage.setItem('showClearTaskWarning', showClearTaskWarning.toString());
   }, [showClearTaskWarning]);
+
   const handlePreviousDay = () => {
     setCurrentDate(prev => subDays(prev, 1));
     setEditingTaskId(null);
   };
+
   const handleNextDay = () => {
     setCurrentDate(prev => addDays(prev, 1));
     setEditingTaskId(null);
   };
+
   const handleTaskToggle = (taskId: number) => {
     const task = dailyTasks.find(t => t.id === taskId);
     if (task && !task.name.trim()) {
@@ -195,6 +207,7 @@ const DailyTasksPage: React.FC = () => {
       return task;
     }));
   };
+
   const getTasksForCurrentDate = () => {
     const currentDateStr = format(currentDate, 'yyyy-MM-dd');
     return dailyTasks.filter(task => {
@@ -208,6 +221,7 @@ const DailyTasksPage: React.FC = () => {
       return false;
     });
   };
+
   const handleQuickAddTask = (timeSlot: string) => {
     const [time, period] = timeSlot.split(' ');
     const [hour, minute] = time.split(':');
@@ -239,6 +253,7 @@ const DailyTasksPage: React.FC = () => {
       }
     }, 100);
   };
+
   const handleAddTask = () => {
     if (!newTaskName.trim()) {
       toast({
@@ -267,6 +282,7 @@ const DailyTasksPage: React.FC = () => {
       description: `"${newTaskName}" has been added to your daily tasks`
     });
   };
+
   const startEditing = (taskId: number, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setEditingTaskId(taskId);
@@ -278,6 +294,7 @@ const DailyTasksPage: React.FC = () => {
       setNewTaskColor(task.color || '#9b87f5');
     }
   };
+
   const handleEditTask = (task: DailyTask) => {
     if (!task.name.trim()) {
       toast({
@@ -295,6 +312,7 @@ const DailyTasksPage: React.FC = () => {
     setSelectedTask(task);
     setShowAddModal(true);
   };
+
   const handleUpdateTask = () => {
     if (!selectedTask) return;
     if (!newTaskName.trim()) {
@@ -326,6 +344,7 @@ const DailyTasksPage: React.FC = () => {
       description: `Your task has been updated successfully`
     });
   };
+
   const handleDeleteTask = (taskId: number) => {
     setDailyTasks(prev => prev.filter(task => task.id !== taskId));
     toast({
@@ -333,11 +352,13 @@ const DailyTasksPage: React.FC = () => {
       description: "The task has been removed from your list"
     });
   };
+
   const handleSetReminder = (task: DailyTask) => {
     setSelectedTask(task);
     setReminderTime(task.timeOfDay || '');
     setShowReminderModal(true);
   };
+
   const saveReminder = () => {
     if (!selectedTask || !reminderTime) {
       toast({
@@ -364,11 +385,13 @@ const DailyTasksPage: React.FC = () => {
     setSelectedTask(null);
     setReminderTime('');
   };
+
   const handleMoveTask = (task: DailyTask) => {
     setSelectedTask(task);
     setMoveToDate(undefined);
     setShowMoveTaskModal(true);
   };
+
   const handleMoveTaskToDate = () => {
     if (!selectedTask || !moveToDate) {
       toast({
@@ -395,12 +418,14 @@ const DailyTasksPage: React.FC = () => {
     setSelectedTask(null);
     setMoveToDate(undefined);
   };
+
   const handleDragStart = (task: DailyTask) => {
     if (isMobile || isTouchDevice) {
       setIsDragging(true);
       setDraggedTask(task);
     }
   };
+
   const handleDragEnd = () => {
     if ((isMobile || isTouchDevice) && draggedTask && targetTimeSlot) {
       const [time, period] = targetTimeSlot.split(' ');
@@ -430,11 +455,13 @@ const DailyTasksPage: React.FC = () => {
     setDraggedTask(null);
     setTargetTimeSlot(null);
   };
+
   const handleTimeSlotHover = (timeSlot: string) => {
     if (isDragging) {
       setTargetTimeSlot(timeSlot);
     }
   };
+
   const handleTaskNameBlur = (taskId: number) => {
     const task = dailyTasks.find(t => t.id === taskId);
     if (task && !newTaskName.trim()) {
@@ -455,12 +482,14 @@ const DailyTasksPage: React.FC = () => {
       setEditingTaskId(null);
     }
   };
+
   const handleCategoryClick = (task: DailyTask) => {
     setSelectedTask(task);
     setNewTaskCategory(task.category || 'Personal');
     setNewTaskColor(task.color || '#9b87f5');
     setShowCategoryModal(true);
   };
+
   const saveCategory = () => {
     if (!selectedTask) return;
     setDailyTasks(prev => prev.map(task => {
@@ -480,6 +509,7 @@ const DailyTasksPage: React.FC = () => {
     setShowCategoryModal(false);
     setSelectedTask(null);
   };
+
   const handleCopyTasks = () => {
     if (!copyToDate) {
       toast({
@@ -514,6 +544,7 @@ const DailyTasksPage: React.FC = () => {
     setCopyToDate(undefined);
     setShowCopyModal(false);
   };
+
   const handleClearTasks = () => {
     if (showClearTaskWarning) {
       setShowClearTasksModal(true);
@@ -521,6 +552,7 @@ const DailyTasksPage: React.FC = () => {
       clearTasksForCurrentDay();
     }
   };
+
   const clearTasksForCurrentDay = () => {
     const currentDateStr = format(currentDate, 'yyyy-MM-dd');
     const tasksToRemove = dailyTasks.filter(task => {
@@ -544,6 +576,7 @@ const DailyTasksPage: React.FC = () => {
     });
     setShowClearTasksModal(false);
   };
+
   const handleTimeIncrementChange = (value: number) => {
     setTimeIncrement(value);
     toast({
@@ -551,6 +584,7 @@ const DailyTasksPage: React.FC = () => {
       description: `Time increment set to ${value} minutes`
     });
   };
+
   const getTasksForTimeSlot = (timeSlot: string) => {
     const [time, period] = timeSlot.split(' ');
     const [hour, minute] = time.split(':');
@@ -568,9 +602,11 @@ const DailyTasksPage: React.FC = () => {
       return isCorrectTime && isForCurrentDate;
     });
   };
+
   const formattedDate = format(currentDate, 'MMMM d, yyyy');
   const dayName = format(currentDate, 'EEEE');
   const dateLabel = isToday(currentDate) ? 'Today' : isTomorrow(currentDate) ? 'Tomorrow' : dayName;
+
   const getTaskCategoryBadgeClass = (category?: string) => {
     switch (category) {
       case 'Morning Routine':
@@ -591,23 +627,25 @@ const DailyTasksPage: React.FC = () => {
         return 'bg-gray-500/20 text-gray-300 border-gray-500/50';
     }
   };
+
   const CATEGORIES = ['Morning Routine', 'Work', 'Health', 'Learning', 'Evening Routine', 'Wellness', 'Productivity', 'Personal', 'Custom'];
   const COLORS = ['#9b87f5',
-  // Primary Purple
-  '#6E56CF',
-  // Vivid Purple
-  '#0EA5E9',
-  // Ocean Blue
-  '#1EAEDB',
-  // Bright Blue
-  '#33C3F0',
-  // Sky Blue
-  '#D6BCFA',
-  // Light Purple
-  '#F97316',
-  // Bright Orange
-  '#D946EF' // Magenta Pink
+    // Primary Purple
+    '#6E56CF',
+    // Vivid Purple
+    '#0EA5E9',
+    // Ocean Blue
+    '#1EAEDB',
+    // Bright Blue
+    '#33C3F0',
+    // Sky Blue
+    '#D6BCFA',
+    // Light Purple
+    '#F97316',
+    // Bright Orange
+    '#D946EF' // Magenta Pink
   ];
+
   return <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-100">
       <div className={`mx-auto p-2 ${isMobile ? 'max-w-md' : 'max-w-2xl'}`}>
         <div className="flex items-center justify-between mb-4 my-0 px-px mx-0 py-[3px]">
@@ -659,7 +697,12 @@ const DailyTasksPage: React.FC = () => {
           </button>
           
           <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full text-center">
-            <span className="text-lg font-medium text-white">{formattedDate}</span>
+            <button 
+              onClick={() => setShowCalendarModal(true)} 
+              className="text-lg font-medium text-white hover:text-blue-300 transition-colors cursor-pointer"
+            >
+              {formattedDate}
+            </button>
           </div>
           
           <button onClick={handleNextDay} className="hover:bg-gray-800 p-2 rounded-full transition-colors absolute right-2 z-10">
@@ -1103,4 +1146,5 @@ const DailyTasksPage: React.FC = () => {
       </div>
     </div>;
 };
+
 export default DailyTasksPage;
