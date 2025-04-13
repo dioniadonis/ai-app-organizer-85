@@ -25,7 +25,7 @@ interface TimeSlotProps {
   onNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onNameBlur: (taskId: number) => void;
   onDragStart: (task: DailyTask) => void;
-  onEditTask?: (taskId: number, task: Partial<DailyTask>) => void;
+  onEditTask: (taskId: number, task: Partial<DailyTask>) => void;
 }
 
 const TimeSlot: React.FC<TimeSlotProps> = ({

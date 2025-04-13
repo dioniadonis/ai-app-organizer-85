@@ -21,7 +21,7 @@ interface TaskItemProps {
   onNameBlur: (taskId: number) => void;
   onDragStart: (task: DailyTask) => void;
   onDragEnd: () => void;
-  onEditTask?: (taskId: number, task: Partial<DailyTask>) => void;
+  onEditTask: (taskId: number, task: Partial<DailyTask>) => void;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({

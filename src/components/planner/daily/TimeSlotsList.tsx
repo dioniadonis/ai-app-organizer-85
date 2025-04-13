@@ -27,7 +27,7 @@ interface TimeSlotsListProps {
   onNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onNameBlur: (taskId: number) => void;
   onDragStart: (task: DailyTask) => void;
-  onEditTask?: (taskId: number, task: Partial<DailyTask>) => void;
+  onEditTask: (taskId: number, task: Partial<DailyTask>) => void;
 }
 
 const TimeSlotsList: React.FC<TimeSlotsListProps> = ({
@@ -71,7 +71,7 @@ const TimeSlotsList: React.FC<TimeSlotsListProps> = ({
   };
 
   return (
-    <ScrollArea className="h-[calc(100vh-200px)] rounded-lg border border-gray-800 bg-gray-900/80" ref={scrollRef}>
+    <ScrollArea className="h-[calc(100dvh-200px)] rounded-lg border border-gray-800 bg-gray-900/80 overflow-x-hidden -webkit-overflow-scrolling-touch" ref={scrollRef}>
       {displayTimeSlots.map((timeSlot) => {
         const tasksInSlot = getTasksForTimeSlot(timeSlot);
         const timeSlotId = `timeslot-${timeSlot}`;

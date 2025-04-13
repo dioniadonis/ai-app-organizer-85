@@ -36,6 +36,19 @@
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
     overflow-x: hidden;
+    /* Fix for iOS height */
+    min-height: 100dvh;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* iOS-specific fixes */
+  @supports (-webkit-touch-callout: none) {
+    body, html {
+      height: -webkit-fill-available;
+    }
+    .hidden-on-ios {
+      display: none !important;
+    }
   }
 }
 
