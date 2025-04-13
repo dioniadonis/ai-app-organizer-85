@@ -32,6 +32,21 @@ const App = () => {
               <Route path="/expenses" element={<ExpensesPage />} />
               <Route path="/daily-tasks" element={<DailyTasksPage />} />
               <Route path="/account" element={<AccountPage />} />
+              {/* Link to the standalone daily tasks app */}
+              <Route path="/daily-tasks-app" element={
+                <div className="max-w-md mx-auto p-4">
+                  <h1 className="text-xl font-bold mb-4">Daily Tasks App</h1>
+                  <p className="mb-4">The Daily Tasks App is now available as a standalone application.</p>
+                  <a 
+                    href="/apps/daily-tasks/index.html" 
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Open Daily Tasks App
+                  </a>
+                </div>
+              } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
