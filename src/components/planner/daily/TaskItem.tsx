@@ -71,6 +71,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
       style={{
         cursor: (isMobile || isTouchDevice) && isDragging && draggedTask?.id === task.id ? 'grabbing' : 'auto'
       }}
+      onClick={() => editingTaskId !== task.id ? onNameBlur(task.id) : null}
     >                            
       {editingTaskId === task.id ? (
         <Input 
@@ -85,7 +86,10 @@ const TaskItem: React.FC<TaskItemProps> = ({
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
             <button 
-              onClick={() => onTaskToggle(task.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onTaskToggle(task.id);
+              }}
               className="flex-shrink-0"
             >
               {task.completed ? (

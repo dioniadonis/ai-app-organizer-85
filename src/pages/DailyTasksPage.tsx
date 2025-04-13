@@ -442,23 +442,31 @@ const DailyTasksPage: React.FC = () => {
   };
 
   const handleTaskNameBlur = (taskId: number) => {
-    const task = dailyTasks.find(t => t.id === taskId);
-    if (task && !newTaskName.trim()) {
-      setDailyTasks(prev => prev.filter(t => t.id !== taskId));
-      setEditingTaskId(null);
-      return;
-    }
-    if (newTaskName.trim()) {
-      setDailyTasks(prev => prev.map(t => {
-        if (t.id === taskId) {
-          return {
-            ...t,
-            name: newTaskName
-          };
-        }
-        return t;
-      }));
-      setEditingTaskId(null);
+    if (editingTaskId === taskId) {
+      const task = dailyTasks.find(t => t.id === taskId);
+      if (task && !newTaskName.trim()) {
+        setDailyTasks(prev => prev.filter(t => t.id !== taskId));
+        setEditingTaskId(null);
+        return;
+      }
+      if (newTaskName.trim()) {
+        setDailyTasks(prev => prev.map(t => {
+          if (t.id === taskId) {
+            return {
+              ...t,
+              name: newTaskName
+            };
+          }
+          return t;
+        }));
+        setEditingTaskId(null);
+      }
+    } else {
+      const task = dailyTasks.find(t => t.id === taskId);
+      if (task) {
+        setNewTaskName(task.name);
+        setEditingTaskId(taskId);
+      }
     }
   };
 
@@ -615,27 +623,6 @@ const DailyTasksPage: React.FC = () => {
     });
   };
 
-  const getTaskCategoryBadgeClass = (category?: string) => {
-    switch (category) {
-      case 'Morning Routine':
-        return 'bg-blue-500/20 text-blue-300 border-blue-500/50';
-      case 'Work':
-        return 'bg-purple-500/20 text-purple-300 border-purple-500/50';
-      case 'Health':
-        return 'bg-green-500/20 text-green-300 border-green-500/50';
-      case 'Learning':
-        return 'bg-orange-500/20 text-orange-300 border-orange-500/50';
-      case 'Evening Routine':
-        return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/50';
-      case 'Wellness':
-        return 'bg-pink-500/20 text-pink-300 border-pink-500/50';
-      case 'Productivity':
-        return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/50';
-      default:
-        return 'bg-gray-500/20 text-gray-300 border-gray-500/50';
-    }
-  };
-
   const formattedDate = format(currentDate, 'MMMM d, yyyy');
   const dayName = format(currentDate, 'EEEE');
   const dateLabel = isToday(currentDate) ? 'Today' : isTomorrow(currentDate) ? 'Tomorrow' : dayName;
@@ -706,7 +693,6 @@ const DailyTasksPage: React.FC = () => {
                 onDragEnd={handleDragEnd}
                 onQuickAddTask={handleQuickAddTask}
                 onTaskToggle={handleTaskToggle}
-                onEditTask={handleEditTask}
                 onMoveTask={handleMoveTask}
                 onDeleteTask={handleDeleteTask}
                 onNameChange={(e) => setNewTaskName(e.target.value)}

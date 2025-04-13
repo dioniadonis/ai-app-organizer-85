@@ -20,7 +20,6 @@ interface TimeSlotProps {
   onDragEnd: () => void;
   onQuickAddTask: (timeSlot: string) => void;
   onTaskToggle: (taskId: number) => void;
-  onEditTask: (task: DailyTask) => void;
   onMoveTask: (task: DailyTask) => void;
   onDeleteTask: (taskId: number) => void;
   onNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -44,7 +43,6 @@ const TimeSlot: React.FC<TimeSlotProps> = ({
   onDragEnd,
   onQuickAddTask,
   onTaskToggle,
-  onEditTask,  // We keep this in the props but won't use it
   onMoveTask,
   onDeleteTask,
   onNameChange,
