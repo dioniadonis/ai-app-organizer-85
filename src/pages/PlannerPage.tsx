@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -180,6 +179,11 @@ const PlannerPage: React.FC = () => {
           <PlannerHeader 
             activeView={activeView} 
             onViewChange={handleTabChange}
+            hasNotifications={hasNotifications}
+            notifications={notifications}
+            setHasNotifications={setHasNotifications}
+            setNotifications={setNotifications}
+            openNotificationSettings={() => setIsNotificationSettingsOpen(true)}
             openAIAssistant={() => setIsAIAssistantOpen(true)}
           />
           

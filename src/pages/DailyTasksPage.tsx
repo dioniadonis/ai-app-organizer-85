@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Edit, Plus, Home, Calendar, X, Check, Clock, CalendarCheck, Circle, Settings, Copy, Move, Trash2, CalendarDays, CheckCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit, Plus, Home, Calendar, X, Check, Clock, CalendarCheck, Circle, Settings, Copy, Move, Trash2, CalendarDays } from 'lucide-react';
 import { format, addDays, subDays, parseISO, isToday, isTomorrow, isSameDay } from 'date-fns';
 import { DailyTask } from '@/components/planner/DailyTasksTab';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,6 @@ import TimeInput from '@/components/TimeInput';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 
 interface TimeIncrementOption {
   label: string;
@@ -38,6 +38,7 @@ const DailyTasksPage: React.FC = () => {
   const [showClearTaskWarning, setShowClearTaskWarning] = useState(true);
   const [selectedTask, setSelectedTask] = useState<DailyTask | null>(null);
   const [newTaskName, setNewTaskName] = useState('');
+  const [newTaskTime, setNewTaskTime] = useState('');
   const [newTaskCategory, setNewTaskCategory] = useState('Personal');
   const [newTaskColor, setNewTaskColor] = useState('#9b87f5');
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
@@ -91,13 +92,14 @@ const DailyTasksPage: React.FC = () => {
         return timeSlots.filter(slot => {
           const [time, period] = slot.split(' ');
           const [hour] = time.split(':');
-          return period === 'PM' && (parseInt(hour) <= 5 || parseInt(hour) === 12);
+          return period === 'PM' && parseInt(hour) < 6;
         });
       case 'evening':
         return timeSlots.filter(slot => {
           const [time, period] = slot.split(' ');
           const [hour] = time.split(':');
-          return period === 'PM' && parseInt(hour) >= 6 && parseInt(hour) !== 12;
+          // Exclude 12-12:30 PM from evening time
+          return period === 'PM' && (parseInt(hour) >= 5 && !(parseInt(hour) === 12));
         });
       default:
         return timeSlots;
@@ -275,7 +277,7 @@ const DailyTasksPage: React.FC = () => {
       id: Date.now(),
       name: newTaskName,
       completed: false,
-      timeOfDay: undefined,
+      timeOfDay: newTaskTime || undefined,
       streak: 0,
       lastCompleted: format(currentDate, 'yyyy-MM-dd'),
       color: newTaskColor,
@@ -284,6 +286,7 @@ const DailyTasksPage: React.FC = () => {
 
     setDailyTasks(prev => [...prev, newTask]);
     setNewTaskName('');
+    setNewTaskTime('');
     setShowAddModal(false);
     toast({
       title: "Task added",
@@ -297,6 +300,7 @@ const DailyTasksPage: React.FC = () => {
     const task = dailyTasks.find(t => t.id === taskId);
     if (task) {
       setNewTaskName(task.name);
+      setNewTaskTime(task.timeOfDay || '');
       setNewTaskCategory(task.category || 'Personal');
       setNewTaskColor(task.color || '#9b87f5');
     }
@@ -313,6 +317,7 @@ const DailyTasksPage: React.FC = () => {
     }
     setEditingTaskId(null);
     setNewTaskName(task.name);
+    setNewTaskTime(task.timeOfDay || '');
     setNewTaskCategory(task.category || 'Personal');
     setNewTaskColor(task.color || '#9b87f5');
     setSelectedTask(task);
@@ -334,6 +339,7 @@ const DailyTasksPage: React.FC = () => {
         return {
           ...task,
           name: newTaskName,
+          timeOfDay: newTaskTime || undefined,
           color: newTaskColor,
           category: newTaskCategory
         };
@@ -342,6 +348,7 @@ const DailyTasksPage: React.FC = () => {
     }));
     setSelectedTask(null);
     setNewTaskName('');
+    setNewTaskTime('');
     setShowAddModal(false);
     toast({
       title: "Task updated",
@@ -505,11 +512,13 @@ const DailyTasksPage: React.FC = () => {
       return;
     }
 
+    // Find existing tasks on the target date to avoid duplicates
     const existingTasksOnTargetDate = dailyTasks.filter(task => {
       const taskDate = task.lastCompleted ? task.lastCompleted.split('T')[0] : '';
       return taskDate === targetDateStr;
     });
 
+    // Filter out tasks that already exist on the target date (by name)
     const tasksToAdd = tasksForCurrentDate.filter(currentTask => {
       return !existingTasksOnTargetDate.some(targetTask => 
         targetTask.name === currentTask.name && 
@@ -650,8 +659,6 @@ const DailyTasksPage: React.FC = () => {
     '#D946EF' // Magenta Pink
   ];
 
-  const [newTaskTime, setNewTaskTime] = useState('');
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-100">
       <div className={`mx-auto p-2 ${isMobile ? 'max-w-md' : 'max-w-2xl'}`}>
@@ -687,6 +694,7 @@ const DailyTasksPage: React.FC = () => {
               setSelectedTask(null);
               setEditingTaskId(null);
               setNewTaskName('');
+              setNewTaskTime('');
               setNewTaskCategory('Personal');
               setNewTaskColor('#9b87f5');
               setShowAddModal(true);
@@ -817,49 +825,50 @@ const DailyTasksPage: React.FC = () => {
                                   <div>
                                     <span 
                                       className={`text-sm ${task.completed ? 'line-through text-gray-400' : 'text-white'}`}
+                                      style={task.color ? { color: task.color } : undefined}
                                     >
                                       {task.name}
                                     </span>
                                     {task.category && (
-                                      <span 
-                                        className={`text-xs px-2 py-0.5 ml-2 rounded-full border ${getTaskCategoryBadgeClass(task.category)}`}
-                                        onClick={() => handleCategoryClick(task)}
+                                      <div 
+                                        className={`text-xs px-2 py-0.5 rounded-full mt-1 inline-block ${getTaskCategoryBadgeClass(task.category)}`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleCategoryClick(task);
+                                        }}
                                       >
                                         {task.category}
-                                      </span>
+                                      </div>
                                     )}
                                   </div>
                                 </div>
-                                
                                 <div className="flex items-center gap-1">
-                                  <button 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      startEditing(task.id, e);
-                                    }}
-                                    className="p-1 hover:bg-gray-700 rounded-full transition-colors"
-                                  >
-                                    <Edit size={14} className="text-gray-400 hover:text-gray-300" />
-                                  </button>
-                                  
                                   <button 
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleMoveTask(task);
                                     }}
-                                    className="p-1 hover:bg-gray-700 rounded-full transition-colors"
+                                    className="text-blue-400 p-1 rounded-full hover:bg-gray-700/50"
                                   >
-                                    <Move size={14} className="text-gray-400 hover:text-gray-300" />
+                                    <Move size={14} />
                                   </button>
-                                  
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditTask(task);
+                                    }}
+                                    className="text-gray-400 p-1 rounded-full hover:bg-gray-700/50"
+                                  >
+                                    <Edit size={14} />
+                                  </button>
                                   <button 
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleDeleteTask(task.id);
                                     }}
-                                    className="p-1 hover:bg-gray-700 rounded-full transition-colors"
+                                    className="text-red-400 p-1 rounded-full hover:bg-gray-700/50"
                                   >
-                                    <Trash2 size={14} className="text-gray-400 hover:text-red-400" />
+                                    <X size={14} />
                                   </button>
                                 </div>
                               </div>
@@ -868,14 +877,13 @@ const DailyTasksPage: React.FC = () => {
                         ))}
                       </div>
                     ) : (
-                      <motion.div 
-                        className="flex items-center justify-center py-2 opacity-30 hover:opacity-100 transition-opacity cursor-pointer"
+                      <button 
                         onClick={() => handleQuickAddTask(timeSlot)}
-                        whileHover={{ scale: 1.03 }}
+                        className="w-full text-center py-1 px-2 border border-dashed border-gray-700 rounded-md text-gray-500 hover:bg-gray-800/40 hover:border-gray-600 hover:text-gray-400 transition-colors text-sm"
                       >
-                        <Plus size={16} className="text-gray-400 mr-1" />
-                        <span className="text-sm text-gray-400">Add task at {timeSlot}</span>
-                      </motion.div>
+                        <Plus size={14} className="inline mr-1" />
+                        Add task
+                      </button>
                     )}
                   </div>
                 </div>
@@ -884,200 +892,196 @@ const DailyTasksPage: React.FC = () => {
           })}
         </ScrollArea>
       </div>
-      
+
+      {/* Add/Edit Task Modal */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800 text-gray-100">
+        <DialogContent className="bg-gray-900 text-white border-gray-800 max-w-md">
           <DialogHeader>
-            <DialogTitle>{selectedTask ? 'Edit Task' : 'Add Task'}</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              {selectedTask ? 'Update your task details' : 'Add a new task to your schedule'}
-            </DialogDescription>
+            <DialogTitle>{selectedTask ? 'Edit Task' : 'Add New Task'}</DialogTitle>
           </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="taskName">Task Name</Label>
+          <div className="space-y-4">
+            <div>
+              <Label>Task Name</Label>
               <Input 
-                id="taskName"
-                value={newTaskName} 
-                onChange={e => setNewTaskName(e.target.value)} 
-                placeholder="Enter task name"
+                value={newTaskName}
+                onChange={(e) => setNewTaskName(e.target.value)}
                 className="bg-gray-800 border-gray-700"
+                placeholder="Enter task name"
               />
             </div>
             
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORIES.map(category => (
-                  <button
-                    key={category}
-                    onClick={() => setNewTaskCategory(category)}
-                    className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
-                      newTaskCategory === category 
-                        ? 'bg-purple-900/30 border-purple-500/50 text-purple-300' 
-                        : 'bg-gray-800/40 border-gray-700 text-gray-300 hover:bg-gray-800/80'
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
+            <div>
+              <TimeInput 
+                value={newTaskTime}
+                onChange={(time) => setNewTaskTime(time)}
+                label="Time"
+              />
             </div>
             
-            <div className="space-y-2">
+            <div>
+              <Label>Category</Label>
+              <select 
+                value={newTaskCategory}
+                onChange={(e) => setNewTaskCategory(e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-white"
+              >
+                {CATEGORIES.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
               <Label>Color</Label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 mt-1">
                 {COLORS.map(color => (
                   <button
                     key={color}
-                    onClick={() => setNewTaskColor(color)}
-                    className={`w-6 h-6 rounded-full transition-transform ${
-                      newTaskColor === color 
-                        ? 'ring-2 ring-white scale-125' 
-                        : 'hover:scale-110'
-                    }`}
+                    className={`w-8 h-8 rounded-full ${newTaskColor === color ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-900' : ''}`}
                     style={{ backgroundColor: color }}
+                    onClick={() => setNewTaskColor(color)}
                   />
                 ))}
               </div>
             </div>
-            
-            <div className="space-y-2">
-              <TimeInput
-                value={selectedTask?.timeOfDay || ''}
-                onChange={(time) => {
-                  if (selectedTask) {
-                    setSelectedTask({ ...selectedTask, timeOfDay: time });
-                  }
-                }}
-                label="Time of Day (optional)"
-              />
-            </div>
           </div>
-          
           <DialogFooter>
             <Button 
-              variant="ghost" 
+              variant="outline" 
               onClick={() => {
                 setShowAddModal(false);
                 setSelectedTask(null);
               }}
-              className="bg-gray-800 hover:bg-gray-700"
             >
               Cancel
             </Button>
             <Button 
               onClick={selectedTask ? handleUpdateTask : handleAddTask}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-blue-600 hover:bg-blue-700"
             >
               {selectedTask ? 'Update Task' : 'Add Task'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
-      <Dialog open={showCalendarModal} onOpenChange={setShowCalendarModal}>
-        <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800 text-gray-100">
+
+      {/* Move Task Modal */}
+      <Dialog open={showMoveTaskModal} onOpenChange={setShowMoveTaskModal}>
+        <DialogContent className="bg-gray-900 text-white border-gray-800 max-w-md">
           <DialogHeader>
-            <DialogTitle>Calendar</DialogTitle>
+            <DialogTitle>Move Task</DialogTitle>
             <DialogDescription className="text-gray-400">
-              Select a date to view or schedule tasks
+              Select a date to move this task to
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="py-4">
+          <div className="space-y-4">
             <DatePicker 
-              date={currentDate}
-              onDateChange={(date) => {
-                if (date) {
-                  setCurrentDate(date);
-                  setShowCalendarModal(false);
-                }
-              }}
+              date={moveToDate}
+              onDateChange={setMoveToDate}
+              label="Move to date"
             />
           </div>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
-        <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800 text-gray-100">
-          <DialogHeader>
-            <DialogTitle>Settings</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Customize your daily tasks view
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-6 py-4">
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium">Time Increment</h3>
-              <div className="flex flex-wrap gap-2">
-                {timeIncrementOptions.map(option => (
-                  <button
-                    key={option.value}
-                    onClick={() => handleTimeIncrementChange(option.value)}
-                    className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
-                      timeIncrement === option.value 
-                        ? 'bg-purple-600/30 text-purple-300 border border-purple-500/50' 
-                        : 'bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-800/80'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Switch 
-                id="clear-warning"
-                checked={showClearTaskWarning}
-                onCheckedChange={setShowClearTaskWarning}
-              />
-              <Label htmlFor="clear-warning" className="text-sm">Show warning when clearing tasks</Label>
-            </div>
-          </div>
-          
           <DialogFooter>
             <Button 
-              onClick={() => setShowSettingsModal(false)}
-              className="bg-purple-600 hover:bg-purple-700"
+              variant="outline" 
+              onClick={() => {
+                setShowMoveTaskModal(false);
+                setSelectedTask(null);
+              }}
             >
-              Done
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleMoveTaskToDate}
+              className="bg-blue-600 hover:bg-blue-700"
+              disabled={!moveToDate}
+            >
+              Move Task
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
+      {/* Category Modal */}
+      <Dialog open={showCategoryModal} onOpenChange={setShowCategoryModal}>
+        <DialogContent className="bg-gray-900 text-white border-gray-800 max-w-md">
+          <DialogHeader>
+            <DialogTitle>Update Category</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Category</Label>
+              <select 
+                value={newTaskCategory}
+                onChange={(e) => setNewTaskCategory(e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-white"
+              >
+                {CATEGORIES.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <Label>Color</Label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {COLORS.map(color => (
+                  <button
+                    key={color}
+                    className={`w-8 h-8 rounded-full ${newTaskColor === color ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-900' : ''}`}
+                    style={{ backgroundColor: color }}
+                    onClick={() => setNewTaskColor(color)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowCategoryModal(false);
+                setSelectedTask(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={saveCategory}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Copy Tasks Modal */}
       <Dialog open={showCopyModal} onOpenChange={setShowCopyModal}>
-        <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800 text-gray-100">
+        <DialogContent className="bg-gray-900 text-white border-gray-800 max-w-md">
           <DialogHeader>
             <DialogTitle>Copy Tasks</DialogTitle>
             <DialogDescription className="text-gray-400">
               Copy all tasks from {format(currentDate, 'MMMM d, yyyy')} to another date
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="py-4 space-y-4">
+          <div className="space-y-4">
             <DatePicker 
               date={copyToDate}
               onDateChange={setCopyToDate}
-              label="Select target date"
+              label="Copy to date"
             />
           </div>
-          
           <DialogFooter>
             <Button 
-              variant="ghost" 
+              variant="outline" 
               onClick={() => setShowCopyModal(false)}
-              className="bg-gray-800 hover:bg-gray-700"
             >
               Cancel
             </Button>
             <Button 
               onClick={handleCopyTasks}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-blue-600 hover:bg-blue-700"
               disabled={!copyToDate}
             >
               Copy Tasks
@@ -1085,131 +1089,105 @@ const DailyTasksPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
-      <Dialog open={showClearTasksModal} onOpenChange={setShowClearTasksModal}>
-        <DialogContent className="sm:max-w-xs bg-gray-900 border-gray-800 text-gray-100">
+
+      {/* Settings Modal */}
+      <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
+        <DialogContent className="bg-gray-900 text-white border-gray-800 max-w-md">
           <DialogHeader>
-            <DialogTitle>Clear Tasks</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Are you sure you want to clear all tasks for {format(currentDate, 'MMMM d, yyyy')}?
-            </DialogDescription>
+            <DialogTitle>Settings</DialogTitle>
           </DialogHeader>
-          
+          <div className="space-y-4">
+            <div>
+              <Label>Time Increment</Label>
+              <select 
+                value={timeIncrement}
+                onChange={(e) => handleTimeIncrementChange(parseInt(e.target.value))}
+                className="w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-white"
+              >
+                {timeIncrementOptions.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <Label htmlFor="clear-warning">Show Clear Tasks Warning</Label>
+              <Switch 
+                id="clear-warning"
+                checked={showClearTaskWarning} 
+                onCheckedChange={setShowClearTaskWarning}
+              />
+            </div>
+          </div>
           <DialogFooter>
             <Button 
-              variant="ghost" 
+              variant="outline" 
+              onClick={() => setShowSettingsModal(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Calendar Modal */}
+      <Dialog open={showCalendarModal} onOpenChange={setShowCalendarModal}>
+        <DialogContent className="bg-gray-900 text-white border-gray-800 max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select Date</DialogTitle>
+          </DialogHeader>
+          <DatePicker 
+            date={currentDate}
+            onDateChange={(date) => {
+              if (date) {
+                setCurrentDate(date);
+                setShowCalendarModal(false);
+              }
+            }}
+            label="Go to date"
+          />
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowCalendarModal(false)}
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clear Tasks Warning Modal */}
+      <Dialog open={showClearTasksModal} onOpenChange={setShowClearTasksModal}>
+        <DialogContent className="bg-gray-900 text-white border-gray-800 max-w-md">
+          <DialogHeader>
+            <DialogTitle>Clear All Tasks?</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              This will remove all tasks for {format(currentDate, 'MMMM d, yyyy')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="show-warning-again">Don't show this warning again</Label>
+              <Switch 
+                id="show-warning-again"
+                checked={!showClearTaskWarning} 
+                onCheckedChange={(checked) => setShowClearTaskWarning(!checked)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
               onClick={() => setShowClearTasksModal(false)}
-              className="bg-gray-800 hover:bg-gray-700"
             >
               Cancel
             </Button>
             <Button 
               onClick={clearTasksForCurrentDay}
-              className="bg-red-600 hover:bg-red-700"
+              variant="destructive"
             >
               Clear Tasks
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={showCategoryModal} onOpenChange={setShowCategoryModal}>
-        <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800 text-gray-100">
-          <DialogHeader>
-            <DialogTitle>Edit Category</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Update the category for this task
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORIES.map(category => (
-                  <button
-                    key={category}
-                    onClick={() => setNewTaskCategory(category)}
-                    className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
-                      newTaskCategory === category 
-                        ? 'bg-purple-900/30 border-purple-500/50 text-purple-300' 
-                        : 'bg-gray-800/40 border-gray-700 text-gray-300 hover:bg-gray-800/80'
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Color</Label>
-              <div className="flex flex-wrap gap-2">
-                {COLORS.map(color => (
-                  <button
-                    key={color}
-                    onClick={() => setNewTaskColor(color)}
-                    className={`w-6 h-6 rounded-full transition-transform ${
-                      newTaskColor === color 
-                        ? 'ring-2 ring-white scale-125' 
-                        : 'hover:scale-110'
-                    }`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              variant="ghost" 
-              onClick={() => setShowCategoryModal(false)}
-              className="bg-gray-800 hover:bg-gray-700"
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={saveCategory}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={showMoveTaskModal} onOpenChange={setShowMoveTaskModal}>
-        <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800 text-gray-100">
-          <DialogHeader>
-            <DialogTitle>Move Task</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Move "{selectedTask?.name}" to another date
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4 space-y-4">
-            <DatePicker 
-              date={moveToDate}
-              onDateChange={setMoveToDate}
-              label="Select target date"
-            />
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              variant="ghost" 
-              onClick={() => setShowMoveTaskModal(false)}
-              className="bg-gray-800 hover:bg-gray-700"
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleMoveTaskToDate}
-              className="bg-purple-600 hover:bg-purple-700"
-              disabled={!moveToDate}
-            >
-              Move Task
             </Button>
           </DialogFooter>
         </DialogContent>
