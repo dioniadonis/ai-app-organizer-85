@@ -1,12 +1,11 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Edit, CheckCircle, Circle, X, Clock, RotateCcw, Copy as CopyIcon } from 'lucide-react';
+import { Edit, CheckCircle, Circle, X, Clock, RotateCcw, Copy as CopyIcon, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { More } from 'lucide-react';
 import { DailyTask } from '@/components/planner/types';
 
 interface TaskItemProps {
@@ -144,7 +143,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
             <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                  <More className="h-4 w-4" />
+                  <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-40 bg-gray-800 border-gray-700 text-gray-200">

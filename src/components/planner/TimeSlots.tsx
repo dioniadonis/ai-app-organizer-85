@@ -112,7 +112,7 @@ const TimeSlots: React.FC<TimeSlotsProps> = ({
                       <TaskItem
                         key={task.id}
                         task={task}
-                        editingTaskId={editingTaskId}
+                        isEditing={editingTaskId === task.id}
                         newTaskName={newTaskName}
                         setNewTaskName={setNewTaskName}
                         onToggleComplete={onToggleComplete}
@@ -125,12 +125,8 @@ const TimeSlots: React.FC<TimeSlotsProps> = ({
                         onDeleteTask={onDeleteTask}
                         onResetStreak={onResetStreak}
                         onCategoryClick={onCategoryClick}
-                        isDragging={isDragging}
-                        draggedTask={draggedTask}
-                        isMobile={isMobile}
-                        isTouchDevice={isTouchDevice}
-                        handleDragStart={handleDragStart}
-                        handleDragEnd={handleDragEnd}
+                        onDragStart={handleDragStart}
+                        isDraggable={true}
                       />
                     ))}
                   </div>
