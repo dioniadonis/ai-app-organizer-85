@@ -42,7 +42,11 @@ export const filterTimeSlotsByRange = (
     case 'morning':
       return timeSlots.filter(slot => {
         const [time, period] = slot.split(' ');
-        return period === 'AM';
+        const [hourStr] = time.split(':');
+        const hour = parseInt(hourStr);
+        
+        // Morning excludes 12 PM
+        return period === 'AM' && hour !== 12;
       });
     case 'afternoon':
       return timeSlots.filter(slot => {
@@ -59,7 +63,7 @@ export const filterTimeSlotsByRange = (
         const [hourStr] = time.split(':');
         const hour = parseInt(hourStr);
         
-        // Evening is 5 PM onwards, explicitly exclude 12 PM
+        // Evening is 5 PM onwards
         return period === 'PM' && hour >= 5 && hour !== 12;
       });
     default:

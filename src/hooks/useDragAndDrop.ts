@@ -5,7 +5,10 @@ import { DailyTask } from '@/components/planner/DailyTasksTab';
 import { toast } from '@/components/ui/use-toast';
 import { parseTimeSlot } from '@/utils/timeUtils';
 
-export const useDragAndDrop = (dailyTasks: DailyTask[], setDailyTasks: React.Dispatch<React.SetStateAction<DailyTask[]>>) => {
+export const useDragAndDrop = (
+  dailyTasks: DailyTask[], 
+  setDailyTasks: React.Dispatch<React.SetStateAction<DailyTask[]>>
+) => {
   const [isDragging, setIsDragging] = useState(false);
   const [draggedTask, setDraggedTask] = useState<DailyTask | null>(null);
   const [targetTimeSlot, setTargetTimeSlot] = useState<string | null>(null);
