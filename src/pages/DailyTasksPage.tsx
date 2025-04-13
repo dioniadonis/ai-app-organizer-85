@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useIsMobile, useTouchDevice } from '@/hooks/use-mobile';
 import TimeInput from '@/components/TimeInput';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -796,4 +797,4 @@ const DailyTasksPage: React.FC = () => {
                   }} dragElastic={0} dragMomentum={false} onDragStart={() => isMobile || isTouchDevice ? handleDragStart(task) : null} onDragEnd={isMobile || isTouchDevice ? handleDragEnd : null} style={{
                     cursor: (isMobile || isTouchDevice) && isDragging && draggedTask?.id === task.id ? 'grabbing' : 'auto'
                   }}>                            
-                            {editingTaskId === task.id ? <Input value={newTaskName} onChange={e => setNewTaskName(e.target.value)} onBlur={() => handleTaskNameBlur(task.id)} className="bg
+                            {editingTaskId === task.id ? <Input value={newTaskName} onChange={e => setNewTaskName(e.target.value)} onBlur={()
