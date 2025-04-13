@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { isToday } from 'date-fns';
 import { Plus } from 'lucide-react';
@@ -112,6 +111,7 @@ const TimeSlots: React.FC<TimeSlotsProps> = ({
                       <TaskItem
                         key={task.id}
                         task={task}
+                        editingTaskId={editingTaskId}
                         isEditing={editingTaskId === task.id}
                         newTaskName={newTaskName}
                         setNewTaskName={setNewTaskName}
@@ -125,8 +125,12 @@ const TimeSlots: React.FC<TimeSlotsProps> = ({
                         onDeleteTask={onDeleteTask}
                         onResetStreak={onResetStreak}
                         onCategoryClick={onCategoryClick}
-                        onDragStart={handleDragStart}
-                        isDraggable={true}
+                        isDragging={isDragging}
+                        draggedTask={draggedTask}
+                        isMobile={isMobile}
+                        isTouchDevice={isTouchDevice}
+                        handleDragStart={handleDragStart}
+                        handleDragEnd={handleDragEnd}
                       />
                     ))}
                   </div>

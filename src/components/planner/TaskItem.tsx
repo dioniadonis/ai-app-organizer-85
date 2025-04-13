@@ -10,6 +10,7 @@ import { DailyTask } from '@/components/planner/types';
 
 interface TaskItemProps {
   task: DailyTask;
+  editingTaskId?: number;
   isEditing: boolean;
   newTaskName: string;
   setNewTaskName: (name: string) => void;
@@ -23,12 +24,19 @@ interface TaskItemProps {
   onDeleteTask: (id: number) => void;
   onResetStreak: (id: number) => void;
   onCategoryClick: (task: DailyTask) => void;
+  isDragging?: boolean;
+  draggedTask?: DailyTask | null;
+  isMobile?: boolean;
+  isTouchDevice?: boolean;
+  handleDragStart?: (task: DailyTask) => void;
+  handleDragEnd?: () => void;
   onDragStart?: (task: DailyTask) => void;
   isDraggable?: boolean;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({
   task,
+  editingTaskId,
   isEditing,
   newTaskName,
   setNewTaskName,
@@ -42,7 +50,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
   onDeleteTask,
   onResetStreak,
   onCategoryClick,
-  onDragStart,
+  handleDragStart,
   isDraggable = false
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -77,7 +85,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
       draggable={isDraggable}
-      onDragStart={() => onDragStart && onDragStart(task)}
+      onDragStart={() => handleDragStart && handleDragStart(task)}
     >
       {isEditing ? (
         <div>
