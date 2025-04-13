@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { TimeInput } from '@/components/TimeInput';
+import TimeInput from '@/components/TimeInput';
 
 interface ReminderModalProps {
   open: boolean;

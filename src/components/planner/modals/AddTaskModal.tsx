@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { TimeInput } from '@/components/TimeInput';
+import TimeInput from '@/components/TimeInput';
 import { COLORS, CATEGORIES, DailyTask } from '@/components/planner/types';
 
 interface AddTaskModalProps {
