@@ -590,7 +590,7 @@ const DailyTasksPage: React.FC = () => {
   ];
   return <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-100">
       <div className={`mx-auto p-2 ${isMobile ? 'max-w-md' : 'max-w-2xl'}`}>
-        <div className="flex items-center justify-between mb-4 py-2">
+        <div className="flex items-center justify-between mb-4 my-0 px-px mx-0 py-[3px]">
           <button onClick={() => navigate('/')} className="rounded-md p-2 hover:bg-gray-800 transition-colors">
             <Home size={24} className="text-blue-400" />
           </button>
@@ -633,7 +633,7 @@ const DailyTasksPage: React.FC = () => {
           </div>
         </div>
         
-        <div className="flex items-center justify-between mb-4 px-4 py-2 bg-gray-800/30 rounded-lg relative h-12">
+        <div className="flex items-center justify-between mb-4 py-2 bg-gray-800/30 rounded-lg relative h-12 my-[10px] px-0 mx-0">
           <button onClick={handlePreviousDay} className="hover:bg-gray-800 p-2 rounded-full transition-colors absolute left-2 z-10">
             <ChevronLeft size={20} className="text-blue-400" />
           </button>
