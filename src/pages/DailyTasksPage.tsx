@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Edit, Plus, Home, Calendar, X, Check, Clock, CalendarCheck, Circle, Settings, Copy, Move, Trash2, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit, Plus, Home, Calendar, X, Check, CalendarCheck, Circle, Settings, Copy, Move, Trash2, CalendarDays, CheckCircle } from 'lucide-react';
 import { format, addDays, subDays, parseISO, isToday, isTomorrow, isSameDay } from 'date-fns';
 import { DailyTask } from '@/components/planner/DailyTasksTab';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,6 @@ const DailyTasksPage: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dailyTasks, setDailyTasks] = useState<DailyTask[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showReminderModal, setShowReminderModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showCopyModal, setShowCopyModal] = useState(false);
@@ -42,7 +41,6 @@ const DailyTasksPage: React.FC = () => {
   const [newTaskTime, setNewTaskTime] = useState('');
   const [newTaskCategory, setNewTaskCategory] = useState('Personal');
   const [newTaskColor, setNewTaskColor] = useState('#9b87f5');
-  const [reminderTime, setReminderTime] = useState('');
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
   const [displayRange, setDisplayRange] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
   const [timeIncrement, setTimeIncrement] = useState<number>(30);
@@ -301,7 +299,6 @@ const DailyTasksPage: React.FC = () => {
     const task = dailyTasks.find(t => t.id === taskId);
     if (task) {
       setNewTaskName(task.name);
-      setNewTaskTime(task.timeOfDay || '');
       setNewTaskCategory(task.category || 'Personal');
       setNewTaskColor(task.color || '#9b87f5');
     }
@@ -363,39 +360,6 @@ const DailyTasksPage: React.FC = () => {
       title: "Task deleted",
       description: "The task has been removed from your list"
     });
-  };
-
-  const handleSetReminder = (task: DailyTask) => {
-    setSelectedTask(task);
-    setReminderTime(task.timeOfDay || '');
-    setShowReminderModal(true);
-  };
-
-  const saveReminder = () => {
-    if (!selectedTask || !reminderTime) {
-      toast({
-        title: "Reminder time required",
-        description: "Please select a time for the reminder",
-        variant: "destructive"
-      });
-      return;
-    }
-    setDailyTasks(prev => prev.map(task => {
-      if (task.id === selectedTask.id) {
-        return {
-          ...task,
-          timeOfDay: reminderTime
-        };
-      }
-      return task;
-    }));
-    toast({
-      title: "Reminder set",
-      description: `Reminder set for "${selectedTask.name}" at ${reminderTime}`
-    });
-    setShowReminderModal(false);
-    setSelectedTask(null);
-    setReminderTime('');
   };
 
   const handleMoveTask = (task: DailyTask) => {
@@ -676,20 +640,14 @@ const DailyTasksPage: React.FC = () => {
   };
 
   const CATEGORIES = ['Morning Routine', 'Work', 'Health', 'Learning', 'Evening Routine', 'Wellness', 'Productivity', 'Personal', 'Custom'];
-  const COLORS = ['#9b87f5',
-    // Primary Purple
-    '#6E56CF',
-    // Vivid Purple
-    '#0EA5E9',
-    // Ocean Blue
-    '#1EAEDB',
-    // Bright Blue
-    '#33C3F0',
-    // Sky Blue
-    '#D6BCFA',
-    // Light Purple
-    '#F97316',
-    // Bright Orange
+  const COLORS = [
+    '#9b87f5', // Primary Purple
+    '#6E56CF', // Vivid Purple
+    '#0EA5E9', // Ocean Blue
+    '#1EAEDB', // Bright Blue
+    '#33C3F0', // Sky Blue
+    '#D6BCFA', // Light Purple
+    '#F97316', // Bright Orange
     '#D946EF' // Magenta Pink
   ];
 
@@ -707,7 +665,6 @@ const DailyTasksPage: React.FC = () => {
                 <CalendarCheck className="h-6 w-6 text-blue-400" />
                 {dateLabel}
               </button>
-              
             </div>
           </div>
           
@@ -725,15 +682,15 @@ const DailyTasksPage: React.FC = () => {
             </button>
             
             <button onClick={e => {
-            e.stopPropagation();
-            setSelectedTask(null);
-            setEditingTaskId(null);
-            setNewTaskName('');
-            setNewTaskTime('');
-            setNewTaskCategory('Personal');
-            setNewTaskColor('#9b87f5');
-            setShowAddModal(true);
-          }} className="rounded-md p-2 hover:bg-gray-800 transition-colors">
+              e.stopPropagation();
+              setSelectedTask(null);
+              setEditingTaskId(null);
+              setNewTaskName('');
+              setNewTaskTime('');
+              setNewTaskCategory('Personal');
+              setNewTaskColor('#9b87f5');
+              setShowAddModal(true);
+            }} className="rounded-md p-2 hover:bg-gray-800 transition-colors">
               <Plus size={20} className="text-blue-400" />
             </button>
           </div>
@@ -754,47 +711,525 @@ const DailyTasksPage: React.FC = () => {
         </div>
         
         <div className="flex items-center justify-between mb-4 space-x-2">
-          {(['all', 'morning', 'afternoon', 'evening'] as const).map(range => <button key={range} onClick={() => setDisplayRange(range)} className={`flex-1 py-2 px-1 rounded-md text-sm transition-colors ${displayRange === range ? 'bg-purple-600/20 text-purple-300 border border-purple-600/30' : 'bg-gray-800/40 hover:bg-gray-800/60'}`}>
+          {(['all', 'morning', 'afternoon', 'evening'] as const).map(range => (
+            <button 
+              key={range} 
+              onClick={() => setDisplayRange(range)} 
+              className={`flex-1 py-2 px-1 rounded-md text-sm transition-colors ${
+                displayRange === range 
+                  ? 'bg-purple-600/20 text-purple-300 border border-purple-600/30' 
+                  : 'bg-gray-800/40 hover:bg-gray-800/60'
+              }`}
+            >
               {range.charAt(0).toUpperCase() + range.slice(1)}
-            </button>)}
+            </button>
+          ))}
         </div>
         
         <ScrollArea className="h-[calc(100vh-200px)] rounded-lg border border-gray-800 bg-gray-900/80" ref={scrollRef}>
           {displayTimeSlots.map((timeSlot, index) => {
-          const tasksInSlot = getTasksForTimeSlot(timeSlot);
-          const timeSlotId = `timeslot-${timeSlot}`;
-          const now = new Date();
-          const [slotTime, slotPeriod] = timeSlot.split(' ');
-          const [slotHour, slotMinute] = slotTime.split(':');
-          let slotHour24 = parseInt(slotHour);
-          if (slotPeriod === 'PM' && slotHour24 !== 12) {
-            slotHour24 += 12;
-          } else if (slotPeriod === 'AM' && slotHour24 === 12) {
-            slotHour24 = 0;
-          }
-          const isCurrentTimeSlot = isToday(currentDate) && now.getHours() === slotHour24 && now.getMinutes() >= parseInt(slotMinute) && now.getMinutes() < parseInt(slotMinute) + timeIncrement;
-          return <div key={timeSlot} id={timeSlotId} className={`border-b border-gray-800 last:border-b-0 ${isCurrentTimeSlot ? 'bg-purple-900/20' : ''} ${targetTimeSlot === timeSlot && isDragging ? 'bg-blue-900/30 border-blue-500/50' : ''}`} onMouseEnter={() => handleTimeSlotHover(timeSlot)} onMouseUp={handleDragEnd}>
+            const tasksInSlot = getTasksForTimeSlot(timeSlot);
+            const timeSlotId = `timeslot-${timeSlot}`;
+            const now = new Date();
+            const [slotTime, slotPeriod] = timeSlot.split(' ');
+            const [slotHour, slotMinute] = slotTime.split(':');
+            let slotHour24 = parseInt(slotHour);
+            if (slotPeriod === 'PM' && slotHour24 !== 12) {
+              slotHour24 += 12;
+            } else if (slotPeriod === 'AM' && slotHour24 === 12) {
+              slotHour24 = 0;
+            }
+            const isCurrentTimeSlot = isToday(currentDate) && now.getHours() === slotHour24 && now.getMinutes() >= parseInt(slotMinute) && now.getMinutes() < parseInt(slotMinute) + timeIncrement;
+            return (
+              <div 
+                key={timeSlot} 
+                id={timeSlotId} 
+                className={`border-b border-gray-800 last:border-b-0 ${
+                  isCurrentTimeSlot ? 'bg-purple-900/20' : ''
+                } ${
+                  targetTimeSlot === timeSlot && isDragging ? 'bg-blue-900/30 border-blue-500/50' : ''
+                }`} 
+                onMouseEnter={() => handleTimeSlotHover(timeSlot)} 
+                onMouseUp={handleDragEnd}
+              >
                 <div className="flex items-center p-3">
                   <div className={`w-20 text-sm font-medium ${isCurrentTimeSlot ? 'text-purple-300' : 'text-gray-400'}`}>
                     {timeSlot}
                   </div>
                   
                   <div className="flex-1 ml-4">
-                    {tasksInSlot.length > 0 ? <div className="space-y-2">
-                        {tasksInSlot.map(task => <motion.div key={task.id} data-task-id={task.id} className={`flex items-center gap-2 bg-gray-800/40 p-2 rounded-md border border-gray-700 hover:bg-gray-800/60 transition-all ${draggedTask?.id === task.id ? 'opacity-50 ring-2 ring-blue-500' : ''}`} initial={{
-                    opacity: 0,
-                    y: 5
-                  }} animate={{
-                    opacity: 1,
-                    y: 0
-                  }} whileHover={{
-                    scale: 1.02
-                  }} drag={isMobile || isTouchDevice ? true : false} dragConstraints={{
-                    left: 0,
-                    right: 0,
-                    top: 0,
-                    bottom: 0
-                  }} dragElastic={0} dragMomentum={false} onDragStart={() => isMobile || isTouchDevice ? handleDragStart(task) : null} onDragEnd={isMobile || isTouchDevice ? handleDragEnd : null} style={{
-                    cursor: (isMobile || isTouchDevice) && isDragging && draggedTask?.id === task.id ? 'grabbing' : 'auto'
-                  }}>                            
-                            {editingTaskId === task.id ? <Input value={newTaskName} onChange={e => setNewTaskName(e.target.value)} onBlur={()
+                    {tasksInSlot.length > 0 ? (
+                      <div className="space-y-2">
+                        {tasksInSlot.map(task => (
+                          <motion.div 
+                            key={task.id} 
+                            data-task-id={task.id} 
+                            className={`flex items-center gap-2 bg-gray-800/40 p-2 rounded-md border border-gray-700 hover:bg-gray-800/60 transition-all ${
+                              draggedTask?.id === task.id ? 'opacity-50 ring-2 ring-blue-500' : ''
+                            }`} 
+                            initial={{
+                              opacity: 0,
+                              y: 5
+                            }} 
+                            animate={{
+                              opacity: 1,
+                              y: 0
+                            }} 
+                            whileHover={{
+                              scale: 1.02
+                            }} 
+                            drag={isMobile || isTouchDevice ? true : false} 
+                            dragConstraints={{
+                              left: 0,
+                              right: 0,
+                              top: 0,
+                              bottom: 0
+                            }} 
+                            dragElastic={0} 
+                            dragMomentum={false} 
+                            onDragStart={() => isMobile || isTouchDevice ? handleDragStart(task) : null} 
+                            onDragEnd={isMobile || isTouchDevice ? handleDragEnd : null} 
+                            style={{
+                              cursor: (isMobile || isTouchDevice) && isDragging && draggedTask?.id === task.id ? 'grabbing' : 'auto'
+                            }}
+                          >                            
+                            {editingTaskId === task.id ? (
+                              <Input 
+                                value={newTaskName} 
+                                onChange={e => setNewTaskName(e.target.value)} 
+                                onBlur={() => handleTaskNameBlur(task.id)} 
+                                className="bg-gray-700 border-gray-600"
+                                onClick={e => e.stopPropagation()}
+                              />
+                            ) : (
+                              <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center gap-2">
+                                  <button 
+                                    onClick={() => handleTaskToggle(task.id)}
+                                    className="flex-shrink-0"
+                                  >
+                                    {task.completed ? (
+                                      <CheckCircle className="h-5 w-5 text-purple-400" />
+                                    ) : (
+                                      <Circle className="h-5 w-5 text-gray-400" />
+                                    )}
+                                  </button>
+                                  <div>
+                                    <span 
+                                      className={`text-sm ${task.completed ? 'line-through text-gray-400' : 'text-white'}`}
+                                      style={task.color ? { color: task.color } : undefined}
+                                    >
+                                      {task.name}
+                                    </span>
+                                  </div>
+                                </div>
+                                
+                                <div className="flex items-center gap-2">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    className="h-8 w-8 rounded-full hover:bg-gray-700"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditTask(task);
+                                    }}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    className="h-8 w-8 rounded-full hover:bg-gray-700"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleMoveTask(task);
+                                    }}
+                                  >
+                                    <Move className="h-4 w-4" />
+                                  </Button>
+                                  
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    className="h-8 w-8 rounded-full hover:bg-red-900/50 text-red-500"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteTask(task.id);
+                                    }}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </motion.div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div 
+                        className="h-8 flex items-center justify-center hover:bg-gray-800/30 rounded transition-colors cursor-pointer"
+                        onClick={() => handleQuickAddTask(timeSlot)}
+                      >
+                        <Plus className="h-4 w-4 text-gray-500" />
+                        <span className="text-xs text-gray-500 ml-1">Add task</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </ScrollArea>
+      </div>
+
+      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+        <DialogContent className="bg-gray-800 border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle>{selectedTask ? 'Edit Task' : 'Add New Task'}</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              {selectedTask ? 'Edit your daily task details' : 'Add a new task to your daily schedule'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 my-4">
+            <div>
+              <Label htmlFor="taskName">Task Name</Label>
+              <Input 
+                id="taskName"
+                value={newTaskName} 
+                onChange={(e) => setNewTaskName(e.target.value)} 
+                placeholder="Enter task name" 
+                className="bg-gray-700 border-gray-600 mt-1"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="taskTime">Time (Optional)</Label>
+              <TimeInput 
+                id="taskTime"
+                value={newTaskTime} 
+                onChange={setNewTaskTime} 
+                label="Time" 
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="taskCategory">Category</Label>
+              <select 
+                id="taskCategory"
+                value={newTaskCategory}
+                onChange={(e) => setNewTaskCategory(e.target.value)}
+                className="w-full px-3 py-2 mt-1 bg-gray-700 border border-gray-600 rounded-md text-white"
+              >
+                {CATEGORIES.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <Label>Color</Label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {COLORS.map(color => (
+                  <button
+                    key={color}
+                    onClick={() => setNewTaskColor(color)}
+                    className={`w-8 h-8 rounded-full ${newTaskColor === color ? 'ring-2 ring-white' : ''}`}
+                    style={{ backgroundColor: color }}
+                    aria-label={`Select color ${color}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowAddModal(false);
+                setSelectedTask(null);
+              }}
+              className="border-gray-600 text-gray-300"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={selectedTask ? handleUpdateTask : handleAddTask}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {selectedTask ? 'Update Task' : 'Add Task'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
+        <DialogContent className="bg-gray-800 border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Settings</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Customize your daily tasks view
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 my-4">
+            <div>
+              <Label>Time Interval</Label>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {timeIncrementOptions.map((option) => (
+                  <Button
+                    key={option.value}
+                    variant={timeIncrement === option.value ? "default" : "outline"}
+                    className={timeIncrement === option.value ? "bg-purple-600" : "border-gray-600"}
+                    onClick={() => handleTimeIncrementChange(option.value)}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Show clear tasks warning</Label>
+                <p className="text-sm text-gray-400">
+                  Show confirmation when clearing tasks
+                </p>
+              </div>
+              <Switch 
+                checked={showClearTaskWarning} 
+                onCheckedChange={setShowClearTaskWarning}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              onClick={() => setShowSettingsModal(false)}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCalendarModal} onOpenChange={setShowCalendarModal}>
+        <DialogContent className="bg-gray-800 border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Select Date</DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <DatePicker
+              date={currentDate}
+              onDateChange={setCurrentDate}
+            />
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              onClick={() => setShowCalendarModal(false)}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCopyModal} onOpenChange={setShowCopyModal}>
+        <DialogContent className="bg-gray-800 border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Copy Tasks</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Copy all tasks from {format(currentDate, 'MMMM d, yyyy')} to another date
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Label>Select target date</Label>
+            <div className="mt-2">
+              <DatePicker
+                date={copyToDate}
+                onDateChange={setCopyToDate}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowCopyModal(false);
+                setCopyToDate(undefined);
+              }}
+              className="border-gray-600 text-gray-300"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCopyTasks}
+              className="bg-purple-600 hover:bg-purple-700"
+              disabled={!copyToDate}
+            >
+              Copy Tasks
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showClearTasksModal} onOpenChange={setShowClearTasksModal}>
+        <DialogContent className="bg-gray-800 border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Clear All Tasks</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Are you sure you want to clear all tasks for {format(currentDate, 'MMMM d, yyyy')}?
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-2">
+            <p className="text-gray-300">This action cannot be undone.</p>
+          </div>
+          
+          <div className="flex items-center py-2">
+            <Switch 
+              id="disable-warning"
+              checked={!showClearTaskWarning} 
+              onCheckedChange={(checked) => setShowClearTaskWarning(!checked)}
+            />
+            <Label htmlFor="disable-warning" className="ml-2">
+              Don't ask me again
+            </Label>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowClearTasksModal(false)}
+              className="border-gray-600 text-gray-300"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                clearTasksForCurrentDay();
+                setShowClearTasksModal(false);
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Clear Tasks
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCategoryModal} onOpenChange={setShowCategoryModal}>
+        <DialogContent className="bg-gray-800 border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Set Category</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Choose a category for this task
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 my-4">
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <select 
+                id="category"
+                value={newTaskCategory}
+                onChange={(e) => setNewTaskCategory(e.target.value)}
+                className="w-full px-3 py-2 mt-1 bg-gray-700 border border-gray-600 rounded-md text-white"
+              >
+                {CATEGORIES.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <Label>Color</Label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {COLORS.map(color => (
+                  <button
+                    key={color}
+                    onClick={() => setNewTaskColor(color)}
+                    className={`w-8 h-8 rounded-full ${newTaskColor === color ? 'ring-2 ring-white' : ''}`}
+                    style={{ backgroundColor: color }}
+                    aria-label={`Select color ${color}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowCategoryModal(false);
+                setSelectedTask(null);
+              }}
+              className="border-gray-600 text-gray-300"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={saveCategory}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showMoveTaskModal} onOpenChange={setShowMoveTaskModal}>
+        <DialogContent className="bg-gray-800 border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Move Task</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Move this task to another date
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Label>Select target date</Label>
+            <div className="mt-2">
+              <DatePicker
+                date={moveToDate}
+                onDateChange={setMoveToDate}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowMoveTaskModal(false);
+                setMoveToDate(undefined);
+                setSelectedTask(null);
+              }}
+              className="border-gray-600 text-gray-300"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleMoveTaskToDate}
+              className="bg-purple-600 hover:bg-purple-700"
+              disabled={!moveToDate}
+            >
+              Move Task
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default DailyTasksPage;
