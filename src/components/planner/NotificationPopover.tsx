@@ -18,6 +18,7 @@ interface NotificationPopoverProps {
   markAsRead: (id: number) => void;
 }
 
+// This component is kept for future reference but not currently used
 const NotificationPopover: React.FC<NotificationPopoverProps> = ({
   hasNotifications,
   notifications,
