@@ -71,7 +71,11 @@ const TimeSlotsList: React.FC<TimeSlotsListProps> = ({
   };
 
   return (
-    <ScrollArea className="h-[calc(100dvh-200px)] rounded-lg border border-gray-800 bg-gray-900/80 overflow-x-hidden" style={{WebkitOverflowScrolling: 'touch'}} ref={scrollRef}>
+    <ScrollArea 
+      className="h-[calc(100dvh-200px)] rounded-lg border border-gray-800 bg-gray-900/80 overflow-x-hidden" 
+      style={{WebkitOverflowScrolling: 'touch'}} 
+      ref={scrollRef}
+    >
       {displayTimeSlots.map((timeSlot) => {
         const tasksInSlot = getTasksForTimeSlot(timeSlot);
         const timeSlotId = `timeslot-${timeSlot.replace(/[:\s]/g, '-')}`;
