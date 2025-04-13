@@ -688,7 +688,7 @@ const DailyTasksPage: React.FC = () => {
           </button>
           
           <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full text-center">
-            <span className="text-lg font-medium text-white">{dateLabel} - {formattedDate}</span>
+            <span className="text-lg font-medium text-white">{formattedDate}</span>
           </div>
           
           <button 
