@@ -58,7 +58,7 @@ export function DatePicker({
             id={id}
             variant="outline"
             className={cn(
-              "group w-full justify-between bg-background px-3 font-normal outline-offset-0 hover:bg-background focus-visible:border-ring focus-visible:outline-[3px] focus-visible:outline-ring/20",
+              "group w-full justify-between font-normal outline-offset-0 hover:bg-background focus-visible:border-ring focus-visible:outline-[3px] focus-visible:outline-ring/20",
               disabled && "opacity-50 cursor-not-allowed"
             )}
             disabled={disabled}
