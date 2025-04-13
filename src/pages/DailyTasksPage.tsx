@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,7 +17,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
-// Define the TimeIncrementOption interface
 interface TimeIncrementOption {
   label: string;
   value: number;
@@ -40,7 +38,6 @@ const DailyTasksPage: React.FC = () => {
   const [showClearTaskWarning, setShowClearTaskWarning] = useState(true);
   const [selectedTask, setSelectedTask] = useState<DailyTask | null>(null);
   const [newTaskName, setNewTaskName] = useState('');
-  const [newTaskTime, setNewTaskTime] = useState('');
   const [newTaskCategory, setNewTaskCategory] = useState('Personal');
   const [newTaskColor, setNewTaskColor] = useState('#9b87f5');
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
@@ -301,7 +298,6 @@ const DailyTasksPage: React.FC = () => {
     const task = dailyTasks.find(t => t.id === taskId);
     if (task) {
       setNewTaskName(task.name);
-      setNewTaskTime(task.timeOfDay || '');
       setNewTaskCategory(task.category || 'Personal');
       setNewTaskColor(task.color || '#9b87f5');
     }
@@ -318,7 +314,6 @@ const DailyTasksPage: React.FC = () => {
     }
     setEditingTaskId(null);
     setNewTaskName(task.name);
-    setNewTaskTime(task.timeOfDay || '');
     setNewTaskCategory(task.category || 'Personal');
     setNewTaskColor(task.color || '#9b87f5');
     setSelectedTask(task);
@@ -340,7 +335,6 @@ const DailyTasksPage: React.FC = () => {
         return {
           ...task,
           name: newTaskName,
-          timeOfDay: newTaskTime || undefined,
           color: newTaskColor,
           category: newTaskCategory
         };
@@ -349,7 +343,6 @@ const DailyTasksPage: React.FC = () => {
     }));
     setSelectedTask(null);
     setNewTaskName('');
-    setNewTaskTime('');
     setShowAddModal(false);
     toast({
       title: "Task updated",
@@ -513,13 +506,11 @@ const DailyTasksPage: React.FC = () => {
       return;
     }
 
-    // Find existing tasks on the target date to avoid duplicates
     const existingTasksOnTargetDate = dailyTasks.filter(task => {
       const taskDate = task.lastCompleted ? task.lastCompleted.split('T')[0] : '';
       return taskDate === targetDateStr;
     });
 
-    // Filter out tasks that already exist on the target date (by name)
     const tasksToAdd = tasksForCurrentDate.filter(currentTask => {
       return !existingTasksOnTargetDate.some(targetTask => 
         targetTask.name === currentTask.name && 
@@ -894,7 +885,6 @@ const DailyTasksPage: React.FC = () => {
         </ScrollArea>
       </div>
 
-      {/* Add/Edit Task Modal */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <DialogContent className="bg-gray-900 text-white border-gray-800 max-w-md">
           <DialogHeader>
@@ -908,14 +898,6 @@ const DailyTasksPage: React.FC = () => {
                 onChange={(e) => setNewTaskName(e.target.value)}
                 className="bg-gray-800 border-gray-700"
                 placeholder="Enter task name"
-              />
-            </div>
-            
-            <div>
-              <TimeInput 
-                value={newTaskTime}
-                onChange={(time) => setNewTaskTime(time)}
-                label="Time"
               />
             </div>
             
@@ -966,7 +948,6 @@ const DailyTasksPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Move Task Modal */}
       <Dialog open={showMoveTaskModal} onOpenChange={setShowMoveTaskModal}>
         <DialogContent className="bg-gray-900 text-white border-gray-800 max-w-md">
           <DialogHeader>
@@ -1003,7 +984,6 @@ const DailyTasksPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Category Modal */}
       <Dialog open={showCategoryModal} onOpenChange={setShowCategoryModal}>
         <DialogContent className="bg-gray-900 text-white border-gray-800 max-w-md">
           <DialogHeader>
@@ -1057,7 +1037,6 @@ const DailyTasksPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Copy Tasks Modal */}
       <Dialog open={showCopyModal} onOpenChange={setShowCopyModal}>
         <DialogContent className="bg-gray-900 text-white border-gray-800 max-w-md">
           <DialogHeader>
@@ -1091,7 +1070,6 @@ const DailyTasksPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Settings Modal */}
       <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
         <DialogContent className="bg-gray-900 text-white border-gray-800 max-w-md">
           <DialogHeader>
@@ -1131,7 +1109,6 @@ const DailyTasksPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Calendar Modal */}
       <Dialog open={showCalendarModal} onOpenChange={setShowCalendarModal}>
         <DialogContent className="bg-gray-900 text-white border-gray-800 max-w-md">
           <DialogHeader>
@@ -1158,7 +1135,6 @@ const DailyTasksPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Clear Tasks Warning Modal */}
       <Dialog open={showClearTasksModal} onOpenChange={setShowClearTasksModal}>
         <DialogContent className="bg-gray-900 text-white border-gray-800 max-w-md">
           <DialogHeader>
