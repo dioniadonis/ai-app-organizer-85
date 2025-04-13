@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,6 +17,12 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+
+// Define the TimeIncrementOption interface
+interface TimeIncrementOption {
+  label: string;
+  value: number;
+}
 
 const DailyTasksPage: React.FC = () => {
   const navigate = useNavigate();
