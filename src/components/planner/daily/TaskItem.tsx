@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Edit, Move, X, CheckCircle, Circle } from 'lucide-react';
+import { Move, X, CheckCircle, Circle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DailyTask } from '@/components/planner/DailyTasksTab';
@@ -15,7 +15,6 @@ interface TaskItemProps {
   isDragging: boolean;
   draggedTask: DailyTask | null;
   onTaskToggle: (taskId: number) => void;
-  onEditTask: (task: DailyTask) => void;
   onMoveTask: (task: DailyTask) => void;
   onDeleteTask: (taskId: number) => void;
   onNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -33,7 +32,6 @@ const TaskItem: React.FC<TaskItemProps> = ({
   isDragging,
   draggedTask,
   onTaskToggle,
-  onEditTask,
   onMoveTask,
   onDeleteTask,
   onNameChange,
@@ -106,18 +104,6 @@ const TaskItem: React.FC<TaskItemProps> = ({
           </div>
           
           <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="h-8 w-8 rounded-full hover:bg-gray-700"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEditTask(task);
-              }}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            
             <Button 
               variant="ghost" 
               size="icon"

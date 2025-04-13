@@ -44,7 +44,7 @@ const TimeSlot: React.FC<TimeSlotProps> = ({
   onDragEnd,
   onQuickAddTask,
   onTaskToggle,
-  onEditTask,
+  onEditTask,  // We keep this in the props but won't use it
   onMoveTask,
   onDeleteTask,
   onNameChange,
@@ -81,7 +81,6 @@ const TimeSlot: React.FC<TimeSlotProps> = ({
                   isDragging={isDragging}
                   draggedTask={draggedTask}
                   onTaskToggle={onTaskToggle}
-                  onEditTask={onEditTask}
                   onMoveTask={onMoveTask}
                   onDeleteTask={onDeleteTask}
                   onNameChange={onNameChange}

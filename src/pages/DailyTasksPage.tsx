@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { format, addDays, subDays, isToday, isTomorrow, isSameDay } from 'date-fns';
@@ -111,7 +110,7 @@ const DailyTasksPage: React.FC = () => {
           const hour = parseInt(hourStr);
           
           // Afternoon is 12 PM to 4:59 PM
-          return period === 'PM' && (hour === 12 || (hour >= 1 && hour < 5));
+          return period === 'PM' && hour <= 4;
         });
       case 'evening':
         return timeSlots.filter(slot => {
@@ -177,7 +176,6 @@ const DailyTasksPage: React.FC = () => {
     localStorage.setItem('showClearTaskWarning', showClearTaskWarning.toString());
   }, [showClearTaskWarning]);
 
-  // Event handlers
   const handlePreviousDay = () => {
     setCurrentDate(prev => subDays(prev, 1));
     setEditingTaskId(null);
@@ -325,24 +323,6 @@ const DailyTasksPage: React.FC = () => {
       setNewTaskCategory(task.category || 'Personal');
       setNewTaskColor(task.color || '#9b87f5');
     }
-  };
-
-  const handleEditTask = (task: DailyTask) => {
-    if (!task.name.trim()) {
-      toast({
-        title: "Task name required",
-        description: "Please enter a name for your task",
-        variant: "destructive"
-      });
-      return;
-    }
-    setEditingTaskId(null);
-    setNewTaskName(task.name);
-    setNewTaskTime(task.timeOfDay || '');
-    setNewTaskCategory(task.category || 'Personal');
-    setNewTaskColor(task.color || '#9b87f5');
-    setSelectedTask(task);
-    setShowAddModal(true);
   };
 
   const handleUpdateTask = () => {
@@ -656,7 +636,6 @@ const DailyTasksPage: React.FC = () => {
     }
   };
 
-  // Format dates for display
   const formattedDate = format(currentDate, 'MMMM d, yyyy');
   const dayName = format(currentDate, 'EEEE');
   const dateLabel = isToday(currentDate) ? 'Today' : isTomorrow(currentDate) ? 'Tomorrow' : dayName;
@@ -739,7 +718,6 @@ const DailyTasksPage: React.FC = () => {
         </ScrollArea>
       </div>
 
-      {/* Modals */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <AddTaskModal 
           isEdit={!!selectedTask}
