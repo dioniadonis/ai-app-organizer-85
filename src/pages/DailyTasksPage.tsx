@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Edit, Plus, Home, Calendar, X, Check, Clock, CalendarCheck, Circle, Settings, Copy, Move, Trash2, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit, Plus, Home, Calendar, X, Check, Clock, CalendarCheck, Circle, Settings, Copy, Move, Trash2, CalendarDays, CheckCircle } from 'lucide-react';
 import { format, addDays, subDays, parseISO, isToday, isTomorrow, isSameDay } from 'date-fns';
 import { DailyTask } from '@/components/planner/DailyTasksTab';
 import { Button } from '@/components/ui/button';
@@ -16,11 +15,7 @@ import TimeInput from '@/components/TimeInput';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-
-interface TimeIncrementOption {
-  label: string;
-  value: number;
-}
+import { Label } from '@/components/ui/label';
 
 const DailyTasksPage: React.FC = () => {
   const navigate = useNavigate();
@@ -98,7 +93,6 @@ const DailyTasksPage: React.FC = () => {
         return timeSlots.filter(slot => {
           const [time, period] = slot.split(' ');
           const [hour] = time.split(':');
-          // Exclude 12-12:30 PM from evening time
           return period === 'PM' && (parseInt(hour) >= 5 && !(parseInt(hour) === 12));
         });
       default:

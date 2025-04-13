@@ -6,37 +6,19 @@ import { Bell, ChevronLeft, LayoutDashboard, CalendarClock, CreditCard, UserCirc
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
-import NotificationPopover from './NotificationPopover';
 
 interface PlannerHeaderProps {
   activeView: string;
   onViewChange: (value: string) => void;
-  hasNotifications: boolean;
-  notifications: any[];
-  setHasNotifications: (value: boolean) => void;
-  setNotifications: (notifications: any[]) => void;
-  openNotificationSettings: () => void;
   openAIAssistant: () => void;
 }
 
 const PlannerHeader: React.FC<PlannerHeaderProps> = ({
   activeView,
   onViewChange,
-  hasNotifications,
-  notifications,
-  setHasNotifications,
-  setNotifications,
-  openNotificationSettings,
   openAIAssistant
 }) => {
   const navigate = useNavigate();
-
-  const markNotificationAsRead = (id: number) => {
-    setNotifications(notifications.filter(n => n.id !== id));
-    if (notifications.length <= 1) {
-      setHasNotifications(false);
-    }
-  };
 
   const navigateToAccount = () => {
     toast({
@@ -58,13 +40,6 @@ const PlannerHeader: React.FC<PlannerHeaderProps> = ({
         </motion.h1>
         
         <div className="flex items-center gap-3">
-          <NotificationPopover 
-            hasNotifications={hasNotifications}
-            notifications={notifications}
-            openSettings={openNotificationSettings}
-            markAsRead={markNotificationAsRead}
-          />
-          
           <Button 
             variant="ghost" 
             size="icon" 
