@@ -170,7 +170,6 @@ const DailyTasksPage: React.FC = () => {
     localStorage.setItem('showClearTaskWarning', showClearTaskWarning.toString());
   }, [showClearTaskWarning]);
 
-  // Event handlers
   const handlePreviousDay = () => {
     setCurrentDate(prev => subDays(prev, 1));
     setEditingTaskId(null);
@@ -649,7 +648,6 @@ const DailyTasksPage: React.FC = () => {
     }
   };
 
-  // Format dates for display
   const formattedDate = format(currentDate, 'MMMM d, yyyy');
   const dayName = format(currentDate, 'EEEE');
   const dateLabel = isToday(currentDate) ? 'Today' : isTomorrow(currentDate) ? 'Tomorrow' : dayName;
@@ -732,7 +730,6 @@ const DailyTasksPage: React.FC = () => {
         </ScrollArea>
       </div>
 
-      {/* Modals */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <AddTaskModal 
           isEdit={!!selectedTask}
