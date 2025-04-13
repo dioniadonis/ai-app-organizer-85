@@ -3,6 +3,7 @@ import React from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import TimeSlot from './TimeSlot';
 import { DailyTask } from '@/components/planner/DailyTasksTab';
+import { isToday } from 'date-fns';
 
 interface TimeSlotsListProps {
   displayTimeSlots: string[];
@@ -26,6 +27,7 @@ interface TimeSlotsListProps {
   onNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onNameBlur: (taskId: number) => void;
   onDragStart: (task: DailyTask) => void;
+  onEditTask?: (taskId: number, task: Partial<DailyTask>) => void;
 }
 
 const TimeSlotsList: React.FC<TimeSlotsListProps> = ({
@@ -49,7 +51,8 @@ const TimeSlotsList: React.FC<TimeSlotsListProps> = ({
   onDeleteTask,
   onNameChange,
   onNameBlur,
-  onDragStart
+  onDragStart,
+  onEditTask
 }) => {
   const isCurrentTimeSlot = (timeSlot: string) => {
     const now = new Date();
@@ -96,6 +99,7 @@ const TimeSlotsList: React.FC<TimeSlotsListProps> = ({
             onNameChange={onNameChange}
             onNameBlur={onNameBlur}
             onDragStart={onDragStart}
+            onEditTask={onEditTask}
           />
         );
       })}
@@ -104,6 +108,3 @@ const TimeSlotsList: React.FC<TimeSlotsListProps> = ({
 };
 
 export default TimeSlotsList;
-
-// Add isToday import
-import { isToday } from 'date-fns';

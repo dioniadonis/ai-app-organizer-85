@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Move, X, CheckCircle, Circle } from 'lucide-react';
@@ -21,6 +20,7 @@ interface TaskItemProps {
   onNameBlur: (taskId: number) => void;
   onDragStart: (task: DailyTask) => void;
   onDragEnd: () => void;
+  onEditTask?: (taskId: number, task: Partial<DailyTask>) => void;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({
@@ -37,7 +37,8 @@ const TaskItem: React.FC<TaskItemProps> = ({
   onNameChange,
   onNameBlur,
   onDragStart,
-  onDragEnd
+  onDragEnd,
+  onEditTask
 }) => {
   return (
     <motion.div 

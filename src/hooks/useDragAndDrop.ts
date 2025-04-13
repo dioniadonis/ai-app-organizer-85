@@ -7,7 +7,7 @@ import { parseTimeSlot } from '@/utils/timeUtils';
 
 export const useDragAndDrop = (
   dailyTasks: DailyTask[], 
-  setDailyTasks: React.Dispatch<React.SetStateAction<DailyTask[]>>
+  onTaskUpdate: (taskId: number, updates: Partial<DailyTask>) => void
 ) => {
   const [isDragging, setIsDragging] = useState(false);
   const [draggedTask, setDraggedTask] = useState<DailyTask | null>(null);
@@ -22,15 +22,7 @@ export const useDragAndDrop = (
     if (draggedTask && targetTimeSlot) {
       const timeString = parseTimeSlot(targetTimeSlot);
       
-      setDailyTasks(prev => prev.map(task => {
-        if (task.id === draggedTask.id) {
-          return {
-            ...task,
-            timeOfDay: timeString
-          };
-        }
-        return task;
-      }));
+      onTaskUpdate(draggedTask.id, { timeOfDay: timeString });
       
       toast({
         title: "Task moved",

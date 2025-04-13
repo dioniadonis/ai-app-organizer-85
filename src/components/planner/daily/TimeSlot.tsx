@@ -25,6 +25,7 @@ interface TimeSlotProps {
   onNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onNameBlur: (taskId: number) => void;
   onDragStart: (task: DailyTask) => void;
+  onEditTask?: (taskId: number, task: Partial<DailyTask>) => void;
 }
 
 const TimeSlot: React.FC<TimeSlotProps> = ({
@@ -47,7 +48,8 @@ const TimeSlot: React.FC<TimeSlotProps> = ({
   onDeleteTask,
   onNameChange,
   onNameBlur,
-  onDragStart
+  onDragStart,
+  onEditTask
 }) => {
   return (
     <div 
@@ -85,6 +87,7 @@ const TimeSlot: React.FC<TimeSlotProps> = ({
                   onNameBlur={onNameBlur}
                   onDragStart={onDragStart}
                   onDragEnd={onDragEnd}
+                  onEditTask={onEditTask}
                 />
               ))}
             </div>

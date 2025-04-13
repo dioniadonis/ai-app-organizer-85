@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { format, addDays, subDays, isToday, isTomorrow } from 'date-fns';
@@ -28,6 +27,7 @@ import {
   filterTimeSlotsByRange,
   scrollToCurrentTimeSlot
 } from '@/utils/timeUtils';
+import { DailyTask } from '@/components/planner/DailyTasksTab';
 
 const CATEGORIES = ['Morning Routine', 'Work', 'Health', 'Learning', 'Evening Routine', 'Wellness', 'Productivity', 'Personal', 'Custom'];
 const COLORS = [
@@ -95,7 +95,7 @@ const DailyTasksPage: React.FC = () => {
     handleDragStart,
     handleDragEnd,
     handleTimeSlotHover
-  } = useDragAndDrop(dailyTasks, setDailyTasks);
+  } = useDragAndDrop(dailyTasks, handleUpdateTask);
 
   // Generate time slots based on current increment
   const timeSlots = generateTimeSlots(timeIncrement);
@@ -135,7 +135,7 @@ const DailyTasksPage: React.FC = () => {
   };
 
   const handleMoveTaskToDateWrapper = () => {
-    if (handleMoveTaskToDate(selectedTask, moveToDate)) {
+    if (selectedTask && moveToDate && handleMoveTaskToDate(selectedTask, moveToDate)) {
       setShowMoveTaskModal(false);
       setSelectedTask(null);
       setMoveToDate(undefined);
@@ -158,7 +158,12 @@ const DailyTasksPage: React.FC = () => {
   };
 
   const handleUpdateTaskWrapper = () => {
-    if (handleUpdateTask(newTaskName, newTaskTime, newTaskColor, newTaskCategory)) {
+    if (selectedTask && handleUpdateTask(selectedTask.id, { 
+      name: newTaskName,
+      timeOfDay: newTaskTime || undefined,
+      color: newTaskColor,
+      category: newTaskCategory
+    })) {
       setNewTaskName('');
       setNewTaskTime('');
       setShowAddModal(false);
@@ -174,7 +179,12 @@ const DailyTasksPage: React.FC = () => {
 
   const saveCategory = () => {
     if (!selectedTask) return;
-    handleUpdateTask(selectedTask.name, selectedTask.timeOfDay || '', newTaskColor, newTaskCategory);
+    
+    handleUpdateTask(selectedTask.id, {
+      color: newTaskColor,
+      category: newTaskCategory
+    });
+    
     setShowCategoryModal(false);
     setSelectedTask(null);
   };
@@ -246,6 +256,7 @@ const DailyTasksPage: React.FC = () => {
           onNameChange={(e) => setNewTaskName(e.target.value)}
           onNameBlur={handleTaskNameBlur}
           onDragStart={handleDragStart}
+          onEditTask={handleUpdateTask}
         />
       </div>
 

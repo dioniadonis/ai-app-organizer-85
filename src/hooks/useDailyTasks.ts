@@ -79,6 +79,42 @@ export const useDailyTasks = (currentDate: Date) => {
     });
   };
 
+  // Modified to handle partial updates
+  const handleUpdateTask = (taskId: number, updates: Partial<DailyTask>) => {
+    const task = dailyTasks.find(t => t.id === taskId);
+    
+    if (!task) return false;
+    
+    // If we're updating the name, validate it's not empty
+    if (updates.name !== undefined && !updates.name.trim()) {
+      toast({
+        title: "Task name required",
+        description: "Please enter a name for your task",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    setDailyTasks(prev => prev.map(task => {
+      if (task.id === taskId) {
+        return {
+          ...task,
+          ...updates
+        };
+      }
+      return task;
+    }));
+    
+    if (updates.name) {
+      toast({
+        title: "Task updated",
+        description: `Your task has been updated successfully`
+      });
+    }
+    
+    return true;
+  };
+
   const handleTaskToggle = (taskId: number) => {
     const task = dailyTasks.find(t => t.id === taskId);
     if (task && !task.name.trim()) {
@@ -191,36 +227,6 @@ export const useDailyTasks = (currentDate: Date) => {
     return true;
   };
 
-  const handleUpdateTask = (newTaskName: string, newTaskTime: string, newTaskColor: string, newTaskCategory: string) => {
-    if (!selectedTask) return false;
-    if (!newTaskName.trim()) {
-      toast({
-        title: "Task name required",
-        description: "Please enter a name for your task",
-        variant: "destructive"
-      });
-      return false;
-    }
-    setDailyTasks(prev => prev.map(task => {
-      if (task.id === selectedTask.id) {
-        return {
-          ...task,
-          name: newTaskName,
-          timeOfDay: newTaskTime || undefined,
-          color: newTaskColor,
-          category: newTaskCategory
-        };
-      }
-      return task;
-    }));
-    setSelectedTask(null);
-    toast({
-      title: "Task updated",
-      description: `Your task has been updated successfully`
-    });
-    return true;
-  };
-
   const handleDeleteTask = (taskId: number) => {
     setDailyTasks(prev => prev.filter(task => task.id !== taskId));
     toast({
@@ -238,15 +244,7 @@ export const useDailyTasks = (currentDate: Date) => {
         return;
       }
       if (newTaskName.trim()) {
-        setDailyTasks(prev => prev.map(t => {
-          if (t.id === taskId) {
-            return {
-              ...t,
-              name: newTaskName
-            };
-          }
-          return t;
-        }));
+        handleUpdateTask(taskId, { name: newTaskName });
         setEditingTaskId(null);
       }
     } else {
