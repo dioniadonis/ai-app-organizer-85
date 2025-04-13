@@ -15,10 +15,12 @@ import TimeInput from '@/components/TimeInput';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+
 interface TimeIncrementOption {
   label: string;
   value: number;
 }
+
 const DailyTasksPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -50,16 +52,22 @@ const DailyTasksPage: React.FC = () => {
   const [targetTimeSlot, setTargetTimeSlot] = useState<string | null>(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showMoveTaskModal, setShowMoveTaskModal] = useState(false);
-  const timeIncrementOptions: TimeIncrementOption[] = [{
-    label: '15 minutes',
-    value: 15
-  }, {
-    label: '30 minutes',
-    value: 30
-  }, {
-    label: '60 minutes',
-    value: 60
-  }];
+
+  const timeIncrementOptions: TimeIncrementOption[] = [
+    {
+      label: '15 minutes',
+      value: 15
+    },
+    {
+      label: '30 minutes',
+      value: 30
+    },
+    {
+      label: '60 minutes',
+      value: 60
+    }
+  ];
+
   const generateTimeSlots = useCallback(() => {
     const slots = [];
     const totalMinutesInDay = 24 * 60;
@@ -72,6 +80,7 @@ const DailyTasksPage: React.FC = () => {
     }
     return slots;
   }, [timeIncrement]);
+
   const timeSlots = generateTimeSlots();
   const getFilteredTimeSlots = useCallback(() => {
     switch (displayRange) {
@@ -96,7 +105,9 @@ const DailyTasksPage: React.FC = () => {
         return timeSlots;
     }
   }, [timeSlots, displayRange]);
+
   const displayTimeSlots = getFilteredTimeSlots();
+
   useEffect(() => {
     if (scrollRef.current && isToday(currentDate)) {
       const now = new Date();
@@ -115,6 +126,7 @@ const DailyTasksPage: React.FC = () => {
       }
     }
   }, [displayRange, timeIncrement, currentDate]);
+
   useEffect(() => {
     const savedTasks = localStorage.getItem('dailyTasks');
     if (savedTasks) {
@@ -135,20 +147,25 @@ const DailyTasksPage: React.FC = () => {
       setShowClearTaskWarning(warningPref === 'true');
     }
   }, []);
+
   useEffect(() => {
     localStorage.setItem('dailyTasks', JSON.stringify(dailyTasks));
   }, [dailyTasks]);
+
   useEffect(() => {
     localStorage.setItem('showClearTaskWarning', showClearTaskWarning.toString());
   }, [showClearTaskWarning]);
+
   const handlePreviousDay = () => {
     setCurrentDate(prev => subDays(prev, 1));
     setEditingTaskId(null);
   };
+
   const handleNextDay = () => {
     setCurrentDate(prev => addDays(prev, 1));
     setEditingTaskId(null);
   };
+
   const handleTaskToggle = (taskId: number) => {
     const task = dailyTasks.find(t => t.id === taskId);
     if (task && !task.name.trim()) {
@@ -162,12 +179,14 @@ const DailyTasksPage: React.FC = () => {
       }
       return;
     }
+
     setDailyTasks(prev => prev.map(task => {
       if (task.id === taskId) {
         const wasCompleted = task.completed;
-        const today = new Date().toISOString().split('T')[0];
+        const today = format(currentDate, 'yyyy-MM-dd');
         let newStreak = task.streak;
         let lastCompleted = task.lastCompleted;
+
         if (!wasCompleted) {
           newStreak = task.streak + 1;
           lastCompleted = today;
@@ -185,6 +204,7 @@ const DailyTasksPage: React.FC = () => {
             });
           }
         }
+
         return {
           ...task,
           completed: !wasCompleted,
@@ -195,6 +215,21 @@ const DailyTasksPage: React.FC = () => {
       return task;
     }));
   };
+
+  const getTasksForCurrentDate = () => {
+    const currentDateStr = format(currentDate, 'yyyy-MM-dd');
+    return dailyTasks.filter(task => {
+      if (task.lastCompleted) {
+        return task.lastCompleted.split('T')[0] === currentDateStr;
+      }
+      if (task.id) {
+        const taskDate = new Date(task.id);
+        return isSameDay(taskDate, currentDate);
+      }
+      return false;
+    });
+  };
+
   const handleQuickAddTask = (timeSlot: string) => {
     const [time, period] = timeSlot.split(' ');
     const [hour, minute] = time.split(':');
@@ -211,10 +246,11 @@ const DailyTasksPage: React.FC = () => {
       completed: false,
       timeOfDay: timeString,
       streak: 0,
-      lastCompleted: undefined,
+      lastCompleted: format(currentDate, 'yyyy-MM-dd'),
       color: newTaskColor,
       category: 'Personal'
     };
+
     setDailyTasks(prev => [...prev, newTask]);
     setSelectedTask(newTask);
     setEditingTaskId(newTask.id);
@@ -226,6 +262,7 @@ const DailyTasksPage: React.FC = () => {
       }
     }, 100);
   };
+
   const handleAddTask = () => {
     if (!newTaskName.trim()) {
       toast({
@@ -235,16 +272,18 @@ const DailyTasksPage: React.FC = () => {
       });
       return;
     }
+
     const newTask: DailyTask = {
       id: Date.now(),
       name: newTaskName,
       completed: false,
       timeOfDay: newTaskTime || undefined,
       streak: 0,
-      lastCompleted: undefined,
+      lastCompleted: format(currentDate, 'yyyy-MM-dd'),
       color: newTaskColor,
       category: newTaskCategory
     };
+
     setDailyTasks(prev => [...prev, newTask]);
     setNewTaskName('');
     setNewTaskTime('');
@@ -254,6 +293,7 @@ const DailyTasksPage: React.FC = () => {
       description: `"${newTaskName}" has been added to your daily tasks`
     });
   };
+
   const startEditing = (taskId: number, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setEditingTaskId(taskId);
@@ -261,10 +301,11 @@ const DailyTasksPage: React.FC = () => {
     if (task) {
       setNewTaskName(task.name);
       setNewTaskTime(task.timeOfDay || '');
-      setNewCategory(task.category || 'Personal');
-      setNewColor(task.color || COLORS[0]);
+      setNewTaskCategory(task.category || 'Personal');
+      setNewTaskColor(task.color || '#9b87f5');
     }
   };
+
   const handleEditTask = (task: DailyTask) => {
     if (!task.name.trim()) {
       toast({
@@ -282,6 +323,7 @@ const DailyTasksPage: React.FC = () => {
     setSelectedTask(task);
     setShowAddModal(true);
   };
+
   const handleUpdateTask = () => {
     if (!selectedTask) return;
     if (!newTaskName.trim()) {
@@ -313,6 +355,7 @@ const DailyTasksPage: React.FC = () => {
       description: `Your task has been updated successfully`
     });
   };
+
   const handleDeleteTask = (taskId: number) => {
     setDailyTasks(prev => prev.filter(task => task.id !== taskId));
     toast({
@@ -320,11 +363,13 @@ const DailyTasksPage: React.FC = () => {
       description: "The task has been removed from your list"
     });
   };
+
   const handleSetReminder = (task: DailyTask) => {
     setSelectedTask(task);
     setReminderTime(task.timeOfDay || '');
     setShowReminderModal(true);
   };
+
   const saveReminder = () => {
     if (!selectedTask || !reminderTime) {
       toast({
@@ -351,11 +396,13 @@ const DailyTasksPage: React.FC = () => {
     setSelectedTask(null);
     setReminderTime('');
   };
+
   const handleMoveTask = (task: DailyTask) => {
     setSelectedTask(task);
     setMoveToDate(undefined);
     setShowMoveTaskModal(true);
   };
+
   const handleMoveTaskToDate = () => {
     if (!selectedTask || !moveToDate) {
       toast({
@@ -382,12 +429,14 @@ const DailyTasksPage: React.FC = () => {
     setSelectedTask(null);
     setMoveToDate(undefined);
   };
+
   const handleDragStart = (task: DailyTask) => {
     if (isMobile || isTouchDevice) {
       setIsDragging(true);
       setDraggedTask(task);
     }
   };
+
   const handleDragEnd = () => {
     if ((isMobile || isTouchDevice) && draggedTask && targetTimeSlot) {
       const [time, period] = targetTimeSlot.split(' ');
@@ -417,11 +466,13 @@ const DailyTasksPage: React.FC = () => {
     setDraggedTask(null);
     setTargetTimeSlot(null);
   };
+
   const handleTimeSlotHover = (timeSlot: string) => {
     if (isDragging) {
       setTargetTimeSlot(timeSlot);
     }
   };
+
   const handleTaskNameBlur = (taskId: number) => {
     const task = dailyTasks.find(t => t.id === taskId);
     if (task && !newTaskName.trim()) {
@@ -442,12 +493,14 @@ const DailyTasksPage: React.FC = () => {
       setEditingTaskId(null);
     }
   };
+
   const handleCategoryClick = (task: DailyTask) => {
     setSelectedTask(task);
     setNewTaskCategory(task.category || 'Personal');
     setNewTaskColor(task.color || '#9b87f5');
     setShowCategoryModal(true);
   };
+
   const saveCategory = () => {
     if (!selectedTask) return;
     setDailyTasks(prev => prev.map(task => {
@@ -467,6 +520,7 @@ const DailyTasksPage: React.FC = () => {
     setShowCategoryModal(false);
     setSelectedTask(null);
   };
+
   const handleCopyTasks = () => {
     if (!copyToDate) {
       toast({
@@ -476,21 +530,28 @@ const DailyTasksPage: React.FC = () => {
       });
       return;
     }
+
     const currentDateStr = format(currentDate, 'yyyy-MM-dd');
     const targetDateStr = format(copyToDate, 'yyyy-MM-dd');
-    const tasksForToday = dailyTasks.filter(task => {
-      if (task.lastCompleted) {
-        const taskDate = task.lastCompleted.split('T')[0];
-        return taskDate === currentDateStr;
-      }
-      return isSameDay(new Date(task.id), currentDate);
-    });
-    const copiedTasks = tasksForToday.map(task => ({
+    
+    const tasksForCurrentDate = getTasksForCurrentDate();
+
+    if (tasksForCurrentDate.length === 0) {
+      toast({
+        title: "No tasks to copy",
+        description: "There are no tasks on the current day to copy",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const copiedTasks = tasksForCurrentDate.map(task => ({
       ...task,
       id: Date.now() + Math.random() * 1000,
       completed: false,
       lastCompleted: targetDateStr
     }));
+
     setDailyTasks(prev => [...prev, ...copiedTasks]);
     toast({
       title: "Tasks copied",
@@ -499,6 +560,7 @@ const DailyTasksPage: React.FC = () => {
     setCopyToDate(undefined);
     setShowCopyModal(false);
   };
+
   const handleClearTasks = () => {
     if (showClearTaskWarning) {
       setShowClearTasksModal(true);
@@ -506,12 +568,14 @@ const DailyTasksPage: React.FC = () => {
       clearTasksForCurrentDay();
     }
   };
+
   const clearTasksForCurrentDay = () => {
-    const today = format(currentDate, 'yyyy-MM-dd');
+    const currentDateStr = format(currentDate, 'yyyy-MM-dd');
     const tasksToRemove = dailyTasks.filter(task => {
-      const taskDay = task.lastCompleted ? task.lastCompleted.split('T')[0] : today;
-      return taskDay === today;
+      const taskDay = task.lastCompleted ? task.lastCompleted.split('T')[0] : '';
+      return taskDay === currentDateStr;
     });
+
     if (tasksToRemove.length === 0) {
       toast({
         title: "No tasks to clear",
@@ -519,16 +583,19 @@ const DailyTasksPage: React.FC = () => {
       });
       return;
     }
+
     setDailyTasks(prev => prev.filter(task => {
-      const taskDay = task.lastCompleted ? task.lastCompleted.split('T')[0] : today;
-      return taskDay !== today;
+      const taskDay = task.lastCompleted ? task.lastCompleted.split('T')[0] : '';
+      return taskDay !== currentDateStr;
     }));
+
     toast({
       title: "Tasks cleared",
       description: `${tasksToRemove.length} tasks have been cleared for ${format(currentDate, 'MMMM d, yyyy')}`
     });
     setShowClearTasksModal(false);
   };
+
   const handleTimeIncrementChange = (value: number) => {
     setTimeIncrement(value);
     toast({
@@ -536,6 +603,7 @@ const DailyTasksPage: React.FC = () => {
       description: `Time increment set to ${value} minutes`
     });
   };
+
   const getTasksForTimeSlot = (timeSlot: string) => {
     const [time, period] = timeSlot.split(' ');
     const [hour, minute] = time.split(':');
@@ -546,11 +614,22 @@ const DailyTasksPage: React.FC = () => {
       hour24 = 0;
     }
     const timeString = `${hour24.toString().padStart(2, '0')}:${minute}`;
-    return dailyTasks.filter(task => task.timeOfDay === timeString);
+    
+    const currentDateStr = format(currentDate, 'yyyy-MM-dd');
+    return dailyTasks.filter(task => {
+      const isCorrectTime = task.timeOfDay === timeString;
+      const isForCurrentDate = task.lastCompleted ? 
+        task.lastCompleted.split('T')[0] === currentDateStr : 
+        isSameDay(new Date(task.id), currentDate);
+      
+      return isCorrectTime && isForCurrentDate;
+    });
   };
+
   const formattedDate = format(currentDate, 'MMMM d, yyyy');
   const dayName = format(currentDate, 'EEEE');
   const dateLabel = isToday(currentDate) ? 'Today' : isTomorrow(currentDate) ? 'Tomorrow' : dayName;
+
   const getTaskCategoryBadgeClass = (category?: string) => {
     switch (category) {
       case 'Morning Routine':
@@ -571,24 +650,27 @@ const DailyTasksPage: React.FC = () => {
         return 'bg-gray-500/20 text-gray-300 border-gray-500/50';
     }
   };
+
   const CATEGORIES = ['Morning Routine', 'Work', 'Health', 'Learning', 'Evening Routine', 'Wellness', 'Productivity', 'Personal', 'Custom'];
   const COLORS = ['#9b87f5',
-  // Primary Purple
-  '#6E56CF',
-  // Vivid Purple
-  '#0EA5E9',
-  // Ocean Blue
-  '#1EAEDB',
-  // Bright Blue
-  '#33C3F0',
-  // Sky Blue
-  '#D6BCFA',
-  // Light Purple
-  '#F97316',
-  // Bright Orange
-  '#D946EF' // Magenta Pink
+    // Primary Purple
+    '#6E56CF',
+    // Vivid Purple
+    '#0EA5E9',
+    // Ocean Blue
+    '#1EAEDB',
+    // Bright Blue
+    '#33C3F0',
+    // Sky Blue
+    '#D6BCFA',
+    // Light Purple
+    '#F97316',
+    // Bright Orange
+    '#D946EF' // Magenta Pink
   ];
-  return <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-100">
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-100">
       <div className={`mx-auto p-2 ${isMobile ? 'max-w-md' : 'max-w-2xl'}`}>
         <div className="flex items-center justify-between mb-4 my-0 px-px mx-0 py-[3px]">
           <button onClick={() => navigate('/')} className="rounded-md p-2 hover:bg-gray-800 transition-colors">
@@ -1081,6 +1163,8 @@ const DailyTasksPage: React.FC = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default DailyTasksPage;
