@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -961,8 +960,8 @@ const DailyTasksPage: React.FC = () => {
             </DialogHeader>
             <div className="flex justify-center">
               <DatePicker 
-                selected={currentDate} 
-                onSelect={(date) => {
+                date={currentDate} 
+                onDateChange={(date) => {
                   if (date) {
                     setCurrentDate(date);
                     setShowCalendarModal(false);
@@ -987,8 +986,8 @@ const DailyTasksPage: React.FC = () => {
                 <label className="text-sm text-gray-400">Select Target Date</label>
                 <div className="mt-2">
                   <DatePicker 
-                    selected={copyToDate} 
-                    onSelect={(date) => {
+                    date={copyToDate} 
+                    onDateChange={(date) => {
                       if (date) {
                         setCopyToDate(date);
                       }
@@ -1026,8 +1025,8 @@ const DailyTasksPage: React.FC = () => {
                 <label className="text-sm text-gray-400">Select Target Date</label>
                 <div className="mt-2">
                   <DatePicker 
-                    selected={moveToDate} 
-                    onSelect={(date) => {
+                    date={moveToDate} 
+                    onDateChange={(date) => {
                       if (date) {
                         setMoveToDate(date);
                       }
