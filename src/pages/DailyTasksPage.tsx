@@ -91,13 +91,13 @@ const DailyTasksPage: React.FC = () => {
         return timeSlots.filter(slot => {
           const [time, period] = slot.split(' ');
           const [hour] = time.split(':');
-          return period === 'PM' && parseInt(hour) < 6;
+          return period === 'PM' && (parseInt(hour) <= 5 || parseInt(hour) === 12);
         });
       case 'evening':
         return timeSlots.filter(slot => {
           const [time, period] = slot.split(' ');
           const [hour] = time.split(':');
-          return period === 'PM' && (parseInt(hour) >= 5 && !(parseInt(hour) === 12));
+          return period === 'PM' && parseInt(hour) >= 6 && parseInt(hour) !== 12;
         });
       default:
         return timeSlots;
@@ -275,7 +275,7 @@ const DailyTasksPage: React.FC = () => {
       id: Date.now(),
       name: newTaskName,
       completed: false,
-      timeOfDay: newTaskTime || undefined,
+      timeOfDay: undefined,
       streak: 0,
       lastCompleted: format(currentDate, 'yyyy-MM-dd'),
       color: newTaskColor,
@@ -284,7 +284,6 @@ const DailyTasksPage: React.FC = () => {
 
     setDailyTasks(prev => [...prev, newTask]);
     setNewTaskName('');
-    setNewTaskTime('');
     setShowAddModal(false);
     toast({
       title: "Task added",
