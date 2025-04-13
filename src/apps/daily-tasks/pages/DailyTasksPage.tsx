@@ -6,7 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from '@/components/ui/use-toast';
 import { useIsMobile, useTouchDevice } from '@/hooks/use-mobile';
 
-// Import components
+// Import our components
 import DailyTaskHeader from '@/components/planner/daily/DailyTaskHeader';
 import DateNavigator from '@/components/planner/daily/DateNavigator';
 import TimeRangeSelector from '@/components/planner/daily/TimeRangeSelector';
@@ -66,7 +66,7 @@ const DailyTasksPage: React.FC = () => {
       value: 60
     }
   ];
-  
+
   const CATEGORIES = ['Morning Routine', 'Work', 'Health', 'Learning', 'Evening Routine', 'Wellness', 'Productivity', 'Personal', 'Custom'];
   const COLORS = [
     '#9b87f5', // Primary Purple
@@ -167,7 +167,6 @@ const DailyTasksPage: React.FC = () => {
     localStorage.setItem('showClearTaskWarning', showClearTaskWarning.toString());
   }, [showClearTaskWarning]);
 
-  // Event handlers
   const handlePreviousDay = () => {
     setCurrentDate(prev => subDays(prev, 1));
     setEditingTaskId(null);
@@ -646,7 +645,6 @@ const DailyTasksPage: React.FC = () => {
     }
   };
 
-  // Format dates for display
   const formattedDate = format(currentDate, 'MMMM d, yyyy');
   const dayName = format(currentDate, 'EEEE');
   const dateLabel = isToday(currentDate) ? 'Today' : isTomorrow(currentDate) ? 'Tomorrow' : dayName;
@@ -729,7 +727,6 @@ const DailyTasksPage: React.FC = () => {
         </ScrollArea>
       </div>
 
-      {/* Modals */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <AddTaskModal 
           isEdit={!!selectedTask}

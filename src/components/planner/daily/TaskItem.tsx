@@ -79,8 +79,9 @@ const TaskItem: React.FC<TaskItemProps> = ({
           value={newTaskName} 
           onChange={onNameChange} 
           onBlur={() => onNameBlur(task.id)} 
-          className="bg-gray-700 border-gray-600 text-white" // Explicitly set text color to white
+          className="bg-gray-700 border-gray-600 text-white focus:text-white active:text-white hover:text-white" 
           onClick={e => e.stopPropagation()}
+          autoFocus
         />
       ) : (
         <div className="flex items-center justify-between w-full">
