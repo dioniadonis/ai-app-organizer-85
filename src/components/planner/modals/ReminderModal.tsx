@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import TimeInput from '@/components/TimeInput';
+import { TimeInput } from '@/components/TimeInput';
 
 interface ReminderModalProps {
   open: boolean;
@@ -23,7 +23,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Set Reminder</DialogTitle>
+          <DialogTitle>Set Task Time</DialogTitle>
           <DialogDescription className="text-gray-400">
             When do you want to be reminded about this task?
           </DialogDescription>

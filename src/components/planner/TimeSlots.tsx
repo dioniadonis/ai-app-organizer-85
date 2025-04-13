@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { isToday } from 'date-fns';
 import { Plus } from 'lucide-react';
@@ -112,7 +113,6 @@ const TimeSlots: React.FC<TimeSlotsProps> = ({
                         key={task.id}
                         task={task}
                         editingTaskId={editingTaskId}
-                        isEditing={editingTaskId === task.id}
                         newTaskName={newTaskName}
                         setNewTaskName={setNewTaskName}
                         onToggleComplete={onToggleComplete}
