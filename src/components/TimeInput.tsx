@@ -94,7 +94,7 @@ const TimeInput: React.FC<TimeInputProps> = ({ value, onChange, label = "Time" }
   };
 
   return (
-    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+    <div className="space-y-2">
       <Label>{label}</Label>
       <div className="flex items-center gap-2">
         <Clock className="h-4 w-4 text-gray-400" />
@@ -106,7 +106,6 @@ const TimeInput: React.FC<TimeInputProps> = ({ value, onChange, label = "Time" }
             value={hours}
             onChange={handleHoursChange}
             className="w-14 bg-gray-700 border-gray-600 text-center"
-            onClick={(e) => e.stopPropagation()}
           />
           <span className="text-gray-400">:</span>
           <Input
@@ -116,13 +115,12 @@ const TimeInput: React.FC<TimeInputProps> = ({ value, onChange, label = "Time" }
             value={minutes}
             onChange={handleMinutesChange}
             className="w-14 bg-gray-700 border-gray-600 text-center"
-            onClick={(e) => e.stopPropagation()}
           />
           <Select value={period} onValueChange={handlePeriodChange}>
-            <SelectTrigger className="w-16 bg-gray-700 border-gray-600" onClick={(e) => e.stopPropagation()}>
+            <SelectTrigger className="w-16 bg-gray-700 border-gray-600">
               <SelectValue placeholder="AM" />
             </SelectTrigger>
-            <SelectContent onClick={(e) => e.stopPropagation()}>
+            <SelectContent>
               <SelectItem value="AM">AM</SelectItem>
               <SelectItem value="PM">PM</SelectItem>
             </SelectContent>

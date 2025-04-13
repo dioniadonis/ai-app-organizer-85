@@ -161,7 +161,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onSetReminder(task)}>
                   <Clock className="h-4 w-4 mr-2" />
-                  Set Time
+                  Set Reminder
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onMoveTask(task)}>
                   <Clock className="h-4 w-4 mr-2" />

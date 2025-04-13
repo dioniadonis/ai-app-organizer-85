@@ -23,7 +23,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-gray-800 border-gray-700 sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Set Task Time</DialogTitle>
+          <DialogTitle>Set Reminder</DialogTitle>
           <DialogDescription className="text-gray-400">
             When do you want to be reminded about this task?
           </DialogDescription>
