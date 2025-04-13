@@ -98,8 +98,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
             </button>
             <div>
               <span 
-                className={`text-sm ${task.completed ? 'line-through text-gray-400' : 'text-white'}`}
-                style={task.color ? { color: task.color } : undefined}
+                className={`text-sm text-white ${task.completed ? 'line-through text-gray-400' : ''}`}
               >
                 {task.name}
               </span>

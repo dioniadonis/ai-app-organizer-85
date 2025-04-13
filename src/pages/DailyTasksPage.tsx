@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { format, addDays, subDays, isToday, isTomorrow, isSameDay } from 'date-fns';
@@ -106,14 +107,20 @@ const DailyTasksPage: React.FC = () => {
       case 'afternoon':
         return timeSlots.filter(slot => {
           const [time, period] = slot.split(' ');
-          const [hour] = time.split(':');
-          return period === 'PM' && parseInt(hour) < 6;
+          const [hourStr] = time.split(':');
+          const hour = parseInt(hourStr);
+          
+          // Afternoon is 12 PM to 4:59 PM
+          return period === 'PM' && (hour === 12 || (hour >= 1 && hour < 5));
         });
       case 'evening':
         return timeSlots.filter(slot => {
           const [time, period] = slot.split(' ');
-          const [hour] = time.split(':');
-          return period === 'PM' && parseInt(hour) >= 5;
+          const [hourStr] = time.split(':');
+          const hour = parseInt(hourStr);
+          
+          // Evening is 5 PM onwards
+          return period === 'PM' && hour >= 5;
         });
       default:
         return timeSlots;
