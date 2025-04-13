@@ -88,6 +88,14 @@ const DailyTasksPage: React.FC = () => {
     clearTasksForCurrentDay
   } = useDailyTasks(currentDate);
 
+  // Create an adapter function that converts from (task: DailyTask) => void 
+  // to (taskId: number, task: Partial<DailyTask>) => void
+  const handleEditTaskAdapter = (task: DailyTask) => {
+    if (task && task.id) {
+      handleUpdateTask(task.id, { timeOfDay: task.timeOfDay });
+    }
+  };
+
   const {
     isDragging,
     draggedTask,
