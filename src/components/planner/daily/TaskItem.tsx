@@ -103,6 +103,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
             <div>
               <span 
                 className={`text-sm text-white ${task.completed ? 'line-through text-gray-400' : ''}`}
+                style={task.color ? { color: task.color } : undefined}
               >
                 {task.name}
               </span>
