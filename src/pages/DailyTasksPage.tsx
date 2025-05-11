@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { format, addDays, subDays, isToday, isTomorrow } from 'date-fns';
@@ -58,21 +59,19 @@ const DailyTasksPage: React.FC = () => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showMoveTaskModal, setShowMoveTaskModal] = useState(false);
   const [newTaskTime, setNewTaskTime] = useState('');
-  const [newTaskCategory, setNewTaskCategory] = useState('Personal');
-  const [newTaskColor, setNewTaskColor] = useState('#9b87f5');
-  const [displayRange, setDisplayRange] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
-  const [timeIncrement, setTimeIncrement] = useState<number>(30);
+  const [newTaskName, setNewTaskName] = useState('');
   const [copyToDate, setCopyToDate] = useState<Date | undefined>(undefined);
   const [moveToDate, setMoveToDate] = useState<Date | undefined>(undefined);
+  const [displayRange, setDisplayRange] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
+  const [timeIncrement, setTimeIncrement] = useState<number>(30);
 
   // Custom hooks
   const {
     dailyTasks,
     editingTaskId,
-    newTaskName,
     selectedTask,
     showClearTaskWarning,
-    setNewTaskName,
+    setNewTaskName: setTaskNameInHook,
     setSelectedTask,
     setEditingTaskId,
     setShowClearTaskWarning,
@@ -87,14 +86,6 @@ const DailyTasksPage: React.FC = () => {
     handleCopyTasks,
     clearTasksForCurrentDay
   } = useDailyTasks(currentDate);
-
-  // Create an adapter function that converts from (task: DailyTask) => void 
-  // to (taskId: number, task: Partial<DailyTask>) => void
-  const handleEditTaskAdapter = (task: DailyTask) => {
-    if (task && task.id) {
-      handleUpdateTask(task.id, { timeOfDay: task.timeOfDay });
-    }
-  };
 
   const {
     isDragging,
@@ -125,7 +116,7 @@ const DailyTasksPage: React.FC = () => {
   };
 
   const handleQuickAddTaskWrapper = (timeSlot: string) => {
-    handleQuickAddTask(timeSlot, newTaskColor);
+    handleQuickAddTask(timeSlot, '#9b87f5');
   };
 
   const handleClearTasks = () => {
@@ -143,7 +134,8 @@ const DailyTasksPage: React.FC = () => {
   };
 
   const handleMoveTaskToDateWrapper = () => {
-    if (selectedTask && moveToDate && handleMoveTaskToDate(selectedTask, moveToDate)) {
+    if (selectedTask && moveToDate) {
+      handleMoveTaskToDate(selectedTask, moveToDate);
       setShowMoveTaskModal(false);
       setSelectedTask(null);
       setMoveToDate(undefined);
@@ -158,7 +150,7 @@ const DailyTasksPage: React.FC = () => {
   };
 
   const handleAddTaskWrapper = () => {
-    if (handleAddTask(newTaskName, newTaskTime, newTaskColor, newTaskCategory)) {
+    if (handleAddTask(newTaskName, newTaskTime, '#9b87f5', 'Personal')) {
       setNewTaskName('');
       setNewTaskTime('');
       setShowAddModal(false);
@@ -166,12 +158,11 @@ const DailyTasksPage: React.FC = () => {
   };
 
   const handleUpdateTaskWrapper = () => {
-    if (selectedTask && handleUpdateTask(selectedTask.id, { 
-      name: newTaskName,
-      timeOfDay: newTaskTime || undefined,
-      color: newTaskColor,
-      category: newTaskCategory
-    })) {
+    if (selectedTask) {
+      handleUpdateTask(selectedTask.id, { 
+        name: newTaskName,
+        timeOfDay: newTaskTime || undefined
+      });
       setNewTaskName('');
       setNewTaskTime('');
       setShowAddModal(false);
@@ -180,8 +171,6 @@ const DailyTasksPage: React.FC = () => {
 
   const handleCategoryClick = (task: DailyTask) => {
     setSelectedTask(task);
-    setNewTaskCategory(task.category || 'Personal');
-    setNewTaskColor(task.color || '#9b87f5');
     setShowCategoryModal(true);
   };
 
@@ -189,8 +178,8 @@ const DailyTasksPage: React.FC = () => {
     if (!selectedTask) return;
     
     handleUpdateTask(selectedTask.id, {
-      color: newTaskColor,
-      category: newTaskCategory
+      color: '#9b87f5',
+      category: 'Personal'
     });
     
     setShowCategoryModal(false);
@@ -203,6 +192,12 @@ const DailyTasksPage: React.FC = () => {
       title: "Settings updated",
       description: `Time increment set to ${value} minutes`
     });
+  };
+
+  // Handle name change in this component
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewTaskName(e.target.value);
+    setTaskNameInHook(e.target.value);
   };
 
   const formattedDate = format(currentDate, 'MMMM d, yyyy');
@@ -224,8 +219,6 @@ const DailyTasksPage: React.FC = () => {
             setEditingTaskId(null);
             setNewTaskName('');
             setNewTaskTime('');
-            setNewTaskCategory('Personal');
-            setNewTaskColor('#9b87f5');
             setShowAddModal(true);
           }}
           isMobile={isMobile}
@@ -261,7 +254,7 @@ const DailyTasksPage: React.FC = () => {
           onTaskToggle={handleTaskToggle}
           onMoveTask={handleMoveTask}
           onDeleteTask={handleDeleteTask}
-          onNameChange={(e) => setNewTaskName(e.target.value)}
+          onNameChange={handleNameChange}
           onNameBlur={handleTaskNameBlur}
           onDragStart={handleDragStart}
           onEditTask={handleUpdateTask}
@@ -273,14 +266,14 @@ const DailyTasksPage: React.FC = () => {
           isEdit={!!selectedTask}
           taskName={newTaskName}
           taskTime={newTaskTime}
-          taskCategory={newTaskCategory}
-          taskColor={newTaskColor}
-          categories={CATEGORIES}
-          colors={COLORS}
-          onNameChange={(e) => setNewTaskName(e.target.value)}
+          taskCategory=""
+          taskColor=""
+          categories={[]}
+          colors={[]}
+          onNameChange={handleNameChange}
           onTimeChange={setNewTaskTime}
-          onCategoryChange={(e) => setNewTaskCategory(e.target.value)}
-          onColorChange={setNewTaskColor}
+          onCategoryChange={() => {}}
+          onColorChange={() => {}}
           onCancel={() => {
             setShowAddModal(false);
             setSelectedTask(null);
@@ -335,12 +328,12 @@ const DailyTasksPage: React.FC = () => {
 
       <Dialog open={showCategoryModal} onOpenChange={setShowCategoryModal}>
         <CategoryModal 
-          category={newTaskCategory}
-          color={newTaskColor}
+          category={'Personal'}
+          color={'#9b87f5'}
           categories={CATEGORIES}
           colors={COLORS}
-          onCategoryChange={(e) => setNewTaskCategory(e.target.value)}
-          onColorChange={setNewTaskColor}
+          onCategoryChange={() => {}}
+          onColorChange={() => {}}
           onCancel={() => {
             setShowCategoryModal(false);
             setSelectedTask(null);

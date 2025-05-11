@@ -26,14 +26,8 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
   isEdit,
   taskName,
   taskTime,
-  taskCategory,
-  taskColor,
-  categories,
-  colors,
   onNameChange,
   onTimeChange,
-  onCategoryChange,
-  onColorChange,
   onCancel,
   onSave
 }) => {
@@ -65,35 +59,6 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
             onChange={onTimeChange} 
             label="Time" 
           />
-        </div>
-        
-        <div>
-          <Label htmlFor="taskCategory">Category</Label>
-          <select 
-            id="taskCategory"
-            value={taskCategory}
-            onChange={onCategoryChange}
-            className="w-full px-3 py-2 mt-1 bg-gray-700 border border-gray-600 rounded-md text-white"
-          >
-            {categories.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-        </div>
-        
-        <div>
-          <Label>Color</Label>
-          <div className="flex flex-wrap gap-2 mt-1">
-            {colors.map(color => (
-              <button
-                key={color}
-                onClick={() => onColorChange(color)}
-                className={`w-8 h-8 rounded-full ${taskColor === color ? 'ring-2 ring-white' : ''}`}
-                style={{ backgroundColor: color }}
-                aria-label={`Select color ${color}`}
-              />
-            ))}
-          </div>
         </div>
       </div>
       
